@@ -188,7 +188,7 @@ namespace AntennaRange
 		protected void PostCannotTransmitError()
 		{
 			string ErrorText = string.Format (
-				"Unable to transmit: out of range!  Maximum range = {0}; Current range = {1}.",
+				"Unable to transmit: out of range!  Maximum range = {0}m; Current range = {1}m.",
 				Tools.MuMech_ToSI((double)this.maxTransmitDistance),
 				Tools.MuMech_ToSI((double)this.transmitDistance));
 			ScreenMessages.PostScreenMessage (new ScreenMessage (ErrorText, 4f, ScreenMessageStyle.UPPER_LEFT));
@@ -230,8 +230,8 @@ namespace AntennaRange
 		public override string GetInfo()
 		{
 			string text = base.GetInfo();
-			text += "Nominal Range: " + Tools.MuMech_ToSI((double)this.nominalRange) + "\n";
-			text += "Maximum Range: " + Tools.MuMech_ToSI((double)this.maxTransmitDistance) + "\n";
+			text += "Nominal Range: " + Tools.MuMech_ToSI((double)this.nominalRange) + "m\n";
+			text += "Maximum Range: " + Tools.MuMech_ToSI((double)this.maxTransmitDistance) + "m\n";
 			return text;
 		}
 
