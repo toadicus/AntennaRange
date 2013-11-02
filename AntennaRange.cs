@@ -68,16 +68,38 @@ namespace AntennaRange
 		// The distance from Kerbin at which the antenna will perform exactly as prescribed by packetResourceCost
 		// and packetSize.
 		[KSPField(isPersistant = false)]
-		public double nominalRange = 1500000d;
+		public float nominalRange;
 
 		// The multiplier on packetResourceCost that defines the maximum power output of the antenna.  When the power
 		// cost exceeds packetResourceCost * maxPowerFactor, transmission will fail.
 		[KSPField(isPersistant = false)]
-		public float maxPowerFactor = 8f;
+		public float maxPowerFactor;
 
 		// The multipler on packetSize that defines the maximum data bandwidth of the antenna.
 		[KSPField(isPersistant = false)]
-		public float maxDataFactor = 4f;
+		public float maxDataFactor;
+
+		// Override ModuleDataTransmitter.DataRate to just return packetSize, because we want antennas to be scored in
+		// terms of watts/byte
+		// HACK: This seems a little wrong; joules/byte sounds better, but it favors the larger antenna always.
+		public new float DataRate
+		{
+			get
+			{
+				return this.packetSize;
+			}
+		}
+
+		// Override ModuleDataTransmitter.DataResourceCost to just return packetResourceCost, because we want antennas
+		// to be scored in terms of watts/byte
+		// HACK: This seems a little wrong; joules/byte sounds better, but it favors the larger antenna always.
+		public new float DataResourceCost
+		{
+			get
+			{
+				return this.packetResourceCost;
+			}
+		}
 
 		// Build ALL the objects.
 		public ModuleLimitedDataTransmitter () : base() { }
@@ -108,9 +130,28 @@ namespace AntennaRange
 		// work.
 		public override void OnLoad(ConfigNode node)
 		{
+			this.Fields.Load(node);
+			base.Fields.Load(node);
+
 			base.OnLoad (node);
+
 			this._basepacketSize = base.packetSize;
 			this._basepacketResourceCost = base.packetResourceCost;
+
+			Tools.PostDebugMessage(string.Format(
+				"{0} loaded:\n" +
+				"packetSize: {1}\n" +
+				"packetResourceCost: {2}\n" +
+				"nominalRange: {3}\n" +
+				"maxPowerFactor: {4}\n" +
+				"maxDataFactor: {5}\n",
+				this.name,
+				base.packetSize,
+				this._basepacketResourceCost,
+				this.nominalRange,
+				this.maxPowerFactor,
+				this.maxDataFactor
+			));
 		}
 
 		// Post an error in the communication messages describing the reason transmission has failed.  Currently there
@@ -236,7 +277,10 @@ namespace AntennaRange
 				"maxTransmitDistance: {5}\n" +
 				"transmitDistance: {6}\n" +
 				"nominalRange: {7}\n" +
-				"CanTransmit: {8}",
+				"CanTransmit: {8}\n" +
+				"DataRate: {9}\n" +
+				"DataResourceCost: {10}\n" +
+				"TransmitterScore: {11}",
 				this.name,
 				this._basepacketSize,
 				base.packetSize,
@@ -245,7 +289,10 @@ namespace AntennaRange
 				this.maxTransmitDistance,
 				this.transmitDistance,
 				this.nominalRange,
-				this.CanTransmit()
+				this.CanTransmit(),
+				this.DataRate,
+				this.DataResourceCost,
+				ScienceUtil.GetTransmitterScore(this)
 				);
 			ScreenMessages.PostScreenMessage (new ScreenMessage (msg, 4f, ScreenMessageStyle.UPPER_RIGHT));
 		}
@@ -256,10 +303,17 @@ namespace AntennaRange
 	{
 		// When debugging, be verbose.  The Conditional attribute prevents this from firing when not DEBUGging.
 		[System.Diagnostics.Conditional("DEBUG")]
-		public static void PostDebugMessage(string Str)
+		public static void PostDebugMessage(string Msg)
 		{
-			ScreenMessage Message = new ScreenMessage (Str, 4f, ScreenMessageStyle.LOWER_CENTER);
-			ScreenMessages.PostScreenMessage (Message);
+			if (HighLogic.LoadedScene > GameScenes.SPACECENTER)
+			{
+				ScreenMessage Message = new ScreenMessage(Msg, 4f, ScreenMessageStyle.LOWER_CENTER);
+				ScreenMessages.PostScreenMessage(Message);
+			}
+			else
+			{
+				KSPLog.print(Msg);
+			}
 		}
 	}
 }
