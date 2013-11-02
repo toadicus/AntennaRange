@@ -112,6 +112,7 @@ namespace AntennaRange
 		{
 			get
 			{
+				PreTransmit_SetPacketSize();
 				return this.packetSize;
 			}
 		}
@@ -122,6 +123,7 @@ namespace AntennaRange
 		{
 			get
 			{
+				PreTransmit_SetPacketResourceCost();
 				return this.packetResourceCost;
 			}
 		}
@@ -342,4 +344,3 @@ namespace AntennaRange
 		}
 	}
 }
-
