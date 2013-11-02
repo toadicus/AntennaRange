@@ -79,9 +79,35 @@ namespace AntennaRange
 		[KSPField(isPersistant = false)]
 		public float maxDataFactor;
 
+
+		/*
+		 * The next two functions overwrite the behavior of the stock functions and do not perform equivalently, except
+		 * in that they both return floats.  Here's some quick justification:
+		 * 
+		 * The stock implementation of GetTransmitterScore (which I cannot override) is:
+		 * 		Score = (1 + DataResourceCost) / DataRate
+		 * 
+		 * The stock DataRate and DataResourceCost are:
+		 * 		DataRate = packetSize / packetInterval
+		 * 		DataResourceCost = packetResourceCost / packetSize
+		 * 
+		 * So, the resulting score is essentially in terms of joules per byte per baud.  Rearranging that a bit, it
+		 * could also look like joule-seconds per byte per byte, or newton-meter-seconds per byte per byte.  Either way,
+		 * that metric is not a very reasonable one.
+		 * 
+		 * Two metrics that might make more sense are joules per byte or joules per byte per second.  The latter case
+		 * would look like:
+		 * 		DataRate = packetSize / packetInterval
+		 * 		DataResourceCost = packetResourceCost
+		 * 
+		 * The former case, which I've chosen to implement below, is:
+		 * 		DataRate = packetSize
+		 * 		DataResourceCost = packetResourceCost
+		 * 
+		 * So... hopefully that doesn't screw with anything else.
+		 * */
 		// Override ModuleDataTransmitter.DataRate to just return packetSize, because we want antennas to be scored in
-		// terms of watts/byte
-		// HACK: This seems a little wrong; joules/byte sounds better, but it favors the larger antenna always.
+		// terms of joules/byte
 		public new float DataRate
 		{
 			get
@@ -91,8 +117,7 @@ namespace AntennaRange
 		}
 
 		// Override ModuleDataTransmitter.DataResourceCost to just return packetResourceCost, because we want antennas
-		// to be scored in terms of watts/byte
-		// HACK: This seems a little wrong; joules/byte sounds better, but it favors the larger antenna always.
+		// to be scored in terms of joules/byte
 		public new float DataResourceCost
 		{
 			get
