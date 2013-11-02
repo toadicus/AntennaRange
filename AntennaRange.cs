@@ -11,7 +11,8 @@
  * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. To view a
  * copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
  * 
- * This software uses the ModuleManager library © 2013 ialdabaoth, used under a Creative Commons Attribution-ShareAlike 3.0 Uported License.
+ * This software uses the ModuleManager library © 2013 ialdabaoth, used under a Creative Commons Attribution-ShareAlike
+ * 3.0 Uported License.
  * 
  */
 
@@ -33,8 +34,10 @@ namespace AntennaRange
 	 * where D is the total transmission distance, P is the transmission power, and R is the data rate.
 	 * 
 	 * */
-	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, IScienceDataTransmitter
+	public class ModuleLimitedDataTransmitter : PartModule, IScienceDataTransmitter
 	{
+		protected ModuleDataTransmitter dataTransmitter = null;
+
 		// Stores the packetResourceCost as defined in the .cfg file.
 		protected float _basepacketResourceCost;
 
@@ -42,7 +45,7 @@ namespace AntennaRange
 		protected float _basepacketSize;
 
 		// We don't have a Bard, so we're hiding Kerbin here.
-		protected CelestialBody _Kerbin;
+		protected CelestialBody _Kerbin = null;
 
 		// Returns the current distance to the center of Kerbin, which is totally where the Kerbals keep their radioes.
 		protected double transmitDistance
@@ -79,90 +82,105 @@ namespace AntennaRange
 		[KSPField(isPersistant = false)]
 		public float maxDataFactor = 4f;
 
-		// Override ModuleDataTransmitter.packetSize.  Below the nominal range, scales up packetSize to
-		// packetSize * maxDataFactor
-		[KSPField(isPersistant = false)]
-		public new float packetSize
+		public float DataRate
 		{
 			get
 			{
-				if (this.transmitDistance >= this.nominalRange)
-				{
-					return this._basepacketSize;
-				}
-				else
-				{
-					// From above, data rate increases with the inverse square of the distance.
-					return Math.Min(this._basepacketSize * (float)Math.Pow(this.nominalRange / this.transmitDistance, 2),
-					                 this._basepacketSize * this.maxDataFactor);
-				}
+				return dataTransmitter.DataRate;
 			}
-			set
-			{
-				this._basepacketSize = value;
-			}
-			
 		}
 
-		// Override ModuleDataTransmitter.packetResourceCost.  Above the nominal range, scales up packetResourceCost to
-		// packetResourceCost * maxPowerFactor.
-		[KSPField(isPersistant = false)]
-		public new float packetResourceCost
+		public double DataResourceCost
 		{
 			get
 			{
-				if (this.transmitDistance <= this.nominalRange)
-				{
-					return this._basepacketResourceCost;
-				}
-				else
-				{
-					// From above, power increases with the square of the distance.
-					return this._basepacketResourceCost * (float)Math.Pow (this.transmitDistance / this.nominalRange, 2);
-				}
+				return dataTransmitter.DataRate;
 			}
-			set
-			{
-				this._basepacketResourceCost = value;
-			}
-
 		}
 
 		// Build ALL the objects.
 		public ModuleLimitedDataTransmitter () : base()
 		{
-			// Go fetch Kerbin, because it is tricksy and hides from us.
-			List<CelestialBody> bodies = FlightGlobals.Bodies;
+			dataTransmitter = new ModuleDataTransmitter ();
+		}
 
-			foreach (CelestialBody body in bodies)
+		public override void OnStart(PartModule.StartState state)
+		{
+			if (state >= PartModule.StartState.PreLaunch && this._Kerbin == null)
 			{
-				if (body.name == "Kerbin")
+				// Go fetch Kerbin, because it is tricksy and hides from us.
+				List<CelestialBody> bodies = FlightGlobals.Bodies;
+
+				foreach (CelestialBody body in bodies)
 				{
-					this._Kerbin = body;
-					break;
+					if (body.name == "Kerbin")
+					{
+						this._Kerbin = body;
+						break;
+					}
 				}
 			}
+		}
+
+		public override void OnLoad(ConfigNode node)
+		{
+			dataTransmitter.OnLoad (node);
+			this._basepacketSize = dataTransmitter.packetSize;
+			this._basepacketResourceCost = dataTransmitter.packetResourceCost;
 		}
 
 		// Post an error in the communication messages describing the reason transmission has failed.  Currently there
 		// is only one reason for this.
 		protected void PostCannotTransmitError()
 		{
-			string ErrorText = String.Format ("Unable to transmit: out of range!  Maximum range = {0}; Current range = {1}.", this.maxTransmitDistance, this.transmitDistance);
+			string ErrorText = String.Format(
+				"Unable to transmit: out of range!  Maximum range = {0}; Current range = {1}.",
+				this.maxTransmitDistance,
+				this.transmitDistance
+				);
 			ScreenMessages.PostScreenMessage (new ScreenMessage (ErrorText, 4f, ScreenMessageStyle.UPPER_LEFT));
+		}
+
+		protected void PreTransmit_SetpacketSize()
+		{
+			if (this.transmitDistance >= this.nominalRange)
+			{
+				dataTransmitter.packetSize = this._basepacketSize;
+			}
+			else
+			{
+				// From above, data rate increases with the inverse square of the distance.
+				dataTransmitter.packetSize = Math.Min(this._basepacketSize
+				                           * (float)Math.Pow(this.nominalRange / this.transmitDistance, 2),
+				                           this._basepacketSize * this.maxDataFactor);
+			}
+		}
+
+		protected void PreTransmit_SetpacketResourceCost()
+		{
+			if (this.transmitDistance <= this.nominalRange)
+			{
+				dataTransmitter.packetResourceCost = this._basepacketResourceCost;
+			}
+			else
+			{
+				// From above, power increases with the square of the distance.
+				dataTransmitter.packetResourceCost = this._basepacketResourceCost
+					* (float)Math.Pow (this.transmitDistance / this.nominalRange, 2);
+			}
 		}
 
 		// Override ModuleDataTransmitter.GetInfo to add nominal and maximum range to the VAB description.
 		public override string GetInfo()
 		{
-			string text = base.GetInfo();
+			string text = dataTransmitter.GetInfo();
 			text += "Nominal Range: " + this.nominalRange.ToString() + "\n";
 			text += "Maximum Range: " + this.maxTransmitDistance.ToString() + "\n";
 			return text;
 		}
 
 		// Override ModuleDataTransmitter.CanTransmit to return false when transmission is not possible.
-		public new bool CanTransmit()
+		public bool CanTransmit()
 		{
 			if (this.transmitDistance > this.maxTransmitDistance)
 			{
@@ -171,32 +189,72 @@ namespace AntennaRange
 			return true;
 		}
 
+		public bool IsBusy()
+		{
+			return dataTransmitter.IsBusy ();
+		}
+
 		// Override ModuleDataTransmitter.TransmitData to check against CanTransmit and fail out when CanTransmit
 		// returns false.
-		public new void TransmitData(List<ScienceData> dataQueue)
+		public void TransmitData(List<ScienceData> dataQueue)
 		{
-			if (this.CanTransmit())
-			{
-				base.TransmitData(dataQueue);
-			}
-			else
-			{
-				this.PostCannotTransmitError ();
-			}
+			dataTransmitter.TransmitData(dataQueue);
+//			this.PreTransmit_SetpacketSize ();
+//			this.PreTransmit_SetpacketResourceCost ();
+//
+//			Tools.PostDebugMessage(
+//				"Attempting to TransmitData. Distance: " + this.transmitDistance.ToString()
+//				+ " packetSize: " + this.packetSize.ToString()
+//				+ " packetResourceCost: " + this.packetResourceCost.ToString()
+//				);
+//			if (this.CanTransmit())
+//			{
+//				base.TransmitData(dataQueue);
+//			}
+//			else
+//			{
+//				this.PostCannotTransmitError ();
+//			}
 		}
 
 		// Override ModuleDataTransmitter.StartTransmission to check against CanTransmit and fail out when CanTransmit
 		// returns false.
-		public new void StartTransmission()
+		[KSPEvent (guiName = "Transmit Data", active = true, guiActive = true)]
+		public void StartTransmission()
 		{
-			if (this.CanTransmit())
-			{
-				base.StartTransmission();
-			}
-			else
-			{
-				this.PostCannotTransmitError ();
-			}
+			dataTransmitter.StartTransmission ();
+//			this.PreTransmit_SetpacketSize ();
+//			this.PreTransmit_SetpacketResourceCost ();
+//
+//			Tools.PostDebugMessage(
+//				"Attempting to TransmitData. Distance: " + this.transmitDistance.ToString()
+//				+ " packetSize: " + this.packetSize.ToString()
+//				+ " packetResourceCost: " + this.packetResourceCost.ToString()
+//				);
+//			if (this.CanTransmit())
+//			{
+//				base.StartTransmission();
+//			}
+//			else
+//			{
+//				this.PostCannotTransmitError ();
+//			}
+		}
+
+		[KSPEvent (guiName = "Stop Transmitting", active = true, guiActive = true)]
+		public void StopTransmission()
+		{
+			dataTransmitter.StopTransmission ();
+		}
+	}
+
+	public static class Tools
+	{
+		[System.Diagnostics.Conditional("DEBUG")]
+		public static void PostDebugMessage(string Str)
+		{
+			ScreenMessage Message = new ScreenMessage (Str, 4f, ScreenMessageStyle.UPPER_RIGHT);
+			ScreenMessages.PostScreenMessage (Message);
 		}
 	}
 }
