@@ -82,6 +82,7 @@ namespace AntennaRange
 		// Build ALL the objects.
 		public ModuleLimitedDataTransmitter () : base() { }
 
+		// At least once, when the module starts with a state on the launch pad or later, go find Kerbin.
 		public override void OnStart (StartState state)
 		{
 			base.OnStart (state);
@@ -102,6 +103,9 @@ namespace AntennaRange
 			}
 		}
 
+		// When the module loads, fetch the Squad KSPFields from the base.  This is necessary in part because
+		// overloading packetSize and packetResourceCostinto a property in ModuleLimitedDataTransmitter didn't
+		// work.
 		public override void OnLoad(ConfigNode node)
 		{
 			base.OnLoad (node);
@@ -120,6 +124,9 @@ namespace AntennaRange
 			ScreenMessages.PostScreenMessage (new ScreenMessage (ErrorText, 4f, ScreenMessageStyle.UPPER_LEFT));
 		}
 
+		// Before transmission, set packetResourceCost.  Per above, packet size increases with the square of
+		// distance.  packetResourceCost maxes out at _basepacketResourceCost * maxPowerFactor, at which point
+		// transmission fails (see CanTransmit).
 		protected void PreTransmit_SetPacketResourceCost()
 		{
 			if (this.transmitDistance <= this.nominalRange)
@@ -133,6 +140,8 @@ namespace AntennaRange
 			}
 		}
 
+		// Before transmission, set packetSize.  Per above, packet size increases with the inverse square of
+		// distance.  packetSize maxes out at _basepacketSize * maxDataFactor.
 		protected void PreTransmit_SetPacketSize()
 		{
 			if (this.transmitDistance >= this.nominalRange)
@@ -141,7 +150,7 @@ namespace AntennaRange
 			}
 			else
 			{
-				base.packetSize = Math.Min (
+				base.packetSize = Math.Min(
 					this._basepacketSize * (float)Math.Pow (this.nominalRange / this.transmitDistance, 2),
 					this._basepacketSize * this.maxDataFactor);
 			}
@@ -210,6 +219,7 @@ namespace AntennaRange
 			}
 		}
 
+		// When debugging, it's nice to have a button that just tells you everything.
 		#if DEBUG
 		[KSPEvent (guiName = "Show Debug Info", active = true, guiActive = true)]
 		public void DebugInfo()
@@ -237,17 +247,18 @@ namespace AntennaRange
 				this.nominalRange,
 				this.CanTransmit()
 				);
-			ScreenMessages.PostScreenMessage (new ScreenMessage (msg, 30f, ScreenMessageStyle.UPPER_RIGHT));
+			ScreenMessages.PostScreenMessage (new ScreenMessage (msg, 4f, ScreenMessageStyle.UPPER_RIGHT));
 		}
 		#endif
 	}
 
 	public static class Tools
 	{
+		// When debugging, be verbose.  The Conditional attribute prevents this from firing when not DEBUGging.
 		[System.Diagnostics.Conditional("DEBUG")]
 		public static void PostDebugMessage(string Str)
 		{
-			ScreenMessage Message = new ScreenMessage (Str, 4f, ScreenMessageStyle.UPPER_RIGHT);
+			ScreenMessage Message = new ScreenMessage (Str, 4f, ScreenMessageStyle.LOWER_CENTER);
 			ScreenMessages.PostScreenMessage (Message);
 		}
 	}
