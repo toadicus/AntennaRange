@@ -35,6 +35,10 @@ namespace AntennaRange
 	 * where D is the total transmission distance, P is the transmission power, and R is the data rate.
 	 * 
 	 * */
+
+	/*
+	 * Fields
+	 * */
 	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, IScienceDataTransmitter
 	{
 		// Stores the packetResourceCost as defined in the .cfg file.
@@ -46,6 +50,26 @@ namespace AntennaRange
 		// We don't have a Bard, so we're hiding Kerbin here.
 		protected CelestialBody _Kerbin;
 
+		// Let's make the error text pretty!
+		protected UnityEngine.GUIStyle ErrorStyle;
+
+		// The distance from Kerbin at which the antenna will perform exactly as prescribed by packetResourceCost
+		// and packetSize.
+		[KSPField(isPersistant = false)]
+		public float nominalRange;
+
+		// The multiplier on packetResourceCost that defines the maximum power output of the antenna.  When the power
+		// cost exceeds packetResourceCost * maxPowerFactor, transmission will fail.
+		[KSPField(isPersistant = false)]
+		public float maxPowerFactor;
+
+		// The multipler on packetSize that defines the maximum data bandwidth of the antenna.
+		[KSPField(isPersistant = false)]
+		public float maxDataFactor;
+
+		/*
+		 * Properties
+		 * */
 		// Returns the current distance to the center of Kerbin, which is totally where the Kerbals keep their radioes.
 		protected double transmitDistance
 		{
@@ -66,21 +90,6 @@ namespace AntennaRange
 				return Math.Sqrt (this.maxPowerFactor) * this.nominalRange;
 			}
 		}
-
-		// The distance from Kerbin at which the antenna will perform exactly as prescribed by packetResourceCost
-		// and packetSize.
-		[KSPField(isPersistant = false)]
-		public float nominalRange;
-
-		// The multiplier on packetResourceCost that defines the maximum power output of the antenna.  When the power
-		// cost exceeds packetResourceCost * maxPowerFactor, transmission will fail.
-		[KSPField(isPersistant = false)]
-		public float maxPowerFactor;
-
-		// The multipler on packetSize that defines the maximum data bandwidth of the antenna.
-		[KSPField(isPersistant = false)]
-		public float maxDataFactor;
-
 
 		/*
 		 * The next two functions overwrite the behavior of the stock functions and do not perform equivalently, except
@@ -114,7 +123,7 @@ namespace AntennaRange
 		{
 			get
 			{
-				PreTransmit_SetPacketSize();
+				this.PreTransmit_SetPacketSize();
 				return this.packetSize;
 			}
 		}
@@ -125,13 +134,25 @@ namespace AntennaRange
 		{
 			get
 			{
-				PreTransmit_SetPacketResourceCost();
+				this.PreTransmit_SetPacketResourceCost();
 				return this.packetResourceCost;
 			}
 		}
 
+		/*
+		 * Methods
+		 * */
 		// Build ALL the objects.
-		public ModuleLimitedDataTransmitter () : base() { }
+		public ModuleLimitedDataTransmitter () : base()
+		{
+			// Make the error posting prettier.
+			this.ErrorStyle = new UnityEngine.GUIStyle();
+			this.ErrorStyle.normal.textColor = (UnityEngine.Color)XKCDColors.OrangeRed;
+			this.ErrorStyle.active.textColor = (UnityEngine.Color)XKCDColors.OrangeRed;
+			this.ErrorStyle.hover.textColor = (UnityEngine.Color)XKCDColors.OrangeRed;
+			this.ErrorStyle.fontStyle = UnityEngine.FontStyle.Bold;
+			this.ErrorStyle.padding.top = 32;
+		}
 
 		// At least once, when the module starts with a state on the launch pad or later, go find Kerbin.
 		public override void OnStart (StartState state)
@@ -192,7 +213,13 @@ namespace AntennaRange
 				Tools.MuMech_ToSI((double)this.maxTransmitDistance, 2),
 				Tools.MuMech_ToSI((double)this.transmitDistance, 2)
 				);
-			ScreenMessages.PostScreenMessage (new ScreenMessage (ErrorText, 4f, ScreenMessageStyle.UPPER_LEFT));
+			ScreenMessages.PostScreenMessage(
+				new ScreenMessage(
+				ErrorText,
+				4f,
+				ScreenMessageStyle.UPPER_LEFT,
+				this.ErrorStyle
+				));
 		}
 
 		// Before transmission, set packetResourceCost.  Per above, packet cost increases with the square of
