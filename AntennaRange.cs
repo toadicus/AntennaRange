@@ -11,14 +11,15 @@
  * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. To view a
  * copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
  * 
- * This software uses the ModuleManager library © 2013 ialdabaoth, used under a Creative Commons Attribution-ShareAlike 3.0 Uported License.
+ * This software uses the ModuleManager library © 2013 ialdabaoth, used under a Creative Commons Attribution-ShareAlike
+ * 3.0 Uported License.
  * 
  * This software uses code from the MuMechLib library, © 2013 r4m0n, used under the GNU GPL version 3.
  * 
  */
-
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using KSP;
 
 namespace AntennaRange
@@ -49,6 +50,12 @@ namespace AntennaRange
 
 		// We don't have a Bard, so we're hiding Kerbin here.
 		protected CelestialBody _Kerbin;
+
+		// Keep track of vessels with transmitters for relay purposes.
+		protected List<Vessel> _relayVessels;
+
+		// Sometimes we will need to communicate errors; this is how we do it.
+		protected ScreenMessage ErrorMsg;
 
 		// Let's make the error text pretty!
 		protected UnityEngine.GUIStyle ErrorStyle;
@@ -135,8 +142,22 @@ namespace AntennaRange
 			get
 			{
 				this.PreTransmit_SetPacketResourceCost();
-				return this.packetResourceCost;
+
+				if (this.CanTransmit())
+				{
+					return this.packetResourceCost;
+				}
+				else
+				{
+					return float.PositiveInfinity;
+				}
 			}
+		}
+
+		public bool relayChecked
+		{
+			get;
+			protected set;
 		}
 
 		/*
@@ -152,27 +173,29 @@ namespace AntennaRange
 			this.ErrorStyle.hover.textColor = (UnityEngine.Color)XKCDColors.OrangeRed;
 			this.ErrorStyle.fontStyle = UnityEngine.FontStyle.Bold;
 			this.ErrorStyle.padding.top = 32;
+
+			this.ErrorMsg = new ScreenMessage("", 4f, false, ScreenMessageStyle.UPPER_LEFT, this.ErrorStyle);
 		}
 
 		// At least once, when the module starts with a state on the launch pad or later, go find Kerbin.
 		public override void OnStart (StartState state)
 		{
+			this.relayChecked = false;
+
 			base.OnStart (state);
 
-			if (state >= StartState.PreLaunch && this._Kerbin == null)
+			if (state >= StartState.PreLaunch)
 			{
-				// Go fetch Kerbin, because it is tricksy and hides from us.
-				List<CelestialBody> bodies = FlightGlobals.Bodies;
-
-				foreach (CelestialBody body in bodies)
+				if (this._Kerbin == null)
 				{
-					if (body.name == "Kerbin")
-					{
-						this._Kerbin = body;
-						break;
-					}
+					// Go fetch Kerbin, because it is tricksy and hides from us.
+					this._Kerbin = FlightGlobals.Bodies.FirstOrDefault(b => b.name == "Kerbin");
 				}
 			}
+
+			// Pre-set the transmit cost and packet size when loading.
+			this.PreTransmit_SetPacketResourceCost();
+			this.PreTransmit_SetPacketSize();
 		}
 
 		// When the module loads, fetch the Squad KSPFields from the base.  This is necessary in part because
@@ -213,13 +236,10 @@ namespace AntennaRange
 				Tools.MuMech_ToSI((double)this.maxTransmitDistance, 2),
 				Tools.MuMech_ToSI((double)this.transmitDistance, 2)
 				);
-			ScreenMessages.PostScreenMessage(
-				new ScreenMessage(
-				ErrorText,
-				4f,
-				ScreenMessageStyle.UPPER_LEFT,
-				this.ErrorStyle
-				));
+
+			this.ErrorMsg.message = ErrorText;
+
+			ScreenMessages.PostScreenMessage(this.ErrorMsg, true);
 		}
 
 		// Before transmission, set packetResourceCost.  Per above, packet cost increases with the square of
@@ -266,19 +286,100 @@ namespace AntennaRange
 		// Override ModuleDataTransmitter.CanTransmit to return false when transmission is not possible.
 		public new bool CanTransmit()
 		{
-			if (this.transmitDistance > this.maxTransmitDistance)
+			if (this.transmitDistance < this.maxTransmitDistance)
 			{
-				return false;
+				return true;
 			}
-			return true;
+			else
+			{
+				this.relayChecked = true;
+
+				List<Vessel> nearbyVessels = FlightGlobals.Vessels
+					.Where(v => (v.GetWorldPos3D() - vessel.GetWorldPos3D()).magnitude < this.transmitDistance)
+					.ToList();
+
+				Tools.PostDebugMessage(string.Format(
+					"{0}: Vessels in range: {1}",
+					this.GetType().Name,
+					nearbyVessels.Count
+					));
+
+				nearbyVessels = nearbyVessels.Where(v => v.id != vessel.id).ToList();
+
+				Tools.PostDebugMessage(string.Format(
+					"{0}: Vessels in range excluding self: {1}",
+					this.GetType().Name,
+					nearbyVessels.Count
+					));
+
+				List<Part> nearbyParts = nearbyVessels.SelectMany(v => v.Parts).ToList();
+
+				Tools.PostDebugMessage(string.Format(
+					"{0}: Parts in nearby vessels: {1}",
+					this.GetType().Name,
+					nearbyParts.Count
+					));
+
+				List<ModuleLimitedDataTransmitter> nearbyTransmitters = nearbyParts
+					.SelectMany(p => p.Modules.OfType<ModuleLimitedDataTransmitter>())
+					.ToList();
+
+				Tools.PostDebugMessage(string.Format(
+					"{0}: Transmitters in nearby parts: {1}",
+					this.GetType().Name,
+					nearbyTransmitters.Count
+					));
+
+				nearbyTransmitters = nearbyTransmitters.Where(m => !m.relayChecked).ToList();
+
+				Tools.PostDebugMessage(string.Format(
+					"{0}: Transmitters in nearby parts not already checked: {1}",
+					this.GetType().Name,
+					nearbyTransmitters.Count
+					));
+
+				nearbyTransmitters = nearbyTransmitters.Where(m => m.CanTransmit()).ToList();
+
+				Tools.PostDebugMessage(string.Format(
+					"{0}: Transmitters in nearby parts not already checked that can transmit: {1}",
+					this.GetType().Name,
+					nearbyTransmitters.Count
+					));
+
+				List<ModuleLimitedDataTransmitter> nearbyRelays = this._relayVessels
+					.Where(v => (v.GetWorldPos3D() - vessel.GetWorldPos3D()).magnitude < this.transmitDistance)
+					.Where(v => v.id != vessel.id)
+					.SelectMany(v => v.Parts)
+					.SelectMany(p => p.Modules.OfType<ModuleLimitedDataTransmitter>())
+					.Where(m => !m.relayChecked)
+					.Where(m => m.CanTransmit())
+					.ToList();
+
+				Tools.PostDebugMessage(string.Format(
+					"{0}: Found {1} nearby relays.",
+					this.GetType().Name,
+					nearbyRelays.Count
+				));
+
+				this.relayChecked = false;
+
+				if (nearbyRelays.Count == 0)
+				{
+					return false;
+				}
+				else
+				{
+					return true;
+				}
+			}
 		}
 
 		// Override ModuleDataTransmitter.TransmitData to check against CanTransmit and fail out when CanTransmit
 		// returns false.
 		public new void TransmitData(List<ScienceData> dataQueue)
 		{
-			PreTransmit_SetPacketSize ();
-			PreTransmit_SetPacketResourceCost ();
+			this.PreTransmit_SetPacketSize ();
+			this.PreTransmit_SetPacketResourceCost ();
 
 			Tools.PostDebugMessage (
 				"distance: " + this.transmitDistance
@@ -358,19 +459,18 @@ namespace AntennaRange
 
 	public static class Tools
 	{
-		// When debugging, be verbose.  The Conditional attribute prevents this from firing when not DEBUGging.
+		private static ScreenMessage debugmsg = new ScreenMessage("", 2f, ScreenMessageStyle.UPPER_RIGHT);
+
 		[System.Diagnostics.Conditional("DEBUG")]
 		public static void PostDebugMessage(string Msg)
 		{
 			if (HighLogic.LoadedScene > GameScenes.SPACECENTER)
 			{
-				ScreenMessage Message = new ScreenMessage(Msg, 4f, ScreenMessageStyle.LOWER_CENTER);
-				ScreenMessages.PostScreenMessage(Message);
+				debugmsg.message = Msg;
+				ScreenMessages.PostScreenMessage(debugmsg, true);
 			}
-			else
-			{
-				KSPLog.print(Msg);
-			}
+
+			KSPLog.print(Msg);
 		}
 
 		/*
