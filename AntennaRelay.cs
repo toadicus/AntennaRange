@@ -6,32 +6,47 @@ namespace AntennaRange
 {
 	public class AntennaRelay : IAntennaRelay
 	{
+		// We don't have a Bard, so we'll hide Kerbin here.
 		protected CelestialBody Kerbin;
 
+		/// <summary>
+		/// Gets the parent Vessel.
+		/// </summary>
+		/// <value>The parent Vessel.</value>
 		public Vessel vessel
 		{
 			get;
 			protected set;
 		}
 
-		// Returns the current distance to the center of Kerbin, which is totally where the Kerbals keep their radioes.
+		/// <summary>
+		/// Gets the transmit distance.
+		/// </summary>
+		/// <value>The transmit distance.</value>
 		public double transmitDistance
 		{
 			get
 			{
 				IAntennaRelay nearestRelay = this.FindNearestRelay();
 
+				// If there is no available relay nearby...
 				if (nearestRelay == null)
 				{
+					// .. return the distance to Kerbin
 					return this.DistanceTo(this.Kerbin);
 				}
 				else
 				{
+					/// ...otherwise, return the distance to the nearest available relay.
 					return this.DistanceTo(nearestRelay);
 				}
 			}
 		}
 
+		/// <summary>
+		/// The maximum distance at which this relay can operate.
+		/// </summary>
+		/// <value>The max transmit distance.</value>
 		public virtual float maxTransmitDistance
 		{
 			get;
@@ -49,6 +64,10 @@ namespace AntennaRange
 			protected set;
 		}
 
+		/// <summary>
+		/// Determines whether this instance can transmit.
+		/// </summary>
+		/// <returns><c>true</c> if this instance can transmit; otherwise, <c>false</c>.</returns>
 		public bool CanTransmit()
 		{
 			if (this.transmitDistance > this.maxTransmitDistance)
@@ -64,11 +83,13 @@ namespace AntennaRange
 		/// <summary>
 		/// Finds the nearest relay.
 		/// </summary>
-		/// <returns>The nearest relay.</returns>
+		/// <returns>The nearest relay or null, if no relays in range.</returns>
 		public IAntennaRelay FindNearestRelay()
 		{
+			// Set this relay as checked, so that we don't check it again.
 			this.relayChecked = true;
 
+			// Get a list of vessels within transmission range.
 			List<Vessel> nearbyVessels = FlightGlobals.Vessels
 				.Where(v => (v.GetWorldPos3D() - vessel.GetWorldPos3D()).magnitude < this.maxTransmitDistance)
 					.ToList();
@@ -79,6 +100,7 @@ namespace AntennaRange
 				nearbyVessels.Count
 				));
 
+			// Remove this vessel.
 			nearbyVessels.RemoveAll(v => v.id == vessel.id);
 
 			Tools.PostDebugMessage(string.Format(
@@ -87,6 +109,7 @@ namespace AntennaRange
 				nearbyVessels.Count
 				));
 
+			// Get a flattened list of all IAntennaRelay modules and protomodules in transmission range.
 			List<IAntennaRelay> nearbyRelays = nearbyVessels.SelectMany(v => v.GetAntennaRelays()).ToList();
 
 			Tools.PostDebugMessage(string.Format(
@@ -95,6 +118,7 @@ namespace AntennaRange
 				nearbyRelays.Count
 				));
 
+			// Remove all relays already checked this time.
 			nearbyRelays.RemoveAll(r => r.relayChecked);
 
 			Tools.PostDebugMessage(string.Format(
@@ -103,6 +127,8 @@ namespace AntennaRange
 				nearbyRelays.Count
 				));
 
+			// Remove all relays that cannot transmit.
+			// This call to r.CanTransmit() starts a depth-first recursive search for relays with a path back to Kerbin.
 			nearbyRelays.RemoveAll(r => !r.CanTransmit());
 
 			Tools.PostDebugMessage(string.Format(
@@ -111,12 +137,17 @@ namespace AntennaRange
 				nearbyRelays.Count
 				));
 
+			// Sort the available relays by distance.
 			nearbyRelays.Sort(new RelayComparer(this.vessel));
 
+			// Get the nearest available relay, or null if there are no available relays nearby.
 			IAntennaRelay nearestRelay = nearbyRelays.FirstOrDefault();
 
+			// Now that we're done with our recursive CanTransmit checks, flag this relay as not checked so it can be
+			// used next time.
 			this.relayChecked = false;
 
+			// Return the nearest available relay, or null if there are no available relays nearby.
 			return nearestRelay;
 		}
 
@@ -128,20 +159,39 @@ namespace AntennaRange
 		{
 			this.vessel = v;
 
+			// HACK: This might not be safe in all circumstances, but since AntennaRelays are not built until Start,
+			// we hope it is safe enough.
 			this.Kerbin = FlightGlobals.Bodies.FirstOrDefault(b => b.name == "Kerbin");
 		}
 
+		/*
+		 * Class implementing IComparer<IAntennaRelay> for use in sorting relays by distance.
+		 * */
 		internal class RelayComparer : IComparer<IAntennaRelay>
 		{
+			/// <summary>
+			/// The reference Vessel (usually the active vessel).
+			/// </summary>
 			protected Vessel referenceVessel;
 
+			// We don't want no stinking public parameterless constructors.
 			private RelayComparer() {}
 
+			/// <summary>
+			/// Initializes a new instance of the <see cref="AntennaRange.AntennaRelay+RelayComparer"/> class for use
+			/// in sorting relays by distance.
+			/// </summary>
+			/// <param name="reference">The reference Vessel</param>
 			public RelayComparer(Vessel reference)
 			{
 				this.referenceVessel = reference;
 			}
 
+			/// <summary>
+			/// Compare the <see cref="IAntennaRelay"/>s "one" and "two".
+			/// </summary>
+			/// <param name="one">The first IAntennaRelay in the comparison</param>
+			/// <param name="two">The second IAntennaRelay in the comparison</param>
 			public int Compare(IAntennaRelay one, IAntennaRelay two)
 			{
 				double distanceOne;

@@ -43,6 +43,7 @@ namespace AntennaRange
 	 * */
 	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, IScienceDataTransmitter, IAntennaRelay
 	{
+		// Call this an antenna so that you don't have to.
 		[KSPField(isPersistant = true)]
 		protected bool IsAntenna = true;
 
@@ -78,13 +79,14 @@ namespace AntennaRange
 		[KSPField(isPersistant = false)]
 		public float maxDataFactor;
 
+		// This field exists to get saved to the persistence file so that relays can be found on unloaded Vessels.
 		[KSPField(isPersistant = true)]
 		protected float ARmaxTransmitDistance;
 
 		/*
 		 * Properties
 		 * */
-		// Returns the current distance to the center of Kerbin, which is totally where the Kerbals keep their radioes.
+		// Returns the parent vessel housing this antenna.
 		public new Vessel vessel
 		{
 			get
@@ -93,6 +95,7 @@ namespace AntennaRange
 			}
 		}
 
+		// Returns the distance to the nearest relay or Kerbin, whichever is closer.
 		public double transmitDistance
 		{
 			get
@@ -166,6 +169,7 @@ namespace AntennaRange
 			}
 		}
 
+		// Reports whether this antenna has been checked as a viable relay already in the current FindNearestRelay.
 		public bool relayChecked
 		{
 			get
