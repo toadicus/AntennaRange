@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using KSP;
+using UnityEngine;
 
 namespace AntennaRange
 {
@@ -40,7 +41,7 @@ namespace AntennaRange
 	/*
 	 * Fields
 	 * */
-	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, IScienceDataTransmitter
+	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, ILimitedScienceDataTransmitter
 	{
 		// Stores the packetResourceCost as defined in the .cfg file.
 		protected float _basepacketResourceCost;
@@ -74,6 +75,13 @@ namespace AntennaRange
 		[KSPField(isPersistant = false)]
 		public float maxDataFactor;
 
+		[KSPField(isPersistant = true)]
+		protected float ARmaxTransmitDistance;
+
+		// Call this an antenna, to make things easier on us.  This behavior is borrowed from RemoteTech by Cilph.
+		[KSPField(isPersistant = true)]
+		public bool IsAntenna = true;
+
 		/*
 		 * Properties
 		 * */
@@ -90,11 +98,12 @@ namespace AntennaRange
 		}
 
 		// Returns the maximum distance this module can transmit
-		public double maxTransmitDistance
+		[KSPField(isPersistant = true)]
+		public float maxTransmitDistance
 		{
 			get
 			{
-				return Math.Sqrt (this.maxPowerFactor) * this.nominalRange;
+				return this.ARmaxTransmitDistance;
 			}
 		}
 
@@ -206,6 +215,8 @@ namespace AntennaRange
 			this.Fields.Load(node);
 			base.Fields.Load(node);
 
+			this.ARmaxTransmitDistance = Mathf.Sqrt (this.maxPowerFactor) * this.nominalRange;
+
 			base.OnLoad (node);
 
 			this._basepacketSize = base.packetSize;
@@ -233,7 +244,7 @@ namespace AntennaRange
 		{
 			string ErrorText = string.Format (
 				"Unable to transmit: out of range!  Maximum range = {0}m; Current range = {1}m.",
-				Tools.MuMech_ToSI((double)this.maxTransmitDistance, 2),
+				Tools.MuMech_ToSI((double)this.ARmaxTransmitDistance, 2),
 				Tools.MuMech_ToSI((double)this.transmitDistance, 2)
 				);
 
@@ -279,14 +290,17 @@ namespace AntennaRange
 		{
 			string text = base.GetInfo();
 			text += "Nominal Range: " + Tools.MuMech_ToSI((double)this.nominalRange, 2) + "m\n";
-			text += "Maximum Range: " + Tools.MuMech_ToSI((double)this.maxTransmitDistance, 2) + "m\n";
+			text += "Maximum Range: " + Tools.MuMech_ToSI((double)this.ARmaxTransmitDistance, 2) + "m\n";
 			return text;
 		}
 
 		// Override ModuleDataTransmitter.CanTransmit to return false when transmission is not possible.
 		public new bool CanTransmit()
 		{
-			if (this.transmitDistance < this.maxTransmitDistance)
+			this.PreTransmit_SetPacketResourceCost();
+			this.PreTransmit_SetPacketSize();
+
+			if (this.transmitDistance < this.ARmaxTransmitDistance)
 			{
 				return true;
 			}
@@ -312,16 +326,8 @@ namespace AntennaRange
 					nearbyVessels.Count
 					));
 
-				List<Part> nearbyParts = nearbyVessels.SelectMany(v => v.Parts).ToList();
-
-				Tools.PostDebugMessage(string.Format(
-					"{0}: Parts in nearby vessels: {1}",
-					this.GetType().Name,
-					nearbyParts.Count
-					));
-
-				List<ModuleLimitedDataTransmitter> nearbyTransmitters = nearbyParts
-					.SelectMany(p => p.Modules.OfType<ModuleLimitedDataTransmitter>())
+				List<ILimitedScienceDataTransmitter> nearbyTransmitters = nearbyVessels
+					.SelectMany (v => v.GetTransmitters ())
 					.ToList();
 
 				Tools.PostDebugMessage(string.Format(
@@ -346,24 +352,9 @@ namespace AntennaRange
 					nearbyTransmitters.Count
 					));
 
-				List<ModuleLimitedDataTransmitter> nearbyRelays = this._relayVessels
-					.Where(v => (v.GetWorldPos3D() - vessel.GetWorldPos3D()).magnitude < this.transmitDistance)
-					.Where(v => v.id != vessel.id)
-					.SelectMany(v => v.Parts)
-					.SelectMany(p => p.Modules.OfType<ModuleLimitedDataTransmitter>())
-					.Where(m => !m.relayChecked)
-					.Where(m => m.CanTransmit())
-					.ToList();
-
-				Tools.PostDebugMessage(string.Format(
-					"{0}: Found {1} nearby relays.",
-					this.GetType().Name,
-					nearbyRelays.Count
-				));
-
 				this.relayChecked = false;
 
-				if (nearbyRelays.Count == 0)
+				if (nearbyTransmitters.Count == 0)
 				{
 					return false;
 				}
@@ -378,14 +369,6 @@ namespace AntennaRange
 		// returns false.
 		public new void TransmitData(List<ScienceData> dataQueue)
 		{
-			this.PreTransmit_SetPacketSize ();
-			this.PreTransmit_SetPacketResourceCost ();
-
-			Tools.PostDebugMessage (
-				"distance: " + this.transmitDistance
-				+ " packetSize: " + this.packetSize
-				+ " packetResourceCost: " + this.packetResourceCost
-			);
 			if (this.CanTransmit())
 			{
 				base.TransmitData(dataQueue);
@@ -394,6 +377,12 @@ namespace AntennaRange
 			{
 				this.PostCannotTransmitError ();
 			}
+
+			Tools.PostDebugMessage (
+				"distance: " + this.transmitDistance
+				+ " packetSize: " + this.packetSize
+				+ " packetResourceCost: " + this.packetResourceCost
+			);
 		}
 
 		// Override ModuleDataTransmitter.StartTransmission to check against CanTransmit and fail out when CanTransmit
@@ -444,7 +433,7 @@ namespace AntennaRange
 				base.packetSize,
 				this._basepacketResourceCost,
 				base.packetResourceCost,
-				this.maxTransmitDistance,
+				this.ARmaxTransmitDistance,
 				this.transmitDistance,
 				this.nominalRange,
 				this.CanTransmit(),
