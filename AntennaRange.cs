@@ -41,16 +41,19 @@ namespace AntennaRange
 	/*
 	 * Fields
 	 * */
-	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, ILimitedScienceDataTransmitter
+	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, IScienceDataTransmitter, IAntennaRelay
 	{
+		[KSPField(isPersistant = true)]
+		protected bool IsAntenna = true;
+
 		// Stores the packetResourceCost as defined in the .cfg file.
 		protected float _basepacketResourceCost;
 
 		// Stores the packetSize as defined in the .cfg file.
 		protected float _basepacketSize;
 
-		// We don't have a Bard, so we're hiding Kerbin here.
-		protected CelestialBody _Kerbin;
+		// Every antenna is a relay.
+		protected AntennaRelay relay;
 
 		// Keep track of vessels with transmitters for relay purposes.
 		protected List<Vessel> _relayVessels;
@@ -78,27 +81,27 @@ namespace AntennaRange
 		[KSPField(isPersistant = true)]
 		protected float ARmaxTransmitDistance;
 
-		// Call this an antenna, to make things easier on us.  This behavior is borrowed from RemoteTech by Cilph.
-		[KSPField(isPersistant = true)]
-		public bool IsAntenna = true;
-
 		/*
 		 * Properties
 		 * */
 		// Returns the current distance to the center of Kerbin, which is totally where the Kerbals keep their radioes.
-		protected double transmitDistance
+		public new Vessel vessel
 		{
 			get
 			{
-				Vector3d KerbinPos = this._Kerbin.position;
-				Vector3d ActivePos = base.vessel.GetWorldPos3D();
+				return base.vessel;
+			}
+		}
 
-				return (ActivePos - KerbinPos).magnitude;
+		public double transmitDistance
+		{
+			get
+			{
+				return this.relay.transmitDistance;
 			}
 		}
 
 		// Returns the maximum distance this module can transmit
-		[KSPField(isPersistant = true)]
 		public float maxTransmitDistance
 		{
 			get
@@ -165,8 +168,10 @@ namespace AntennaRange
 
 		public bool relayChecked
 		{
-			get;
-			protected set;
+			get
+			{
+				return this.relay.relayChecked;
+			}
 		}
 
 		/*
@@ -189,17 +194,12 @@ namespace AntennaRange
 		// At least once, when the module starts with a state on the launch pad or later, go find Kerbin.
 		public override void OnStart (StartState state)
 		{
-			this.relayChecked = false;
-
 			base.OnStart (state);
 
 			if (state >= StartState.PreLaunch)
 			{
-				if (this._Kerbin == null)
-				{
-					// Go fetch Kerbin, because it is tricksy and hides from us.
-					this._Kerbin = FlightGlobals.Bodies.FirstOrDefault(b => b.name == "Kerbin");
-				}
+				this.relay = new AntennaRelay(vessel);
+				this.relay.maxTransmitDistance = this.maxTransmitDistance;
 			}
 
 			// Pre-set the transmit cost and packet size when loading.
@@ -297,72 +297,7 @@ namespace AntennaRange
 		// Override ModuleDataTransmitter.CanTransmit to return false when transmission is not possible.
 		public new bool CanTransmit()
 		{
-			this.PreTransmit_SetPacketResourceCost();
-			this.PreTransmit_SetPacketSize();
-
-			if (this.transmitDistance < this.ARmaxTransmitDistance)
-			{
-				return true;
-			}
-			else
-			{
-				this.relayChecked = true;
-
-				List<Vessel> nearbyVessels = FlightGlobals.Vessels
-					.Where(v => (v.GetWorldPos3D() - vessel.GetWorldPos3D()).magnitude < this.transmitDistance)
-					.ToList();
-
-				Tools.PostDebugMessage(string.Format(
-					"{0}: Vessels in range: {1}",
-					this.GetType().Name,
-					nearbyVessels.Count
-					));
-
-				nearbyVessels = nearbyVessels.Where(v => v.id != vessel.id).ToList();
-
-				Tools.PostDebugMessage(string.Format(
-					"{0}: Vessels in range excluding self: {1}",
-					this.GetType().Name,
-					nearbyVessels.Count
-					));
-
-				List<ILimitedScienceDataTransmitter> nearbyTransmitters = nearbyVessels
-					.SelectMany (v => v.GetTransmitters ())
-					.ToList();
-
-				Tools.PostDebugMessage(string.Format(
-					"{0}: Transmitters in nearby parts: {1}",
-					this.GetType().Name,
-					nearbyTransmitters.Count
-					));
-
-				nearbyTransmitters = nearbyTransmitters.Where(m => !m.relayChecked).ToList();
-
-				Tools.PostDebugMessage(string.Format(
-					"{0}: Transmitters in nearby parts not already checked: {1}",
-					this.GetType().Name,
-					nearbyTransmitters.Count
-					));
-
-				nearbyTransmitters = nearbyTransmitters.Where(m => m.CanTransmit()).ToList();
-
-				Tools.PostDebugMessage(string.Format(
-					"{0}: Transmitters in nearby parts not already checked that can transmit: {1}",
-					this.GetType().Name,
-					nearbyTransmitters.Count
-					));
-
-				this.relayChecked = false;
-
-				if (nearbyTransmitters.Count == 0)
-				{
-					return false;
-				}
-				else
-				{
-					return true;
-				}
-			}
+			return this.relay.CanTransmit();
 		}
 
 		// Override ModuleDataTransmitter.TransmitData to check against CanTransmit and fail out when CanTransmit
@@ -444,112 +379,5 @@ namespace AntennaRange
 			ScreenMessages.PostScreenMessage (new ScreenMessage (msg, 4f, ScreenMessageStyle.UPPER_RIGHT));
 		}
 		#endif
-	}
-
-	public static class Tools
-	{
-		private static ScreenMessage debugmsg = new ScreenMessage("", 2f, ScreenMessageStyle.UPPER_RIGHT);
-
-		[System.Diagnostics.Conditional("DEBUG")]
-		public static void PostDebugMessage(string Msg)
-		{
-			if (HighLogic.LoadedScene > GameScenes.SPACECENTER)
-			{
-				debugmsg.message = Msg;
-				ScreenMessages.PostScreenMessage(debugmsg, true);
-			}
-
-			KSPLog.print(Msg);
-		}
-
-		/*
-		 * MuMech_ToSI is a part of the MuMechLib library, © 2013 r4m0n, used under the GNU GPL version 3.
-		 * */
-		public static string MuMech_ToSI(double d, int digits = 3, int MinMagnitude = 0, int MaxMagnitude = int.MaxValue)
-		{
-			float exponent = (float)Math.Log10(Math.Abs(d));
-			exponent = UnityEngine.Mathf.Clamp(exponent, (float)MinMagnitude, (float)MaxMagnitude);
-
-			if (exponent >= 0)
-			{
-				switch ((int)Math.Floor(exponent))
-				{
-					case 0:
-						case 1:
-						case 2:
-						return d.ToString("F" + digits);
-						case 3:
-						case 4:
-						case 5:
-						return (d / 1e3).ToString("F" + digits) + "k";
-						case 6:
-						case 7:
-						case 8:
-						return (d / 1e6).ToString("F" + digits) + "M";
-						case 9:
-						case 10:
-						case 11:
-						return (d / 1e9).ToString("F" + digits) + "G";
-						case 12:
-						case 13:
-						case 14:
-						return (d / 1e12).ToString("F" + digits) + "T";
-						case 15:
-						case 16:
-						case 17:
-						return (d / 1e15).ToString("F" + digits) + "P";
-						case 18:
-						case 19:
-						case 20:
-						return (d / 1e18).ToString("F" + digits) + "E";
-						case 21:
-						case 22:
-						case 23:
-						return (d / 1e21).ToString("F" + digits) + "Z";
-						default:
-						return (d / 1e24).ToString("F" + digits) + "Y";
-				}
-			}
-			else if (exponent < 0)
-			{
-				switch ((int)Math.Floor(exponent))
-				{
-					case -1:
-						case -2:
-						case -3:
-						return (d * 1e3).ToString("F" + digits) + "m";
-						case -4:
-						case -5:
-						case -6:
-						return (d * 1e6).ToString("F" + digits) + "μ";
-						case -7:
-						case -8:
-						case -9:
-						return (d * 1e9).ToString("F" + digits) + "n";
-						case -10:
-						case -11:
-						case -12:
-						return (d * 1e12).ToString("F" + digits) + "p";
-						case -13:
-						case -14:
-						case -15:
-						return (d * 1e15).ToString("F" + digits) + "f";
-						case -16:
-						case -17:
-						case -18:
-						return (d * 1e18).ToString("F" + digits) + "a";
-						case -19:
-						case -20:
-						case -21:
-						return (d * 1e21).ToString("F" + digits) + "z";
-						default:
-						return (d * 1e24).ToString("F" + digits) + "y";
-				}
-			}
-			else
-			{
-				return "0";
-			}
-		}
 	}
 }
