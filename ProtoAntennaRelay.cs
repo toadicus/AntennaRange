@@ -26,7 +26,10 @@ namespace AntennaRange
 	 * */
 	public class ProtoAntennaRelay : AntennaRelay, IAntennaRelay
 	{
+		// Stores the proto module.
 		protected ProtoPartModuleSnapshot protoModule;
+
+		// Stores the proto part, which seems silly because all we need is the name.
 		protected Part partPrefab;
 
 		/// <summary>

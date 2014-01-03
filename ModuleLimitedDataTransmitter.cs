@@ -77,10 +77,6 @@ namespace AntennaRange
 		[KSPField(isPersistant = false)]
 		public float maxDataFactor;
 
-		// This field exists to get saved to the persistence file so that relays can be found on unloaded Vessels.
-		[KSPField(isPersistant = true)]
-		protected float ARmaxTransmitDistance;
-
 		/*
 		 * Properties
 		 * */
@@ -107,7 +103,7 @@ namespace AntennaRange
 		{
 			get
 			{
-				return this.ARmaxTransmitDistance;
+				return Mathf.Sqrt (this.maxPowerFactor) * this.nominalRange;
 			}
 		}
 
@@ -213,7 +209,6 @@ namespace AntennaRange
 			this.Fields.Load(node);
 			base.Fields.Load(node);
 
-			this.ARmaxTransmitDistance = Mathf.Sqrt (this.maxPowerFactor) * this.nominalRange;
 			this.IsAntenna = true;
 
 			base.OnLoad (node);
@@ -243,7 +238,7 @@ namespace AntennaRange
 		{
 			string ErrorText = string.Format (
 				"Unable to transmit: out of range!  Maximum range = {0}m; Current range = {1}m.",
-				Tools.MuMech_ToSI((double)this.ARmaxTransmitDistance, 2),
+				Tools.MuMech_ToSI((double)this.maxTransmitDistance, 2),
 				Tools.MuMech_ToSI((double)this.transmitDistance, 2)
 				);
 
@@ -289,7 +284,7 @@ namespace AntennaRange
 		{
 			string text = base.GetInfo();
 			text += "Nominal Range: " + Tools.MuMech_ToSI((double)this.nominalRange, 2) + "m\n";
-			text += "Maximum Range: " + Tools.MuMech_ToSI((double)this.ARmaxTransmitDistance, 2) + "m\n";
+			text += "Maximum Range: " + Tools.MuMech_ToSI((double)this.maxTransmitDistance, 2) + "m\n";
 			return text;
 		}
 
@@ -382,7 +377,7 @@ namespace AntennaRange
 				base.packetSize,
 				this._basepacketResourceCost,
 				base.packetResourceCost,
-				this.ARmaxTransmitDistance,
+				this.maxTransmitDistance,
 				this.transmitDistance,
 				this.nominalRange,
 				this.CanTransmit(),

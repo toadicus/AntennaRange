@@ -22,7 +22,7 @@ namespace AntennaRange
 	public static class Tools
 	{
 		private static ScreenMessage debugmsg = new ScreenMessage("", 2f, ScreenMessageStyle.UPPER_RIGHT);
-
+		// Function that posts messages to the screen and the log when DEBUG is defined.
 		[System.Diagnostics.Conditional("DEBUG")]
 		public static void PostDebugMessage(string Msg)
 		{
