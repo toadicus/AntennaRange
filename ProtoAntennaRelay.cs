@@ -1,4 +1,22 @@
+// AntennaRange © 2014 toadicus
+//
+// AntennaRange provides incentive and requirements for the use of the various antenna parts.
+// Nominally, the breakdown is as follows:
+//
+//     Communotron 16 - Suitable up to Kerbalsynchronous Orbit
+//     Comms DTS-M1 - Suitable throughout the Kerbin subsystem
+//     Communotron 88-88 - Suitable throughout the Kerbol system.
+//
+// This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. To view a
+// copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
+//
+// This software uses the ModuleManager library © 2013 ialdabaoth, used under a Creative Commons Attribution-ShareAlike
+// 3.0 Uported License.
+//
+// This software uses code from the MuMechLib library, © 2013 r4m0n, used under the GNU GPL version 3.
+
 using System;
+using System.Linq;
 
 namespace AntennaRange
 {
@@ -8,7 +26,8 @@ namespace AntennaRange
 	 * */
 	public class ProtoAntennaRelay : AntennaRelay, IAntennaRelay
 	{
-		protected ProtoPartModuleSnapshot snapshot;
+		protected ProtoPartModuleSnapshot protoModule;
+		protected Part partPrefab;
 
 		/// <summary>
 		/// The maximum distance at which this transmitter can operate.
@@ -18,9 +37,7 @@ namespace AntennaRange
 		{
 			get
 			{
-				double result;
-				Double.TryParse(snapshot.moduleValues.GetValue ("ARmaxTransmitDistance") ?? "0", out result);
-				return (float)result;
+				return this.partPrefab.Modules.OfType<ModuleLimitedDataTransmitter>().First().maxTransmitDistance;
 			}
 		}
 
@@ -34,18 +51,18 @@ namespace AntennaRange
 			get
 			{
 				bool result;
-				Boolean.TryParse(this.snapshot.moduleValues.GetValue("relayChecked"), out result);
+				Boolean.TryParse(this.protoModule.moduleValues.GetValue("relayChecked"), out result);
 				return result;
 			}
 			protected set
 			{
-				if (this.snapshot.moduleValues.HasValue("relayChecked"))
+				if (this.protoModule.moduleValues.HasValue("relayChecked"))
 				{
-					this.snapshot.moduleValues.SetValue("relayChecked", value.ToString ());
+					this.protoModule.moduleValues.SetValue("relayChecked", value.ToString ());
 				}
 				else
 				{
-					this.snapshot.moduleValues.AddValue("relayChecked", value);
+					this.protoModule.moduleValues.AddValue("relayChecked", value);
 				}
 			}
 		}
@@ -55,9 +72,10 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="ms">The ProtoPartModuleSnapshot to wrap</param>
 		/// <param name="vessel">The parent Vessel</param>
-		public ProtoAntennaRelay(ProtoPartModuleSnapshot ms, Vessel vessel) : base(vessel)
+		public ProtoAntennaRelay(ProtoPartModuleSnapshot ppms, ProtoPartSnapshot pps, Vessel vessel) : base(vessel)
 		{
-			this.snapshot = ms;
+			this.protoModule = ppms;
+			this.partPrefab = PartLoader.getPartInfoByName(pps.partName).partPrefab;
 		}
 	}
 }
