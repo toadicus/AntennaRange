@@ -45,7 +45,7 @@ namespace AntennaRange
 	{
 		// Call this an antenna so that you don't have to.
 		[KSPField(isPersistant = true)]
-		protected bool IsAntenna = true;
+		protected bool IsAntenna;
 
 		// Stores the packetResourceCost as defined in the .cfg file.
 		protected float _basepacketResourceCost;
@@ -189,7 +189,7 @@ namespace AntennaRange
 			this.ErrorStyle.normal.textColor = (UnityEngine.Color)XKCDColors.OrangeRed;
 			this.ErrorStyle.active.textColor = (UnityEngine.Color)XKCDColors.OrangeRed;
 			this.ErrorStyle.hover.textColor = (UnityEngine.Color)XKCDColors.OrangeRed;
-			this.ErrorStyle.fontStyle = UnityEngine.FontStyle.Bold;
+			this.ErrorStyle.fontStyle = UnityEngine.FontStyle.Normal;
 			this.ErrorStyle.padding.top = 32;
 
 			this.ErrorMsg = new ScreenMessage("", 4f, false, ScreenMessageStyle.UPPER_LEFT, this.ErrorStyle);
@@ -205,10 +205,6 @@ namespace AntennaRange
 				this.relay = new AntennaRelay(vessel);
 				this.relay.maxTransmitDistance = this.maxTransmitDistance;
 			}
-
-			// Pre-set the transmit cost and packet size when loading.
-			this.PreTransmit_SetPacketResourceCost();
-			this.PreTransmit_SetPacketSize();
 		}
 
 		// When the module loads, fetch the Squad KSPFields from the base.  This is necessary in part because
@@ -220,6 +216,7 @@ namespace AntennaRange
 			base.Fields.Load(node);
 
 			this.ARmaxTransmitDistance = Mathf.Sqrt (this.maxPowerFactor) * this.nominalRange;
+			this.IsAntenna = true;
 
 			base.OnLoad (node);
 
@@ -336,8 +333,22 @@ namespace AntennaRange
 				+ " packetSize: " + this.packetSize
 				+ " packetResourceCost: " + this.packetResourceCost
 				);
+
 			if (this.CanTransmit())
 			{
+				this.ErrorMsg.message = "Beginning transmission ";
+
+				if (this.relay.nearestRelay == null)
+				{
+					this.ErrorMsg.message += "directly to Kerbin.";
+				}
+				else
+				{
+					this.ErrorMsg.message += "via relay " + this.relay.nearestRelay;
+				}
+
+				ScreenMessages.PostScreenMessage(this.ErrorMsg);
+
 				base.StartTransmission();
 			}
 			else
@@ -366,7 +377,8 @@ namespace AntennaRange
 				"CanTransmit: {8}\n" +
 				"DataRate: {9}\n" +
 				"DataResourceCost: {10}\n" +
-				"TransmitterScore: {11}",
+				"TransmitterScore: {11}\n" +
+				"NearestRelay: {12}",
 				this.name,
 				this._basepacketSize,
 				base.packetSize,
@@ -378,7 +390,8 @@ namespace AntennaRange
 				this.CanTransmit(),
 				this.DataRate,
 				this.DataResourceCost,
-				ScienceUtil.GetTransmitterScore(this)
+				ScienceUtil.GetTransmitterScore(this),
+				this.relay.FindNearestRelay()
 				);
 			ScreenMessages.PostScreenMessage (new ScreenMessage (msg, 4f, ScreenMessageStyle.UPPER_RIGHT));
 		}

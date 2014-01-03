@@ -20,6 +20,16 @@ namespace AntennaRange
 		}
 
 		/// <summary>
+		/// Gets or sets the nearest relay.
+		/// </summary>
+		/// <value>The nearest relay</value>
+		public IAntennaRelay nearestRelay
+		{
+			get;
+			protected set;
+		}
+
+		/// <summary>
 		/// Gets the transmit distance.
 		/// </summary>
 		/// <value>The transmit distance.</value>
@@ -27,7 +37,7 @@ namespace AntennaRange
 		{
 			get
 			{
-				IAntennaRelay nearestRelay = this.FindNearestRelay();
+				this.nearestRelay = this.FindNearestRelay();
 
 				// If there is no available relay nearby...
 				if (nearestRelay == null)
@@ -94,8 +104,10 @@ namespace AntennaRange
 				.Where(v => (v.GetWorldPos3D() - vessel.GetWorldPos3D()).magnitude < this.maxTransmitDistance)
 					.ToList();
 
+			nearbyVessels.RemoveAll(v => v.vesselType == VesselType.Debris);
+
 			Tools.PostDebugMessage(string.Format(
-				"{0}: Vessels in range: {1}",
+				"{0}: Non-debris vessels in range: {1}",
 				this.GetType().Name,
 				nearbyVessels.Count
 				));
@@ -141,14 +153,34 @@ namespace AntennaRange
 			nearbyRelays.Sort(new RelayComparer(this.vessel));
 
 			// Get the nearest available relay, or null if there are no available relays nearby.
-			IAntennaRelay nearestRelay = nearbyRelays.FirstOrDefault();
+			IAntennaRelay _nearestRelay = nearbyRelays.FirstOrDefault();
+
+			// If we have a nearby relay...
+			if (_nearestRelay != null)
+			{
+				// ...but that relay is farther than Kerbin...
+				if (this.DistanceTo(_nearestRelay) > this.DistanceTo(Kerbin))
+				{
+					// ...just use Kerbin.
+					_nearestRelay = null;
+				}
+			}
 
 			// Now that we're done with our recursive CanTransmit checks, flag this relay as not checked so it can be
 			// used next time.
 			this.relayChecked = false;
 
 			// Return the nearest available relay, or null if there are no available relays nearby.
-			return nearestRelay;
+			return _nearestRelay;
+		}
+
+		public override string ToString()
+		{
+			return string.Format(
+				"Antenna relay on vessel {0} (range to relay: {1}m)",
+				vessel,
+				Tools.MuMech_ToSI(transmitDistance)
+			);
 		}
 
 		/// <summary>
