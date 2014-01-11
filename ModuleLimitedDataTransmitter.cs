@@ -41,10 +41,6 @@ namespace AntennaRange
 	 * */
 	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, IScienceDataTransmitter, IAntennaRelay
 	{
-		// Call this an antenna so that you don't have to.
-		[KSPField(isPersistant = true)]
-		protected bool IsAntenna;
-
 		// Stores the packetResourceCost as defined in the .cfg file.
 		protected float _basepacketResourceCost;
 
@@ -140,7 +136,15 @@ namespace AntennaRange
 			get
 			{
 				this.PreTransmit_SetPacketSize();
-				return this.packetSize;
+
+				if (this.CanTransmit())
+				{
+					return this.packetSize;
+				}
+				else
+				{
+					return float.Epsilon;
+				}
 			}
 		}
 
@@ -208,8 +212,6 @@ namespace AntennaRange
 		{
 			this.Fields.Load(node);
 			base.Fields.Load(node);
-
-			this.IsAntenna = true;
 
 			base.OnLoad (node);
 
@@ -329,18 +331,20 @@ namespace AntennaRange
 
 			if (this.CanTransmit())
 			{
-				this.ErrorMsg.message = "Beginning transmission ";
+				string message;
+
+				message = "Beginning transmission ";
 
 				if (this.relay.nearestRelay == null)
 				{
-					this.ErrorMsg.message += "directly to Kerbin.";
+					message += "directly to Kerbin.";
 				}
 				else
 				{
-					this.ErrorMsg.message += "via relay " + this.relay.nearestRelay;
+					message += "via relay " + this.relay.nearestRelay;
 				}
 
-				ScreenMessages.PostScreenMessage(this.ErrorMsg);
+				ScreenMessages.PostScreenMessage(message, 4f, ScreenMessageStyle.UPPER_LEFT);
 
 				base.StartTransmission();
 			}

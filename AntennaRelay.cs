@@ -26,6 +26,9 @@ namespace AntennaRange
 		// We don't have a Bard, so we'll hide Kerbin here.
 		protected CelestialBody Kerbin;
 
+		protected System.Diagnostics.Stopwatch searchTimer;
+		protected long millisecondsBetweenSearches;
+
 		/// <summary>
 		/// Gets the parent Vessel.
 		/// </summary>
@@ -113,6 +116,19 @@ namespace AntennaRange
 		/// <returns>The nearest relay or null, if no relays in range.</returns>
 		public IAntennaRelay FindNearestRelay()
 		{
+			if (this.searchTimer.IsRunning && this.searchTimer.ElapsedMilliseconds < this.millisecondsBetweenSearches)
+			{
+				return this.nearestRelay;
+			}
+
+			if (this.searchTimer.IsRunning)
+			{
+				this.searchTimer.Stop();
+				this.searchTimer.Reset();
+			}
+
+			this.searchTimer.Start();
+
 			// Set this relay as checked, so that we don't check it again.
 			this.relayChecked = true;
 
@@ -194,9 +210,8 @@ namespace AntennaRange
 		public override string ToString()
 		{
 			return string.Format(
-				"Antenna relay on vessel {0} (range to relay: {1}m)",
-				vessel,
-				Tools.MuMech_ToSI(transmitDistance)
+				"Antenna relay on vessel {0}.",
+				vessel
 			);
 		}
 
@@ -207,6 +222,9 @@ namespace AntennaRange
 		public AntennaRelay(Vessel v)
 		{
 			this.vessel = v;
+
+			this.searchTimer = new System.Diagnostics.Stopwatch();
+			this.millisecondsBetweenSearches = 5000;
 
 			// HACK: This might not be safe in all circumstances, but since AntennaRelays are not built until Start,
 			// we hope it is safe enough.

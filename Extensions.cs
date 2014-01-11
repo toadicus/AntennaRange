@@ -117,13 +117,12 @@ namespace AntennaRange
 				// Loop through the ProtoPartModuleSnapshots in this Vessel
 				foreach (ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
 				{
-					ProtoPartModuleSnapshot ppms = pps.modules.FirstOrDefault(p => p.IsAntenna());
-					// If they are antennas...
-					if (ppms != null)
-					{
-						// ...add a new ProtoAntennaRelay wrapper to the list.
-						Transmitters.Add(new ProtoAntennaRelay(ppms, pps, vessel));
-					}
+					Transmitters.AddRange(
+						PartLoader.getPartInfoByName(pps.partName)
+						.partPrefab
+						.Modules
+						.OfType<IAntennaRelay>()
+					);
 				}
 			}
 
@@ -136,21 +135,6 @@ namespace AntennaRange
 
 			// Return the list of IAntennaRelays
 			return Transmitters;
-		}
-
-		// Returns true if this PartModule contains a True IsAntenna field, false otherwise.
-		public static bool IsAntenna (this PartModule module)
-		{
-			return module.Fields.GetValue<bool> ("IsAntenna");
-		}
-
-		// Returns true if this ProtoPartModuleSnapshot contains a persistent True IsAntenna field, false otherwise
-		public static bool IsAntenna(this ProtoPartModuleSnapshot protomodule)
-		{
-			bool result;
-
-			return Boolean.TryParse (protomodule.moduleValues.GetValue ("IsAntenna") ?? "False", out result)
-				? result : false;
 		}
 	}
 }
