@@ -15,11 +15,9 @@
 //
 // This software uses code from the MuMechLib library, © 2013 r4m0n, used under the GNU GPL version 3.
 
-using KSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace AntennaRange
 {
@@ -53,7 +51,7 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
 		/// <param name="Vessel">A <see cref="Vessel"/></param>
-		public static double DistanceTo(this IAntennaRelay relay, Vessel Vessel)
+		public static double DistanceTo(this AntennaRelay relay, Vessel Vessel)
 		{
 			return relay.vessel.DistanceTo(Vessel);
 		}
@@ -63,7 +61,7 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
 		/// <param name="body">A <see cref="CelestialBody"/></param>
-		public static double DistanceTo(this IAntennaRelay relay, CelestialBody body)
+		public static double DistanceTo(this AntennaRelay relay, CelestialBody body)
 		{
 			return relay.vessel.DistanceTo(body);
 		}
@@ -73,7 +71,7 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="relayOne">This <see cref="IAntennaRelay"/></param>
 		/// <param name="relayTwo">Another <see cref="IAntennaRelay"/></param>
-		public static double DistanceTo(this IAntennaRelay relayOne, IAntennaRelay relayTwo)
+		public static double DistanceTo(this AntennaRelay relayOne, IAntennaRelay relayTwo)
 		{
 			return relayOne.DistanceTo(relayTwo.vessel);
 		}
@@ -119,15 +117,12 @@ namespace AntennaRange
 				// Loop through the ProtoPartModuleSnapshots in this Vessel
 				foreach (ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
 				{
-					foreach (PartModule prefabModule in PartLoader.getPartInfoByName(pps.partName).partPrefab.Modules)
-					{
-						if (prefabModule is ModuleLimitedDataTransmitter)
-						{
-							pps.Load(vessel, false);
-
-							Transmitters.Add(pps.partRef.Modules.OfType<ModuleLimitedDataTransmitter>().First());
-						}
-					}
+					Transmitters.AddRange(
+						PartLoader.getPartInfoByName(pps.partName)
+						.partPrefab
+						.Modules
+						.OfType<IAntennaRelay>()
+					);
 				}
 			}
 

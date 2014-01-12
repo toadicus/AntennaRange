@@ -32,12 +32,6 @@ namespace AntennaRange
 		Vessel vessel { get; }
 
 		/// <summary>
-		/// Gets the nearest relay.
-		/// </summary>
-		/// <value>The nearest relay.</value>
-		IAntennaRelay nearestRelay { get; }
-
-		/// <summary>
 		/// Gets the distance to the nearest relay or Kerbin, whichever is closer.
 		/// </summary>
 		/// <value>The distance to the nearest relay or Kerbin, whichever is closer.</value>
