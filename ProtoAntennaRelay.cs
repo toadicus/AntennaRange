@@ -26,11 +26,8 @@ namespace AntennaRange
 	 * */
 	public class ProtoAntennaRelay : AntennaRelay, IAntennaRelay
 	{
-		// Stores the proto module.
-		protected ProtoPartModuleSnapshot protoModule;
-
-		// Stores the proto part, which seems silly because all we need is the name.
-		protected Part partPrefab;
+		// Stores the relay prefab
+		protected IAntennaRelay relayPrefab;
 
 		/// <summary>
 		/// The maximum distance at which this transmitter can operate.
@@ -40,7 +37,7 @@ namespace AntennaRange
 		{
 			get
 			{
-				return this.partPrefab.Modules.OfType<ModuleLimitedDataTransmitter>().First().maxTransmitDistance;
+				return relayPrefab.maxTransmitDistance;
 			}
 		}
 
@@ -51,23 +48,8 @@ namespace AntennaRange
 		/// <value><c>true</c> if relay checked; otherwise, <c>false</c>.</value>
 		public override bool relayChecked
 		{
-			get
-			{
-				bool result;
-				Boolean.TryParse(this.protoModule.moduleValues.GetValue("relayChecked"), out result);
-				return result;
-			}
-			protected set
-			{
-				if (this.protoModule.moduleValues.HasValue("relayChecked"))
-				{
-					this.protoModule.moduleValues.SetValue("relayChecked", value.ToString ());
-				}
-				else
-				{
-					this.protoModule.moduleValues.AddValue("relayChecked", value);
-				}
-			}
+			get;
+			protected set;
 		}
 
 		/// <summary>
@@ -75,10 +57,10 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="ms">The ProtoPartModuleSnapshot to wrap</param>
 		/// <param name="vessel">The parent Vessel</param>
-		public ProtoAntennaRelay(ProtoPartModuleSnapshot ppms, ProtoPartSnapshot pps, Vessel vessel) : base(vessel)
+		public ProtoAntennaRelay(IAntennaRelay prefabRelay, Vessel vessel) : base(vessel)
 		{
-			this.protoModule = ppms;
-			this.partPrefab = PartLoader.getPartInfoByName(pps.partName).partPrefab;
+			this.relayPrefab = prefabRelay;
+			this.vessel = vessel;
 		}
 	}
 }

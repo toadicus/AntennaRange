@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using KSP;
 using UnityEngine;
 
@@ -56,13 +57,22 @@ namespace AntennaRange
 		// Sometimes we will need to communicate errors; this is how we do it.
 		protected ScreenMessage ErrorMsg;
 
-		// Let's make the error text pretty!
-		protected UnityEngine.GUIStyle ErrorStyle;
-
 		// The distance from Kerbin at which the antenna will perform exactly as prescribed by packetResourceCost
 		// and packetSize.
 		[KSPField(isPersistant = false)]
 		public float nominalRange;
+
+		[KSPField(isPersistant = false, guiActive = true, guiName = "Transmission Distance")]
+		public string UItransmitDistance;
+
+		[KSPField(isPersistant = false, guiActive = true, guiName = "Maximum Distance")]
+		public string UImaxTransmitDistance;
+
+		[KSPField(isPersistant = false, guiActive = true, guiName = "Packet Size")]
+		public string UIpacketSize;
+
+		[KSPField(isPersistant = false, guiActive = true, guiName = "Packet Cost")]
+		public string UIpacketCost;
 
 		// The multiplier on packetResourceCost that defines the maximum power output of the antenna.  When the power
 		// cost exceeds packetResourceCost * maxPowerFactor, transmission will fail.
@@ -72,6 +82,8 @@ namespace AntennaRange
 		// The multipler on packetSize that defines the maximum data bandwidth of the antenna.
 		[KSPField(isPersistant = false)]
 		public float maxDataFactor;
+
+		protected bool actionUIUpdate;
 
 		/*
 		 * Properties
@@ -182,15 +194,7 @@ namespace AntennaRange
 		// Build ALL the objects.
 		public ModuleLimitedDataTransmitter () : base()
 		{
-			// Make the error posting prettier.
-			this.ErrorStyle = new UnityEngine.GUIStyle();
-			this.ErrorStyle.normal.textColor = (UnityEngine.Color)XKCDColors.OrangeRed;
-			this.ErrorStyle.active.textColor = (UnityEngine.Color)XKCDColors.OrangeRed;
-			this.ErrorStyle.hover.textColor = (UnityEngine.Color)XKCDColors.OrangeRed;
-			this.ErrorStyle.fontStyle = UnityEngine.FontStyle.Normal;
-			this.ErrorStyle.padding.top = 32;
-
-			this.ErrorMsg = new ScreenMessage("", 4f, false, ScreenMessageStyle.UPPER_LEFT, this.ErrorStyle);
+			this.ErrorMsg = new ScreenMessage("", 4f, false, ScreenMessageStyle.UPPER_LEFT);
 		}
 
 		// At least once, when the module starts with a state on the launch pad or later, go find Kerbin.
@@ -202,6 +206,11 @@ namespace AntennaRange
 			{
 				this.relay = new AntennaRelay(vessel);
 				this.relay.maxTransmitDistance = this.maxTransmitDistance;
+
+				this.UImaxTransmitDistance = Tools.MuMech_ToSI(this.maxTransmitDistance) + "m";
+
+				GameEvents.onPartActionUICreate.Add(this.onPartActionUICreate);
+				GameEvents.onPartActionUIDismiss.Add(this.onPartActionUIDismiss);
 			}
 		}
 
@@ -244,9 +253,18 @@ namespace AntennaRange
 				Tools.MuMech_ToSI((double)this.transmitDistance, 2)
 				);
 
-			this.ErrorMsg.message = ErrorText;
+			this.ErrorMsg.message = string.Format(
+				"<color='#{0}{1}{2}{3}'><b>{4}</b></color>",
+				((int)(XKCDColors.OrangeRed.r * 255f)).ToString("x2"),
+				((int)(XKCDColors.OrangeRed.g * 255f)).ToString("x2"),
+				((int)(XKCDColors.OrangeRed.b * 255f)).ToString("x2"),
+				((int)(XKCDColors.OrangeRed.a * 255f)).ToString("x2"),
+				ErrorText
+			);
 
-			ScreenMessages.PostScreenMessage(this.ErrorMsg, true);
+			Tools.PostDebugMessage(this.GetType().Name + ": " + this.ErrorMsg.message);
+
+			ScreenMessages.PostScreenMessage(this.ErrorMsg, false);
 		}
 
 		// Before transmission, set packetResourceCost.  Per above, packet cost increases with the square of
@@ -331,26 +349,54 @@ namespace AntennaRange
 
 			if (this.CanTransmit())
 			{
-				string message;
+				StringBuilder message = new StringBuilder();
 
-				message = "Beginning transmission ";
+				message.Append("[" + base.part.partInfo.title + "] ");
+
+				message.Append("Beginning transmission ");
 
 				if (this.relay.nearestRelay == null)
 				{
-					message += "directly to Kerbin.";
+					message.Append("directly to Kerbin.");
 				}
 				else
 				{
-					message += "via relay " + this.relay.nearestRelay;
+					message.Append("via relay " + this.relay.nearestRelay);
 				}
 
-				ScreenMessages.PostScreenMessage(message, 4f, ScreenMessageStyle.UPPER_LEFT);
+				ScreenMessages.PostScreenMessage(message.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
 
 				base.StartTransmission();
 			}
 			else
 			{
 				this.PostCannotTransmitError ();
+			}
+		}
+
+		public void Update()
+		{
+			if (this.actionUIUpdate)
+			{
+				this.UItransmitDistance = Tools.MuMech_ToSI(this.transmitDistance) + "m";
+				this.UIpacketSize = this.CanTransmit() ? Tools.MuMech_ToSI(this.DataRate) + "MiT" : "N/A";
+				this.UIpacketCost = this.CanTransmit() ? Tools.MuMech_ToSI(this.DataResourceCost) + "E" : "N/A";
+			}
+		}
+
+		public void onPartActionUICreate(Part eventPart)
+		{
+			if (eventPart == base.part)
+			{
+				this.actionUIUpdate = true;
+			}
+		}
+
+		public void onPartActionUIDismiss(Part eventPart)
+		{
+			if (eventPart == base.part)
+			{
+				this.actionUIUpdate = false;
 			}
 		}
 

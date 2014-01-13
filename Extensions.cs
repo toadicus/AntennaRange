@@ -103,7 +103,7 @@ namespace AntennaRange
 					.SelectMany (p => p.Modules.OfType<IAntennaRelay> ())
 					.ToList();
 			}
-			// If the vessel is not loaded, we need to find ProtoPartModuleSnapshots with a true IsAntenna field.
+			// If the vessel is not loaded, we need to build ProtoAntennaRelays when we find relay ProtoPartSnapshots.
 			else
 			{
 				Tools.PostDebugMessage(string.Format(
@@ -117,12 +117,37 @@ namespace AntennaRange
 				// Loop through the ProtoPartModuleSnapshots in this Vessel
 				foreach (ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
 				{
-					Transmitters.AddRange(
-						PartLoader.getPartInfoByName(pps.partName)
-						.partPrefab
-						.Modules
-						.OfType<IAntennaRelay>()
-					);
+					IAntennaRelay relayModule;
+					ProtoAntennaRelay protoRelay;
+					int partHash;
+
+					relayModule = null;
+					protoRelay = null;
+					partHash = pps.GetHashCode();
+
+					if (prebuiltProtoRelays.ContainsKey(partHash))
+					{
+						protoRelay = prebuiltProtoRelays[partHash];
+					}
+					else
+					{
+						foreach (PartModule module in PartLoader.getPartInfoByName(pps.partName).partPrefab.Modules)
+						{
+							if (module is IAntennaRelay)
+							{
+								relayModule = module as IAntennaRelay;
+
+								protoRelay = new ProtoAntennaRelay(relayModule, vessel);
+								prebuiltProtoRelays[partHash] = protoRelay;
+								break;
+							}
+						}
+					}
+
+					if (protoRelay != null)
+					{
+						Transmitters.Add(protoRelay);
+					}
 				}
 			}
 
@@ -136,6 +161,8 @@ namespace AntennaRange
 			// Return the list of IAntennaRelays
 			return Transmitters;
 		}
+
+		private static Dictionary<int, ProtoAntennaRelay> prebuiltProtoRelays = new Dictionary<int, ProtoAntennaRelay>();
 	}
 }
 
