@@ -311,6 +311,18 @@ namespace AntennaRange
 		// Override ModuleDataTransmitter.CanTransmit to return false when transmission is not possible.
 		public new bool CanTransmit()
 		{
+			PartStates partState = this.part.State;
+			if (partState == PartStates.DEAD || partState == PartStates.DEACTIVATED)
+			{
+				Tools.PostDebugMessage(string.Format(
+					"{0}: {1} on {2} cannot transmit: {3}",
+					this.GetType().Name,
+					this.part.partInfo.title,
+					this.vessel.name,
+					Enum.GetName(typeof(PartStates), partState)
+				));
+				return false;
+			}
 			return this.relay.CanTransmit();
 		}
 
@@ -351,7 +363,9 @@ namespace AntennaRange
 			{
 				StringBuilder message = new StringBuilder();
 
-				message.Append("[" + base.part.partInfo.title + "] ");
+				message.Append("[");
+				message.Append(base.part.partInfo.title);
+				message.Append("] ");
 
 				message.Append("Beginning transmission ");
 
@@ -361,7 +375,8 @@ namespace AntennaRange
 				}
 				else
 				{
-					message.Append("via relay " + this.relay.nearestRelay);
+					message.Append("via ");
+					message.Append(this.relay.nearestRelay);
 				}
 
 				ScreenMessages.PostScreenMessage(message.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
@@ -398,6 +413,15 @@ namespace AntennaRange
 			{
 				this.actionUIUpdate = false;
 			}
+		}
+
+		public override string ToString()
+		{
+			return string.Format(
+				"{0} on {1}.",
+				this.part.partInfo.title,
+				vessel.name
+			);
 		}
 
 		// When debugging, it's nice to have a button that just tells you everything.

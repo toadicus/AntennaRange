@@ -82,100 +82,10 @@ namespace AntennaRange
 		/// <param name="vessel">This <see cref="Vessel"/></param>
 		public static IEnumerable<IAntennaRelay> GetAntennaRelays (this Vessel vessel)
 		{
-			Tools.PostDebugMessage(string.Format(
-				"{0}: Getting antenna relays from vessel {1}.",
-				"IAntennaRelay",
-				vessel.name
-			));
-
-			List<IAntennaRelay> Transmitters;
-
-			// If the vessel is loaded, we can fetch modules implementing IAntennaRelay directly.
-			if (vessel.loaded) {
-				Tools.PostDebugMessage(string.Format(
-					"{0}: vessel {1} is loaded.",
-					"IAntennaRelay",
-					vessel.name
-					));
-
-				// Gets a list of PartModules implementing IAntennaRelay
-				Transmitters = vessel.Parts
-					.SelectMany (p => p.Modules.OfType<IAntennaRelay> ())
-					.ToList();
-			}
-			// If the vessel is not loaded, we need to build ProtoAntennaRelays when we find relay ProtoPartSnapshots.
-			else
-			{
-				Tools.PostDebugMessage(string.Format(
-					"{0}: vessel {1} is not loaded.",
-					"IAntennaRelay",
-					vessel.name
-					));
-
-				Dictionary<int, IAntennaRelay> prebuiltProtoRelays;
-
-				Transmitters = new List<IAntennaRelay>();
-
-				if (relayDatabase.ContainsKey(vessel.id))
-				{
-					return relayDatabase[vessel.id].Values.ToList();
-				}
-				else
-				{
-					prebuiltProtoRelays = new Dictionary<int, IAntennaRelay>();
-					relayDatabase[vessel.id] = prebuiltProtoRelays;
-				}
-
-				// Loop through the ProtoPartModuleSnapshots in this Vessel
-				foreach (ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
-				{
-					IAntennaRelay relayModule;
-					ProtoAntennaRelay protoRelay;
-					int partHash;
-
-					relayModule = null;
-					protoRelay = null;
-					partHash = pps.GetHashCode();
-
-					if (prebuiltProtoRelays.ContainsKey(partHash))
-					{
-						protoRelay = (ProtoAntennaRelay)prebuiltProtoRelays[partHash];
-					}
-					else
-					{
-						foreach (PartModule module in PartLoader.getPartInfoByName(pps.partName).partPrefab.Modules)
-						{
-							if (module is IAntennaRelay)
-							{
-								relayModule = module as IAntennaRelay;
-
-								protoRelay = new ProtoAntennaRelay(relayModule, vessel);
-								prebuiltProtoRelays[partHash] = protoRelay;
-								break;
-							}
-						}
-					}
-
-					if (protoRelay != null)
-					{
-						Transmitters.Add(protoRelay);
-					}
-				}
-			}
-
-			Tools.PostDebugMessage(string.Format(
-				"{0}: vessel {1} has {2} transmitters.",
-				"IAntennaRelay",
-				vessel.name,
-				Transmitters.Count
-				));
-
-			// Return the list of IAntennaRelays
-			return Transmitters;
+			return RelayDatabase.Instance[vessel].Values.ToList();
 		}
 
-		private static Dictionary<Guid, Dictionary<int, IAntennaRelay>> relayDatabase =
-			new Dictionary<Guid, Dictionary<int, IAntennaRelay>>();
+
 	}
 }
 

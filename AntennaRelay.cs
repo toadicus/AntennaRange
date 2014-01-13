@@ -98,7 +98,7 @@ namespace AntennaRange
 		/// Determines whether this instance can transmit.
 		/// </summary>
 		/// <returns><c>true</c> if this instance can transmit; otherwise, <c>false</c>.</returns>
-		public bool CanTransmit()
+		public virtual bool CanTransmit()
 		{
 			if (this.transmitDistance > this.maxTransmitDistance)
 			{
@@ -205,14 +205,6 @@ namespace AntennaRange
 
 			// Return the nearest available relay, or null if there are no available relays nearby.
 			return _nearestRelay;
-		}
-
-		public override string ToString()
-		{
-			return string.Format(
-				"Antenna relay on vessel {0}.",
-				vessel
-			);
 		}
 
 		/// <summary>

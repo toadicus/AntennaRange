@@ -29,6 +29,9 @@ namespace AntennaRange
 		// Stores the relay prefab
 		protected IAntennaRelay relayPrefab;
 
+		// Stores the prototype part so we can make sure we haven't exploded or so.
+		protected ProtoPartSnapshot protoPart;
+
 		/// <summary>
 		/// The maximum distance at which this transmitter can operate.
 		/// </summary>
@@ -52,15 +55,50 @@ namespace AntennaRange
 			protected set;
 		}
 
+		public string Title
+		{
+			get
+			{
+				return this.protoPart.partInfo.title;
+			}
+		}
+
+		public override bool CanTransmit()
+		{
+			PartStates partState = (PartStates)this.protoPart.state;
+			if (partState == PartStates.DEAD || partState == PartStates.DEACTIVATED)
+			{
+				Tools.PostDebugMessage(string.Format(
+					"{0}: {1} on {2} cannot transmit: {3}",
+					this.GetType().Name,
+					this.Title,
+					this.vessel.name,
+					Enum.GetName(typeof(PartStates), partState)
+				));
+				return false;
+			}
+			return base.CanTransmit();
+		}
+
+		public override string ToString()
+		{
+			return string.Format(
+				"{0} on {1}.",
+				this.Title,
+				vessel.name
+			);
+		}
+
 		/// <summary>
 		/// Initializes a new instance of the <see cref="AntennaRange.ProtoAntennaRelay"/> class.
 		/// </summary>
 		/// <param name="ms">The ProtoPartModuleSnapshot to wrap</param>
 		/// <param name="vessel">The parent Vessel</param>
-		public ProtoAntennaRelay(IAntennaRelay prefabRelay, Vessel vessel) : base(vessel)
+		public ProtoAntennaRelay(IAntennaRelay prefabRelay, ProtoPartSnapshot pps) : base(pps.pVesselRef.vesselRef)
 		{
 			this.relayPrefab = prefabRelay;
-			this.vessel = vessel;
+			this.protoPart = pps;
+			this.vessel = pps.pVesselRef.vesselRef;
 		}
 	}
 }
