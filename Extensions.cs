@@ -112,7 +112,19 @@ namespace AntennaRange
 					vessel.name
 					));
 
+				Dictionary<int, IAntennaRelay> prebuiltProtoRelays;
+
 				Transmitters = new List<IAntennaRelay>();
+
+				if (relayDatabase.ContainsKey(vessel.id))
+				{
+					return relayDatabase[vessel.id].Values.ToList();
+				}
+				else
+				{
+					prebuiltProtoRelays = new Dictionary<int, IAntennaRelay>();
+					relayDatabase[vessel.id] = prebuiltProtoRelays;
+				}
 
 				// Loop through the ProtoPartModuleSnapshots in this Vessel
 				foreach (ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
@@ -127,7 +139,7 @@ namespace AntennaRange
 
 					if (prebuiltProtoRelays.ContainsKey(partHash))
 					{
-						protoRelay = prebuiltProtoRelays[partHash];
+						protoRelay = (ProtoAntennaRelay)prebuiltProtoRelays[partHash];
 					}
 					else
 					{
@@ -162,7 +174,8 @@ namespace AntennaRange
 			return Transmitters;
 		}
 
-		private static Dictionary<int, ProtoAntennaRelay> prebuiltProtoRelays = new Dictionary<int, ProtoAntennaRelay>();
+		private static Dictionary<Guid, Dictionary<int, IAntennaRelay>> relayDatabase =
+			new Dictionary<Guid, Dictionary<int, IAntennaRelay>>();
 	}
 }
 
