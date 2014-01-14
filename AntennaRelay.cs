@@ -21,7 +21,7 @@ using System.Linq;
 
 namespace AntennaRange
 {
-	public class AntennaRelay : IAntennaRelay
+	public class AntennaRelay
 	{
 		// We don't have a Bard, so we'll hide Kerbin here.
 		protected CelestialBody Kerbin;

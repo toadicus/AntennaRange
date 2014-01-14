@@ -55,7 +55,11 @@ namespace AntennaRange
 			protected set;
 		}
 
-		public string Title
+		/// <summary>
+		/// Gets the underlying part's title.
+		/// </summary>
+		/// <value>The title.</value>
+		public string title
 		{
 			get
 			{
@@ -71,7 +75,7 @@ namespace AntennaRange
 				Tools.PostDebugMessage(string.Format(
 					"{0}: {1} on {2} cannot transmit: {3}",
 					this.GetType().Name,
-					this.Title,
+					this.title,
 					this.vessel.name,
 					Enum.GetName(typeof(PartStates), partState)
 				));
@@ -84,8 +88,8 @@ namespace AntennaRange
 		{
 			return string.Format(
 				"{0} on {1}.",
-				this.Title,
-				vessel.name
+				this.title,
+				this.protoPart.pVesselRef.vesselName
 			);
 		}
 
