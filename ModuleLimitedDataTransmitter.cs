@@ -365,7 +365,7 @@ namespace AntennaRange
 
 				message.Append("[");
 				message.Append(base.part.partInfo.title);
-				message.Append("] ");
+				message.Append("]: ");
 
 				message.Append("Beginning transmission ");
 

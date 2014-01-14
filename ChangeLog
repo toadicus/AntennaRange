@@ -1,0 +1,6 @@
+2014-01-14  toadicus  <>
+
+	* ModuleLimitedDataTransmitter.cs: Added a ":" to the
+	  transmission communications for consistency with stock
+	  behavior.
+
