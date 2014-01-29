@@ -138,9 +138,10 @@ namespace AntennaRange
 					.ToList();
 
 			nearbyVessels.RemoveAll(v => v.vesselType == VesselType.Debris);
+			nearbyVessels.RemoveAll(v => v.vesselType == VesselType.Flag);
 
 			Tools.PostDebugMessage(string.Format(
-				"{0}: Non-debris vessels in range: {1}",
+				"{0}: Non-debris, non-flag vessels in range: {1}",
 				this.GetType().Name,
 				nearbyVessels.Count
 				));
