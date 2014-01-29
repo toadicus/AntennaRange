@@ -417,11 +417,17 @@ namespace AntennaRange
 
 		public override string ToString()
 		{
-			return string.Format(
-				"{0} on {1}.",
-				this.part.partInfo.title,
-				vessel.name
-			);
+			StringBuilder msg = new StringBuilder();
+
+			msg.Append(this.part.partInfo.title);
+
+			if (vessel != null)
+			{
+				msg.Append(" on ");
+				msg.Append(vessel.name);
+			}
+
+			return msg.ToString();
 		}
 
 		// When debugging, it's nice to have a button that just tells you everything.
