@@ -131,7 +131,7 @@ namespace AntennaRange
 		// Returns true if both the relayDatabase and the vesselPartCountDB contain the vessel id.
 		public bool ContainsKey(Guid key)
 		{
-			return (this.relayDatabase.ContainsKey(key) & this.vesselPartCountTable.ContainsKey(key));
+			return this.relayDatabase.ContainsKey(key);
 		}
 
 		// Returns true if both the relayDatabase and the vesselPartCountDB contain the vessel.
@@ -216,22 +216,47 @@ namespace AntennaRange
 			{
 				Tools.PostDebugMessage(string.Format(
 					"{0}: vessel {1} is not loaded, searching for modules in prototype parts.",
-					"IAntennaRelay",
+					this.GetType().Name,
 					vessel.name
 				));
 
 				// Loop through the ProtoPartModuleSnapshots in the Vessel...
 				foreach (ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
 				{
+					Tools.PostDebugMessage(string.Format(
+						"{0}: Searching in protopartsnapshot {1}",
+						this.GetType().Name,
+						pps
+					));
+
 					// ...Fetch the prefab, because it's more useful for what we're doing.
 					Part partPrefab = PartLoader.getPartInfoByName(pps.partName).partPrefab;
+
+					Tools.PostDebugMessage(string.Format(
+						"{0}: Got partPrefab {1} in protopartsnapshot {2}",
+						this.GetType().Name,
+						partPrefab,
+						pps
+					));
 
 					// ...loop through the PartModules in the prefab...
 					foreach (PartModule module in partPrefab.Modules)
 					{
+						Tools.PostDebugMessage(string.Format(
+							"{0}: Searching in partmodule {1}",
+							this.GetType().Name,
+							module
+						));
+
 						// ...if the module is a relay...
 						if (module is IAntennaRelay)
 						{
+							Tools.PostDebugMessage(string.Format(
+								"{0}: partmodule {1} is antennarelay",
+								this.GetType().Name,
+								module
+							));
+
 							// ...build a new ProtoAntennaRelay and add it to the table
 							relays.Add(pps.GetHashCode(), new ProtoAntennaRelay(module as IAntennaRelay, pps));
 							// ...neglect relay objects after the first in each part.
