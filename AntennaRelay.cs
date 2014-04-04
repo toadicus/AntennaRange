@@ -27,6 +27,7 @@ namespace AntennaRange
 		protected CelestialBody Kerbin;
 
 		protected IAntennaRelay _nearestRelayCache;
+		protected IAntennaRelay moduleRef;
 
 		protected System.Diagnostics.Stopwatch searchTimer;
 		protected long millisecondsBetweenSearches;
@@ -37,8 +38,10 @@ namespace AntennaRange
 		/// <value>The parent Vessel.</value>
 		public Vessel vessel
 		{
-			get;
-			protected set;
+			get
+			{
+				return this.moduleRef.vessel;
+			}
 		}
 
 		/// <summary>
@@ -144,6 +147,13 @@ namespace AntennaRange
 
 			this.searchTimer.Start();
 
+			Tools.PostDebugMessage(string.Format(
+				"{0}: finding nearest relay for {1} ({2})",
+				this.GetType().Name,
+				this,
+				this.vessel.id
+			));
+
 			// Set this vessel as checked, so that we don't check it again.
 			RelayDatabase.Instance.CheckedVesselsTable[vessel.id] = true;
 
@@ -166,7 +176,7 @@ namespace AntennaRange
 						continue;
 					}
 				}
-				catch (KeyNotFoundException) { /* If the key doesn't exist, do nothing. */}
+				catch (KeyNotFoundException) { /* If the key doesn't exist, don't skip it. */}
 
 				// Skip vessels of the wrong type.
 				switch (potentialVessel.vesselType)
@@ -206,6 +216,11 @@ namespace AntennaRange
 					if (potentialRelay.CanTransmit())
 					{
 						_nearestRelay = potentialRelay;
+						Tools.PostDebugMessage(string.Format("{0}: found new best relay {1} ({2})",
+							this.GetType().Name,
+							_nearestRelay.ToString(),
+							_nearestRelay.vessel.id
+						));
 						break;
 					}
 				}
@@ -223,9 +238,9 @@ namespace AntennaRange
 		/// Initializes a new instance of the <see cref="AntennaRange.ProtoDataTransmitter"/> class.
 		/// </summary>
 		/// <param name="ms"><see cref="ProtoPartModuleSnapshot"/></param>
-		public AntennaRelay(Vessel v)
+		public AntennaRelay(IAntennaRelay module)
 		{
-			this.vessel = v;
+			this.moduleRef = module;
 
 			this.searchTimer = new System.Diagnostics.Stopwatch();
 			this.millisecondsBetweenSearches = 5000;
@@ -233,46 +248,6 @@ namespace AntennaRange
 			// HACK: This might not be safe in all circumstances, but since AntennaRelays are not built until Start,
 			// we hope it is safe enough.
 			this.Kerbin = FlightGlobals.Bodies.FirstOrDefault(b => b.name == "Kerbin");
-		}
-
-		/*
-		 * Class implementing IComparer<IAntennaRelay> for use in sorting relays by distance.
-		 * */
-		internal class RelayComparer : IComparer<IAntennaRelay>
-		{
-			/// <summary>
-			/// The reference Vessel (usually the active vessel).
-			/// </summary>
-			protected Vessel referenceVessel;
-
-			// We don't want no stinking public parameterless constructors.
-			private RelayComparer() {}
-
-			/// <summary>
-			/// Initializes a new instance of the <see cref="AntennaRange.AntennaRelay+RelayComparer"/> class for use
-			/// in sorting relays by distance.
-			/// </summary>
-			/// <param name="reference">The reference Vessel</param>
-			public RelayComparer(Vessel reference)
-			{
-				this.referenceVessel = reference;
-			}
-
-			/// <summary>
-			/// Compare the <see cref="IAntennaRelay"/>s "one" and "two".
-			/// </summary>
-			/// <param name="one">The first IAntennaRelay in the comparison</param>
-			/// <param name="two">The second IAntennaRelay in the comparison</param>
-			public int Compare(IAntennaRelay one, IAntennaRelay two)
-			{
-				double distanceOne;
-				double distanceTwo;
-
-				distanceOne = one.vessel.DistanceTo(referenceVessel);
-				distanceTwo = two.vessel.DistanceTo(referenceVessel);
-
-				return distanceOne.CompareTo(distanceTwo);
-			}
 		}
 	}
 }
