@@ -7,6 +7,7 @@ using KSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace AntennaRange
@@ -48,6 +49,9 @@ namespace AntennaRange
 		// Vessel.id-keyed hash table of booleans to track what vessels have been checked so far this time.
 		public Dictionary<Guid, bool> CheckedVesselsTable;
 
+		protected int cacheHits;
+		protected int cacheMisses;
+
 		/*
 		 * Properties
 		 * */
@@ -61,12 +65,19 @@ namespace AntennaRange
 				{
 					// ...Generate an entry for this vessel.
 					this.AddVessel(vessel);
+					this.cacheMisses++;
 				}
 				// If our part count disagrees with the vessel's part count...
-				if (this.vesselPartCountTable[vessel.id] != vessel.Parts.Count)
+				else if (this.vesselPartCountTable[vessel.id] != vessel.Parts.Count)
 				{
 					// ...Update the our vessel in the cache
 					this.UpdateVessel(vessel);
+					this.cacheMisses++;
+				}
+				// Otherwise, it's a hit
+				else
+				{
+					this.cacheHits++;
 				}
 
 				// Return the Part-hashed table of relays for this vessel
@@ -131,6 +142,19 @@ namespace AntennaRange
 			this.vesselPartCountTable[vessel.id] = vessel.Parts.Count;
 		}
 
+		// Remove a vessel from the cache, if it exists.
+		public void DirtyVessel(Vessel vessel)
+		{
+			if (this.relayDatabase.ContainsKey(vessel.id))
+			{
+				this.relayDatabase.Remove(vessel.id);
+			}
+			if (this.vesselPartCountTable.ContainsKey(vessel.id))
+			{
+				this.vesselPartCountTable.Remove(vessel.id);
+			}
+		}
+
 		// Returns true if both the relayDatabase and the vesselPartCountDB contain the vessel id.
 		public bool ContainsKey(Guid key)
 		{
@@ -154,14 +178,14 @@ namespace AntennaRange
 				if (this.vesselPartCountTable[vessel.id] != vessel.Parts.Count || vessel.loaded)
 				{
 					Tools.PostDebugMessage(string.Format(
-						"{0}: dirtying cache for vessel '{1}' (id: {2}).",
+						"{0}: dirtying cache for vessel '{1}' ({2}).",
 						this.GetType().Name,
 						vessel.vesselName,
 						vessel.id
 					));
 
 					// Dirty the cache (real vessels will never have negative part counts)
-					this.vesselPartCountTable[vessel.id] = -1;
+					this.DirtyVessel(vessel);
 				}
 			}
 		}
@@ -286,9 +310,10 @@ namespace AntennaRange
 			}
 
 			Tools.PostDebugMessage(string.Format(
-				"{0}: vessel '{1}' has {2} transmitters.",
+				"{0}: vessel '{1}' ({2}) has {3} transmitters.",
 				"IAntennaRelay",
 				vessel.vesselName,
+				vessel.id,
 				relays.Count
 			));
 		}
@@ -301,12 +326,16 @@ namespace AntennaRange
 			this.vesselPartCountTable = new Dictionary<Guid, int>();
 			this.CheckedVesselsTable = new Dictionary<Guid, bool>();
 
+			this.cacheHits = 0;
+			this.cacheMisses = 0;
+
 			// Subscribe to some events
 			GameEvents.onVesselWasModified.Add(this.onVesselEvent);
 			GameEvents.onVesselChange.Add(this.onVesselEvent);
 			GameEvents.onVesselDestroy.Add(this.onVesselEvent);
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChange);
 			GameEvents.onPartCouple.Add(this.onFromPartToPartEvent);
+			GameEvents.onPartUndock.Add(this.onPartEvent);
 		}
 
 		~RelayDatabase()
@@ -317,9 +346,39 @@ namespace AntennaRange
 			GameEvents.onVesselDestroy.Remove(this.onVesselEvent);
 			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChange);
 			GameEvents.onPartCouple.Remove(this.onFromPartToPartEvent);
+			GameEvents.onPartUndock.Remove(this.onPartEvent);
 
 			Tools.PostDebugMessage(this.GetType().Name + " destroyed.");
+
+			KSPLog.print(string.Format(
+				"{0} destructed.  Cache hits: {1}, misses: {2}, hit rate: {3:P1}",
+				this.GetType().Name,
+				this.cacheHits,
+				this.cacheMisses,
+				(float)this.cacheHits / (float)(this.cacheMisses + this.cacheHits)
+			));
 		}
+
+		#if DEBUG
+		public void Dump()
+		{
+			StringBuilder sb = new StringBuilder();
+
+			sb.Append("Dumping RelayDatabase:");
+
+			foreach (Guid id in this.relayDatabase.Keys)
+			{
+				sb.AppendFormat("\nVessel {0}:", id);
+
+				foreach (IAntennaRelay relay in this.relayDatabase[id].Values)
+				{
+					sb.AppendFormat("\n\t{0}", relay.ToString());
+				}
+			}
+
+			Tools.PostDebugMessage(sb.ToString());
+		}
+		#endif
 	}
 }
 
