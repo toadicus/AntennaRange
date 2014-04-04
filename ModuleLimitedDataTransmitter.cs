@@ -204,7 +204,7 @@ namespace AntennaRange
 
 			if (state >= StartState.PreLaunch)
 			{
-				this.relay = new AntennaRelay(vessel);
+				this.relay = new AntennaRelay(this);
 				this.relay.maxTransmitDistance = this.maxTransmitDistance;
 
 				this.UImaxTransmitDistance = Tools.MuMech_ToSI(this.maxTransmitDistance) + "m";
@@ -451,7 +451,8 @@ namespace AntennaRange
 				"DataRate: {9}\n" +
 				"DataResourceCost: {10}\n" +
 				"TransmitterScore: {11}\n" +
-				"NearestRelay: {12}",
+				"NearestRelay: {12}\n" +
+				"Vessel ID: {13}",
 				this.name,
 				this._basepacketSize,
 				base.packetSize,
@@ -464,9 +465,31 @@ namespace AntennaRange
 				this.DataRate,
 				this.DataResourceCost,
 				ScienceUtil.GetTransmitterScore(this),
-				this.relay.FindNearestRelay()
+				this.relay.FindNearestRelay(),
+				this.vessel.id
 				);
-			ScreenMessages.PostScreenMessage (new ScreenMessage (msg, 4f, ScreenMessageStyle.UPPER_RIGHT));
+			Tools.PostDebugMessage(msg);
+		}
+
+		[KSPEvent (guiName = "Dump Vessels", active = true, guiActive = true)]
+		public void PrintAllVessels()
+		{
+			StringBuilder sb = new StringBuilder();
+
+			sb.Append("Dumping FlightGlobals.Vessels:");
+
+			foreach (Vessel vessel in FlightGlobals.Vessels)
+			{
+				sb.AppendFormat("\n'{0} ({1})'", vessel.vesselName, vessel.id);
+			}
+
+			Tools.PostDebugMessage(sb.ToString());
+		}
+
+		[KSPEvent (guiName = "Dump RelayDB", active = true, guiActive = true)]
+		public void DumpRelayDB()
+		{
+			RelayDatabase.Instance.Dump();
 		}
 		#endif
 	}
