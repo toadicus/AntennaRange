@@ -124,6 +124,34 @@ namespace AntennaRange
 				return "0";
 			}
 		}
+
+		public static T Min<T>(params T[] values) where T : IComparable<T>
+		{
+			if (values.Length < 2)
+			{
+				throw new ArgumentException("Min must be called with at least two arguments.");
+			}
+
+			IComparable<T> minValue = values[0];
+
+			for (long i = 1; i < values.LongLength; i++)
+			{
+				IComparable<T> value = values[i];
+
+				if (value.CompareTo((T)minValue) < 0)
+				{
+					minValue = value;
+				}
+			}
+
+			return (T)minValue;
+		}
+
+		public static void Restart(this System.Diagnostics.Stopwatch stopwatch)
+		{
+			stopwatch.Reset();
+			stopwatch.Start();
+		}
 	}
 }
 
