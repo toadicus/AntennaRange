@@ -36,7 +36,7 @@ namespace AntennaRange
 		/// Gets the parent Vessel.
 		/// </summary>
 		/// <value>The parent Vessel.</value>
-		public Vessel vessel
+		public virtual Vessel vessel
 		{
 			get
 			{
