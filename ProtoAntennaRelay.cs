@@ -76,7 +76,7 @@ namespace AntennaRange
 					"{0}: {1} on {2} cannot transmit: {3}",
 					this.GetType().Name,
 					this.title,
-					this.vessel.name,
+					this.vessel.vesselName,
 					Enum.GetName(typeof(PartStates), partState)
 				));
 				return false;
@@ -103,6 +103,14 @@ namespace AntennaRange
 			this.relayPrefab = prefabRelay;
 			this.protoPart = pps;
 			this.vessel = pps.pVesselRef.vesselRef;
+		}
+
+		~ProtoAntennaRelay()
+		{
+			Tools.PostDebugMessage(string.Format(
+				"{0}: destroyed",
+				this.ToString()
+			));
 		}
 	}
 }
