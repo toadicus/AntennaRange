@@ -45,6 +45,9 @@ namespace AntennaRange
 		// Vessel.id-keyed hash table of part counts, used for caching
 		protected Dictionary<Guid, int> vesselPartCountTable;
 
+		// Vessel.id-keyed hash table of booleans to track what vessels have been checked so far this time.
+		public Dictionary<Guid, bool> CheckedVesselsTable;
+
 		/*
 		 * Properties
 		 * */
@@ -79,13 +82,13 @@ namespace AntennaRange
 		public bool AddVessel(Vessel vessel)
 		{
 			// If this vessel is already here...
-			if (relayDatabase.ContainsKey(vessel.id))
+			if (this.ContainsKey(vessel))
 			{
 				// ...post an error
 				Debug.LogWarning(string.Format(
 					"{0}: Cannot add vessel '{1}' (id: {2}): Already in database.",
 					this.GetType().Name,
-					vessel.name,
+					vessel.vesselName,
 					vessel.id
 				));
 
@@ -110,12 +113,12 @@ namespace AntennaRange
 		public void UpdateVessel(Vessel vessel)
 		{
 			// Squak if the database doesn't have the vessel
-			if (!relayDatabase.ContainsKey(vessel.id))
+			if (!this.ContainsKey(vessel))
 			{
 				throw new InvalidOperationException(string.Format(
-					"{0}: Update called vessel '{1}' (id: {2}) not in database: vessel will be added.",
+					"{0}: Update called for vessel '{1}' (id: {2}) not in database: vessel will be added.",
 					this.GetType().Name,
-					vessel.name,
+					vessel.vesselName,
 					vessel.id
 				));
 			}
@@ -141,19 +144,19 @@ namespace AntennaRange
 		}
 
 		// Runs when a vessel is modified (or when we switch to one, to catch docking events)
-		public void onVesselWasModified(Vessel vessel)
+		public void onVesselEvent(Vessel vessel)
 		{
 			// If we have this vessel in our cache...
 			if (this.ContainsKey(vessel))
 			{
 				// If our part counts disagree (such as if a part has been added or broken off,
 				// or if we've just docked or undocked)...
-				if (this.vesselPartCountTable[vessel.id] != vessel.Parts.Count)
+				if (this.vesselPartCountTable[vessel.id] != vessel.Parts.Count || vessel.loaded)
 				{
 					Tools.PostDebugMessage(string.Format(
 						"{0}: dirtying cache for vessel '{1}' (id: {2}).",
 						this.GetType().Name,
-						vessel.name,
+						vessel.vesselName,
 						vessel.id
 					));
 
@@ -170,8 +173,24 @@ namespace AntennaRange
 			if (FlightGlobals.ActiveVessel != null)
 			{
 				// ... dirty its cache
-				this.onVesselWasModified(FlightGlobals.ActiveVessel);
+				this.onVesselEvent(FlightGlobals.ActiveVessel);
 			}
+		}
+
+		// Runs when parts are undocked
+		public void onPartEvent(Part part)
+		{
+			if (part != null && part.vessel != null)
+			{
+				this.onVesselEvent(part.vessel);
+			}
+		}
+
+		// Runs when parts are coupled, as in docking
+		public void onFromPartToPartEvent(GameEvents.FromToAction<Part, Part> data)
+		{
+			this.onPartEvent(data.from);
+			this.onPartEvent(data.to);
 		}
 
 		// Produce a Part-hashed table of relays for the given vessel
@@ -183,7 +202,7 @@ namespace AntennaRange
 			Tools.PostDebugMessage(string.Format(
 				"{0}: Getting antenna relays from vessel {1}.",
 				"IAntennaRelay",
-				vessel.name
+				vessel.vesselName
 			));
 
 			// If the vessel is loaded, we can fetch modules implementing IAntennaRelay directly.
@@ -191,7 +210,7 @@ namespace AntennaRange
 				Tools.PostDebugMessage(string.Format(
 					"{0}: vessel {1} is loaded, searching for modules in loaded parts.",
 					"IAntennaRelay",
-					vessel.name
+					vessel.vesselName
 				));
 
 				// Loop through the Parts in the Vessel...
@@ -217,7 +236,7 @@ namespace AntennaRange
 				Tools.PostDebugMessage(string.Format(
 					"{0}: vessel {1} is not loaded, searching for modules in prototype parts.",
 					this.GetType().Name,
-					vessel.name
+					vessel.vesselName
 				));
 
 				// Loop through the ProtoPartModuleSnapshots in the Vessel...
@@ -269,7 +288,7 @@ namespace AntennaRange
 			Tools.PostDebugMessage(string.Format(
 				"{0}: vessel '{1}' has {2} transmitters.",
 				"IAntennaRelay",
-				vessel.name,
+				vessel.vesselName,
 				relays.Count
 			));
 		}
@@ -278,21 +297,26 @@ namespace AntennaRange
 		protected RelayDatabase()
 		{
 			// Initialize the databases
-			relayDatabase =	new Dictionary<Guid, Dictionary<int, IAntennaRelay>>();
-			vesselPartCountTable = new Dictionary<Guid, int>();
+			this.relayDatabase = new Dictionary<Guid, Dictionary<int, IAntennaRelay>>();
+			this.vesselPartCountTable = new Dictionary<Guid, int>();
+			this.CheckedVesselsTable = new Dictionary<Guid, bool>();
 
 			// Subscribe to some events
-			GameEvents.onVesselWasModified.Add(this.onVesselWasModified);
-			GameEvents.onVesselChange.Add(this.onVesselWasModified);
+			GameEvents.onVesselWasModified.Add(this.onVesselEvent);
+			GameEvents.onVesselChange.Add(this.onVesselEvent);
+			GameEvents.onVesselDestroy.Add(this.onVesselEvent);
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChange);
+			GameEvents.onPartCouple.Add(this.onFromPartToPartEvent);
 		}
 
 		~RelayDatabase()
 		{
 			// Unsubscribe from the events
-			GameEvents.onVesselWasModified.Remove(this.onVesselWasModified);
-			GameEvents.onVesselChange.Remove(this.onVesselWasModified);
+			GameEvents.onVesselWasModified.Remove(this.onVesselEvent);
+			GameEvents.onVesselChange.Remove(this.onVesselEvent);
+			GameEvents.onVesselDestroy.Remove(this.onVesselEvent);
 			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChange);
+			GameEvents.onPartCouple.Remove(this.onFromPartToPartEvent);
 
 			Tools.PostDebugMessage(this.GetType().Name + " destroyed.");
 		}
