@@ -26,6 +26,8 @@ namespace AntennaRange
 		// We don't have a Bard, so we'll hide Kerbin here.
 		protected CelestialBody Kerbin;
 
+		protected IAntennaRelay _nearestRelayCache;
+
 		protected System.Diagnostics.Stopwatch searchTimer;
 		protected long millisecondsBetweenSearches;
 
@@ -45,8 +47,21 @@ namespace AntennaRange
 		/// <value>The nearest relay</value>
 		public IAntennaRelay nearestRelay
 		{
-			get;
-			protected set;
+			get
+			{
+				if (this.searchTimer.IsRunning &&
+					this.searchTimer.ElapsedMilliseconds > this.millisecondsBetweenSearches)
+				{
+					this._nearestRelayCache = this.FindNearestRelay();
+					this.searchTimer.Restart();
+				}
+
+				return this._nearestRelayCache;
+			}
+			protected set
+			{
+				this._nearestRelayCache = value;
+			}
 		}
 
 		/// <summary>
@@ -60,7 +75,7 @@ namespace AntennaRange
 				this.nearestRelay = this.FindNearestRelay();
 
 				// If there is no available relay nearby...
-				if (nearestRelay == null)
+				if (this.nearestRelay == null)
 				{
 					// .. return the distance to Kerbin
 					return this.DistanceTo(this.Kerbin);
@@ -129,80 +144,76 @@ namespace AntennaRange
 
 			this.searchTimer.Start();
 
-			// Set this relay as checked, so that we don't check it again.
-			this.relayChecked = true;
+			// Set this vessel as checked, so that we don't check it again.
+			RelayDatabase.Instance.CheckedVesselsTable[vessel.id] = true;
 
-			// Get a list of vessels within transmission range.
-			List<Vessel> nearbyVessels = FlightGlobals.Vessels
-				.Where(v => (v.GetWorldPos3D() - vessel.GetWorldPos3D()).magnitude < this.maxTransmitDistance)
-					.ToList();
+			double nearestDistance = double.PositiveInfinity;
+			IAntennaRelay _nearestRelay = null;
 
-			nearbyVessels.RemoveAll(v => v.vesselType == VesselType.Debris);
-			nearbyVessels.RemoveAll(v => v.vesselType == VesselType.Flag);
-
-			Tools.PostDebugMessage(string.Format(
-				"{0}: Non-debris, non-flag vessels in range: {1}",
-				this.GetType().Name,
-				nearbyVessels.Count
-				));
-
-			// Remove this vessel.
-			nearbyVessels.RemoveAll(v => v.id == vessel.id);
-
-			Tools.PostDebugMessage(string.Format(
-				"{0}: Vessels in range excluding self: {1}",
-				this.GetType().Name,
-				nearbyVessels.Count
-				));
-
-			// Get a flattened list of all IAntennaRelay modules and protomodules in transmission range.
-			List<IAntennaRelay> nearbyRelays = nearbyVessels.SelectMany(v => v.GetAntennaRelays()).ToList();
-
-			Tools.PostDebugMessage(string.Format(
-				"{0}: Found {1} nearby relays.",
-				this.GetType().Name,
-				nearbyRelays.Count
-				));
-
-			// Remove all relays already checked this time.
-			nearbyRelays.RemoveAll(r => r.relayChecked);
-
-			Tools.PostDebugMessage(string.Format(
-				"{0}: Found {1} nearby relays not already checked.",
-				this.GetType().Name,
-				nearbyRelays.Count
-				));
-
-			// Remove all relays that cannot transmit.
-			// This call to r.CanTransmit() starts a depth-first recursive search for relays with a path back to Kerbin.
-			nearbyRelays.RemoveAll(r => !r.CanTransmit());
-
-			Tools.PostDebugMessage(string.Format(
-				"{0}: Found {1} nearby relays not already checked that can transmit.",
-				this.GetType().Name,
-				nearbyRelays.Count
-				));
-
-			// Sort the available relays by distance.
-			nearbyRelays.Sort(new RelayComparer(this.vessel));
-
-			// Get the nearest available relay, or null if there are no available relays nearby.
-			IAntennaRelay _nearestRelay = nearbyRelays.FirstOrDefault();
-
-			// If we have a nearby relay...
-			if (_nearestRelay != null)
+			/*
+			 * Loop through all the vessels and exclude this vessel, vessels of the wrong type, and vessels that are too
+			 * far away.  When we find a candidate, get through its antennae for relays which have not been checked yet
+			 * and that can transmit.  Once we find a suitable candidate, assign it to _nearestRelay for comparison
+			 * against future finds.
+			 * */
+			foreach (Vessel potentialVessel in FlightGlobals.Vessels)
 			{
-				// ...but that relay is farther than Kerbin...
-				if (this.DistanceTo(_nearestRelay) > this.DistanceTo(Kerbin))
+				// Skip vessels that have already been checked for a nearest relay this pass.
+				try
 				{
-					// ...just use Kerbin.
-					_nearestRelay = null;
+					if (RelayDatabase.Instance.CheckedVesselsTable[potentialVessel.id])
+					{
+						continue;
+					}
+				}
+				catch (KeyNotFoundException) { /* If the key doesn't exist, do nothing. */}
+
+				// Skip vessels of the wrong type.
+				switch (potentialVessel.vesselType)
+				{
+					case VesselType.Debris:
+					case VesselType.Flag:
+					case VesselType.EVA:
+					case VesselType.SpaceObject:
+					case VesselType.Unknown:
+						continue;
+					default:
+						break;
+				}
+
+				// Skip vessels with the wrong ID
+				if (potentialVessel.id == vessel.id)
+				{
+					continue;
+				}
+
+				// Find the distance from here to the vessel...
+				double potentialDistance = (potentialVessel.GetWorldPos3D() - vessel.GetWorldPos3D()).magnitude;
+
+				/*
+				 * ...so that we can skip the vessel if it is further away than Kerbin, our transmit distance, or a
+				 * vessel we've already checked.
+				 * */
+				if (potentialDistance > Tools.Min(this.maxTransmitDistance, nearestDistance, vessel.DistanceTo(Kerbin)))
+				{
+					continue;
+				}
+
+				nearestDistance = potentialDistance;
+
+				foreach (IAntennaRelay potentialRelay in potentialVessel.GetAntennaRelays())
+				{
+					if (potentialRelay.CanTransmit())
+					{
+						_nearestRelay = potentialRelay;
+						break;
+					}
 				}
 			}
 
 			// Now that we're done with our recursive CanTransmit checks, flag this relay as not checked so it can be
 			// used next time.
-			this.relayChecked = false;
+			RelayDatabase.Instance.CheckedVesselsTable.Remove(vessel.id);
 
 			// Return the nearest available relay, or null if there are no available relays nearby.
 			return _nearestRelay;
