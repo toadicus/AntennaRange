@@ -26,11 +26,16 @@ namespace AntennaRange
 	 * */
 	public class ProtoAntennaRelay : AntennaRelay, IAntennaRelay
 	{
-		// Stores the relay prefab
-		protected IAntennaRelay relayPrefab;
-
 		// Stores the prototype part so we can make sure we haven't exploded or so.
 		protected ProtoPartSnapshot protoPart;
+
+		public override Vessel vessel
+		{
+			get
+			{
+				return this.protoPart.pVesselRef.vesselRef;
+			}
+		}
 
 		/// <summary>
 		/// The maximum distance at which this transmitter can operate.
@@ -40,7 +45,7 @@ namespace AntennaRange
 		{
 			get
 			{
-				return relayPrefab.maxTransmitDistance;
+				return moduleRef.maxTransmitDistance;
 			}
 		}
 
@@ -87,7 +92,7 @@ namespace AntennaRange
 		public override string ToString()
 		{
 			return string.Format(
-				"{0} on {1}.",
+				"{0} on {1} (proto)",
 				this.title,
 				this.protoPart.pVesselRef.vesselName
 			);
@@ -98,11 +103,9 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="ms">The ProtoPartModuleSnapshot to wrap</param>
 		/// <param name="vessel">The parent Vessel</param>
-		public ProtoAntennaRelay(IAntennaRelay prefabRelay, ProtoPartSnapshot pps) : base(pps.pVesselRef.vesselRef)
+		public ProtoAntennaRelay(IAntennaRelay prefabRelay, ProtoPartSnapshot pps) : base(prefabRelay)
 		{
-			this.relayPrefab = prefabRelay;
 			this.protoPart = pps;
-			this.vessel = pps.pVesselRef.vesselRef;
 		}
 
 		~ProtoAntennaRelay()
