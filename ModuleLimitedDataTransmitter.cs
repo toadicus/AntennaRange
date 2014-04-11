@@ -330,8 +330,31 @@ namespace AntennaRange
 		// returns false.
 		public new void TransmitData(List<ScienceData> dataQueue)
 		{
+			this.PreTransmit_SetPacketSize();
+			this.PreTransmit_SetPacketResourceCost();
+
 			if (this.CanTransmit())
 			{
+				StringBuilder message = new StringBuilder();
+
+				message.Append("[");
+				message.Append(base.part.partInfo.title);
+				message.Append("]: ");
+
+				message.Append("Beginning transmission ");
+
+				if (this.relay.nearestRelay == null)
+				{
+					message.Append("directly to Kerbin.");
+				}
+				else
+				{
+					message.Append("via ");
+					message.Append(this.relay.nearestRelay);
+				}
+
+				ScreenMessages.PostScreenMessage(message.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
+
 				base.TransmitData(dataQueue);
 			}
 			else
