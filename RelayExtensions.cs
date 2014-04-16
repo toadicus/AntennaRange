@@ -29,6 +29,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ToadicusTools;
 
 namespace AntennaRange
 {
@@ -37,26 +38,6 @@ namespace AntennaRange
 	 * */
 	public static class Extensions
 	{
-		/// <summary>
-		/// Returns the distance between this Vessel and another Vessel.
-		/// </summary>
-		/// <param name="vesselOne">This <see cref="Vessel"/><see ></param>
-		/// <param name="vesselTwo">Another <see cref="Vessel"/></param>
-		public static double DistanceTo(this Vessel vesselOne, Vessel vesselTwo)
-		{
-			return (vesselOne.GetWorldPos3D() - vesselTwo.GetWorldPos3D()).magnitude;
-		}
-
-		/// <summary>
-		/// Returns the distance between this Vessel and a CelestialBody
-		/// </summary>
-		/// <param name="vessel">This Vessel</param>
-		/// <param name="body">A <see cref="CelestialBody"/></param>
-		public static double DistanceTo(this Vessel vessel, CelestialBody body)
-		{
-			return (vessel.GetWorldPos3D() - body.position).magnitude;
-		}
-
 		/// <summary>
 		/// Returns the distance between this IAntennaRelay and a Vessel
 		/// </summary>
@@ -95,8 +76,6 @@ namespace AntennaRange
 		{
 			return RelayDatabase.Instance[vessel].Values.ToList();
 		}
-
-
 	}
 }
 
