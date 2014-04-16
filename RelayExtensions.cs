@@ -36,7 +36,7 @@ namespace AntennaRange
 	/*
 	 * A class of utility extensions for Vessels and Relays to help find a relay path back to Kerbin.
 	 * */
-	public static class Extensions
+	public static class RelayExtensions
 	{
 		/// <summary>
 		/// Returns the distance between this IAntennaRelay and a Vessel
