@@ -1,19 +1,31 @@
-﻿// AntennaRange © 2014 toadicus
+﻿// AntennaRange
 //
-// AntennaRange provides incentive and requirements for the use of the various antenna parts.
-// Nominally, the breakdown is as follows:
+// AssemblyInfo.cs
 //
-//     Communotron 16 - Suitable up to Kerbalsynchronous Orbit
-//     Comms DTS-M1 - Suitable throughout the Kerbin subsystem
-//     Communotron 88-88 - Suitable throughout the Kerbol system.
+// Copyright © 2014, toadicus
+// All rights reserved.
 //
-// This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. To view a
-// copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
+// Redistribution and use in source and binary forms, with or without modification,
+// are permitted provided that the following conditions are met:
 //
-// This software uses the ModuleManager library © 2013 ialdabaoth, used under a Creative Commons Attribution-ShareAlike
-// 3.0 Uported License.
+// 1. Redistributions of source code must retain the above copyright notice,
+//    this list of conditions and the following disclaimer.
 //
-// This software uses code from the MuMechLib library, © 2013 r4m0n, used under the GNU GPL version 3.
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation and/or other
+//    materials provided with the distribution.
+//
+// 3. Neither the name of the copyright holder nor the names of its contributors may be used
+//    to endorse or promote products derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+// INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+// WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
