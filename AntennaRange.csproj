@@ -71,6 +71,15 @@
       <Link>ToadicusTools\MuMech_Tools.cs</Link>
     </Compile>
     <Compile Include="RelayExtensions.cs" />
+    <Compile Include="..\ToadicusTools\ModuleDBWrapper.cs">
+      <Link>ToadicusTools\ModuleDBWrapper.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\PrefabDBWrapper.cs">
+      <Link>ToadicusTools\PrefabDBWrapper.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\IModuleDB.cs">
+      <Link>ToadicusTools\IModuleDB.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
