@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug_win</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{B36F2C11-962E-4A75-9F41-61AD56D11493}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>AntennaRange</RootNamespace>
+    <AssemblyName>AntennaRange</AssemblyName>
+    <ReleaseVersion>0.6.2</ReleaseVersion>
+    <SynchReleaseVersion>false</SynchReleaseVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <UseMSBuildEngine>False</UseMSBuildEngine>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug_win|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;TRACE;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="AfterBuild" command="xcopy /y ${ProjectDir}\AntennaRange.cfg C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
+        <Command type="AfterBuild" command="xcopy /y ${TargetFile} C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
+      </CustomCommands>
+    </CustomCommands>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release_win|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="AfterBuild" command="xcopy /y ${ProjectDir}\AntennaRange.cfg C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
+        <Command type="AfterBuild" command="xcopy /y ${TargetFile} C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
+      </CustomCommands>
+    </CustomCommands>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <HintPath>..\..\..\Games\KSP_win\KSP_Data\Managed\System.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\..\..\Games\KSP_win\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\..\Games\KSP_win\KSP_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="IAntennaRelay.cs" />
+    <Compile Include="ModuleLimitedDataTransmitter.cs" />
+    <Compile Include="AntennaRelay.cs" />
+    <Compile Include="ProtoAntennaRelay.cs" />
+    <Compile Include="RelayDatabase.cs" />
+    <Compile Include="..\ToadicusTools\VesselExtensions.cs">
+      <Link>ToadicusTools\VesselExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\Tools.cs">
+      <Link>ToadicusTools\Tools.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\MuMech_Tools.cs">
+      <Link>ToadicusTools\MuMech_Tools.cs</Link>
+    </Compile>
+    <Compile Include="RelayExtensions.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Include="AntennaRange.cfg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="ToadicusTools\" />
+  </ItemGroup>
+</Project>
