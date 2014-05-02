@@ -44,6 +44,8 @@ namespace AntennaRange
 		protected System.Diagnostics.Stopwatch searchTimer;
 		protected long millisecondsBetweenSearches;
 
+		protected bool requireLineOfSight;
+
 		/// <summary>
 		/// Gets the parent Vessel.
 		/// </summary>
@@ -130,7 +132,10 @@ namespace AntennaRange
 		/// <returns><c>true</c> if this instance can transmit; otherwise, <c>false</c>.</returns>
 		public virtual bool CanTransmit()
 		{
-			if (this.transmitDistance > this.maxTransmitDistance)
+			if (
+				this.transmitDistance > this.maxTransmitDistance ||
+				(this.requireLineOfSight && this.nearestRelay == null && !this.vessel.hasLineOfSightTo(this.Kerbin))
+			)
 			{
 				return false;
 			}
@@ -169,7 +174,7 @@ namespace AntennaRange
 			// Set this vessel as checked, so that we don't check it again.
 			RelayDatabase.Instance.CheckedVesselsTable[vessel.id] = true;
 
-			double nearestDistance = double.PositiveInfinity;
+			double nearestSqrDistance = double.PositiveInfinity;
 			IAntennaRelay _nearestRelay = null;
 
 			/*
@@ -181,14 +186,16 @@ namespace AntennaRange
 			foreach (Vessel potentialVessel in FlightGlobals.Vessels)
 			{
 				// Skip vessels that have already been checked for a nearest relay this pass.
-				try
+				if (RelayDatabase.Instance.CheckedVesselsTable.ContainsKey(potentialVessel.id))
 				{
-					if (RelayDatabase.Instance.CheckedVesselsTable[potentialVessel.id])
-					{
-						continue;
-					}
+					Tools.PostDebugMessage(
+						this,
+						"Vessel {0} discarded because it has already been checked this pass.",
+						potentialVessel.vesselName,
+						potentialVessel.vesselType
+					);
+					continue;
 				}
-				catch (KeyNotFoundException) { /* If the key doesn't exist, don't skip it. */}
 
 				// Skip vessels of the wrong type.
 				switch (potentialVessel.vesselType)
@@ -198,6 +205,12 @@ namespace AntennaRange
 					case VesselType.EVA:
 					case VesselType.SpaceObject:
 					case VesselType.Unknown:
+						Tools.PostDebugMessage(
+							this,
+							"Vessel {0} discarded because it is of invalid type {1}.",
+							potentialVessel.vesselName,
+							potentialVessel.vesselType
+						);
 						continue;
 					default:
 						break;
@@ -209,19 +222,41 @@ namespace AntennaRange
 					continue;
 				}
 
+				// Skip vessels to which we do not have line of sight.
+				if (this.requireLineOfSight && !this.vessel.hasLineOfSightTo(potentialVessel))
+				{
+					Tools.PostDebugMessage(
+						this,
+						"Vessel {0} discarded because we do not have line of sight.",
+						potentialVessel.vesselName
+					);
+					continue;
+				}
+
 				// Find the distance from here to the vessel...
-				double potentialDistance = (potentialVessel.GetWorldPos3D() - vessel.GetWorldPos3D()).magnitude;
+				double potentialSqrDistance = (potentialVessel.GetWorldPos3D() - vessel.GetWorldPos3D()).sqrMagnitude;
 
 				/*
 				 * ...so that we can skip the vessel if it is further away than Kerbin, our transmit distance, or a
 				 * vessel we've already checked.
 				 * */
-				if (potentialDistance > Tools.Min(this.maxTransmitDistance, nearestDistance, vessel.DistanceTo(Kerbin)))
+				if (
+					potentialSqrDistance > Tools.Min(
+						this.maxTransmitDistance * this.maxTransmitDistance,
+						nearestSqrDistance,
+						this.vessel.sqrDistanceTo(Kerbin)
+					)
+				)
 				{
+					Tools.PostDebugMessage(
+						this,
+						"Vessel {0} discarded because it is out of range, or farther than another relay.",
+						potentialVessel.vesselName
+					);
 					continue;
 				}
 
-				nearestDistance = potentialDistance;
+				nearestSqrDistance = potentialSqrDistance;
 
 				foreach (IAntennaRelay potentialRelay in potentialVessel.GetAntennaRelays())
 				{
@@ -260,6 +295,14 @@ namespace AntennaRange
 			// HACK: This might not be safe in all circumstances, but since AntennaRelays are not built until Start,
 			// we hope it is safe enough.
 			this.Kerbin = FlightGlobals.Bodies.FirstOrDefault(b => b.name == "Kerbin");
+
+			var config = KSP.IO.PluginConfiguration.CreateForType<AntennaRelay>();
+
+			config.load();
+
+			this.requireLineOfSight = config.GetValue<bool>("requireLineOfSight", false);
+
+			config.save();
 		}
 	}
 }
