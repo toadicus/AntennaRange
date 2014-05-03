@@ -259,11 +259,7 @@ namespace AntennaRange
 		// is only one reason for this.
 		protected void PostCannotTransmitError()
 		{
-			string ErrorText = string.Format (
-				"Unable to transmit: out of range!  Maximum range = {0}m; Current range = {1}m.",
-				Tools.MuMech_ToSI((double)this.maxTransmitDistance, 2),
-				Tools.MuMech_ToSI((double)this.transmitDistance, 2)
-				);
+			string ErrorText = string.Intern("Unable to transmit: no visible receivers in range!");
 
 			this.ErrorMsg.message = string.Format(
 				"<color='#{0}{1}{2}{3}'><b>{4}</b></color>",

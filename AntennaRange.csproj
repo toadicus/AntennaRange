@@ -96,6 +96,13 @@
     <Compile Include="..\ToadicusTools\IModuleDB.cs">
       <Link>ToadicusTools\IModuleDB.cs</Link>
     </Compile>
+    <Compile Include="ARConfiguration.cs" />
+    <Compile Include="..\ToadicusTools\Wrapper\ToolbarWrapper.cs">
+      <Link>ToadicusTools\ToolbarWrapper.cs</Link>
+    </Compile>
+    <Compile Include="..\ToadicusTools\WindowTools.cs">
+      <Link>WindowTools.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

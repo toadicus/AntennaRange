@@ -35,6 +35,8 @@ namespace AntennaRange
 {
 	public class AntennaRelay
 	{
+		public static bool requireLineOfSight;
+
 		// We don't have a Bard, so we'll hide Kerbin here.
 		protected CelestialBody Kerbin;
 
@@ -43,8 +45,6 @@ namespace AntennaRange
 
 		protected System.Diagnostics.Stopwatch searchTimer;
 		protected long millisecondsBetweenSearches;
-
-		protected bool requireLineOfSight;
 
 		/// <summary>
 		/// Gets the parent Vessel.
@@ -134,7 +134,7 @@ namespace AntennaRange
 		{
 			if (
 				this.transmitDistance > this.maxTransmitDistance ||
-				(this.requireLineOfSight && this.nearestRelay == null && !this.vessel.hasLineOfSightTo(this.Kerbin))
+				(requireLineOfSight && this.nearestRelay == null && !this.vessel.hasLineOfSightTo(this.Kerbin))
 			)
 			{
 				return false;
@@ -188,12 +188,6 @@ namespace AntennaRange
 				// Skip vessels that have already been checked for a nearest relay this pass.
 				if (RelayDatabase.Instance.CheckedVesselsTable.ContainsKey(potentialVessel.id))
 				{
-					Tools.PostDebugMessage(
-						this,
-						"Vessel {0} discarded because it has already been checked this pass.",
-						potentialVessel.vesselName,
-						potentialVessel.vesselType
-					);
 					continue;
 				}
 
@@ -205,12 +199,6 @@ namespace AntennaRange
 					case VesselType.EVA:
 					case VesselType.SpaceObject:
 					case VesselType.Unknown:
-						Tools.PostDebugMessage(
-							this,
-							"Vessel {0} discarded because it is of invalid type {1}.",
-							potentialVessel.vesselName,
-							potentialVessel.vesselType
-						);
 						continue;
 					default:
 						break;
@@ -223,7 +211,7 @@ namespace AntennaRange
 				}
 
 				// Skip vessels to which we do not have line of sight.
-				if (this.requireLineOfSight && !this.vessel.hasLineOfSightTo(potentialVessel))
+				if (requireLineOfSight && !this.vessel.hasLineOfSightTo(potentialVessel))
 				{
 					Tools.PostDebugMessage(
 						this,
@@ -295,12 +283,15 @@ namespace AntennaRange
 			// HACK: This might not be safe in all circumstances, but since AntennaRelays are not built until Start,
 			// we hope it is safe enough.
 			this.Kerbin = FlightGlobals.Bodies.FirstOrDefault(b => b.name == "Kerbin");
+		}
 
+		static AntennaRelay()
+		{
 			var config = KSP.IO.PluginConfiguration.CreateForType<AntennaRelay>();
 
 			config.load();
 
-			this.requireLineOfSight = config.GetValue<bool>("requireLineOfSight", false);
+			AntennaRelay.requireLineOfSight = config.GetValue<bool>("requireLineOfSight", false);
 
 			config.save();
 		}
