@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>AntennaRange</RootNamespace>
     <AssemblyName>AntennaRange</AssemblyName>
-    <ReleaseVersion>0.6.2</ReleaseVersion>
+    <ReleaseVersion>1.1</ReleaseVersion>
     <SynchReleaseVersion>false</SynchReleaseVersion>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <UseMSBuildEngine>False</UseMSBuildEngine>
@@ -77,41 +77,14 @@
     <Compile Include="AntennaRelay.cs" />
     <Compile Include="ProtoAntennaRelay.cs" />
     <Compile Include="RelayDatabase.cs" />
-    <Compile Include="..\ToadicusTools\VesselExtensions.cs">
-      <Link>ToadicusTools\VesselExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\ToadicusTools\Tools.cs">
-      <Link>ToadicusTools\Tools.cs</Link>
-    </Compile>
-    <Compile Include="..\ToadicusTools\MuMech_Tools.cs">
-      <Link>ToadicusTools\MuMech_Tools.cs</Link>
-    </Compile>
     <Compile Include="RelayExtensions.cs" />
-    <Compile Include="..\ToadicusTools\ModuleDBWrapper.cs">
-      <Link>ToadicusTools\ModuleDBWrapper.cs</Link>
-    </Compile>
-    <Compile Include="..\ToadicusTools\PrefabDBWrapper.cs">
-      <Link>ToadicusTools\PrefabDBWrapper.cs</Link>
-    </Compile>
-    <Compile Include="..\ToadicusTools\IModuleDB.cs">
-      <Link>ToadicusTools\IModuleDB.cs</Link>
-    </Compile>
     <Compile Include="ARConfiguration.cs" />
-    <Compile Include="..\ToadicusTools\Wrapper\ToolbarWrapper.cs">
-      <Link>ToadicusTools\ToolbarWrapper.cs</Link>
-    </Compile>
-    <Compile Include="..\ToadicusTools\WindowTools.cs">
-      <Link>WindowTools.cs</Link>
-    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <None Include="AntennaRange.cfg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ToadicusTools\" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -126,5 +99,11 @@
       <HintPath>..\_KSPAssemblies\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ToadicusTools\ToadicusTools.csproj">
+      <Project>{D48A5542-6655-4149-BC27-B27DF0466F1C}</Project>
+      <Name>ToadicusTools</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>
