@@ -8,6 +8,8 @@ using System;
 using ToadicusTools;
 using UnityEngine;
 
+[assembly: KSPAssemblyDependency("ToadicusTools", 0, 0)]
+
 namespace AntennaRange
 {
 	[KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
