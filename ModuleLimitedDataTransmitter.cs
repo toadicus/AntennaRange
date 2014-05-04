@@ -95,6 +95,16 @@ namespace AntennaRange
 		[KSPField(isPersistant = false)]
 		public float maxDataFactor;
 
+		[KSPField(
+			isPersistant = true,
+			guiName = "Packet Throttle",
+			guiUnits = "%",
+			guiActive = true,
+			guiActiveEditor = false
+		)]
+		[UI_FloatRange(maxValue = 100f, minValue = 2.5f, stepIncrement = 2.5f)]
+		public float packetThrottle;
+
 		protected bool actionUIUpdate;
 
 		/*
@@ -207,6 +217,7 @@ namespace AntennaRange
 		public ModuleLimitedDataTransmitter () : base()
 		{
 			this.ErrorMsg = new ScreenMessage("", 4f, false, ScreenMessageStyle.UPPER_LEFT);
+			this.packetThrottle = 100f;
 		}
 
 		// At least once, when the module starts with a state on the launch pad or later, go find Kerbin.
@@ -305,6 +316,8 @@ namespace AntennaRange
 					this._basepacketSize * (float)Math.Pow (this.nominalRange / this.transmitDistance, 2),
 					this._basepacketSize * this.maxDataFactor);
 			}
+
+			base.packetSize *= this.packetThrottle / 100f;
 		}
 
 		// Override ModuleDataTransmitter.GetInfo to add nominal and maximum range to the VAB description.
