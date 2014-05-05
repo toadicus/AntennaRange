@@ -76,6 +76,24 @@ namespace AntennaRange
 		{
 			return RelayDatabase.Instance[vessel].Values.ToList();
 		}
+
+		/// <summary>
+		/// Determines if the specified vessel has a connected relay.
+		/// </summary>
+		/// <returns><c>true</c> if the specified vessel has a connected relay; otherwise, <c>false</c>.</returns>
+		/// <param name="vessel"></param>
+		public static bool HasConnectedRelay(this Vessel vessel)
+		{
+			foreach (IAntennaRelay relay in RelayDatabase.Instance[vessel].Values)
+			{
+				if (relay.CanTransmit())
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
 	}
 }
 
