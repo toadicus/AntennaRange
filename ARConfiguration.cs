@@ -20,6 +20,20 @@ namespace AntennaRange
 
 		private IButton toolbarButton;
 
+		private KSP.IO.PluginConfiguration _config;
+		private KSP.IO.PluginConfiguration config
+		{
+			get
+			{
+				if (this._config == null)
+				{
+					this._config = KSP.IO.PluginConfiguration.CreateForType<AntennaRelay>();
+				}
+
+				return this._config;
+			}
+		}
+
 		public void Awake()
 		{
 			Tools.PostDebugMessage(this, "Waking up.");
@@ -46,14 +60,10 @@ namespace AntennaRange
 					this.showConfigWindow = !this.showConfigWindow;
 				};
 
-				var config = KSP.IO.PluginConfiguration.CreateForType<AntennaRelay>();
-
-				config.load();
-
-				this.configWindowPos = config.GetValue<Rect>("configWindowPos", this.configWindowPos);
-				AntennaRelay.requireLineOfSight = config.GetValue<bool>("requireLineOfSight", false);
-
-				config.save();
+				this.configWindowPos = this.LoadConfigValue("configWindowPos", this.configWindowPos);
+				AntennaRelay.requireLineOfSight = this.LoadConfigValue("requireLineOfSight", false);
+				ARFlightController.requireConnectionForControl =
+					this.LoadConfigValue("requireConnectionForControl", false);
 			}
 
 			if (this.showConfigWindow)
@@ -81,11 +91,27 @@ namespace AntennaRange
 			GUILayout.BeginVertical(GUILayout.ExpandHeight(true));
 
 			GUILayout.BeginHorizontal(GUILayout.ExpandWidth(true));
+
 			bool requireLineOfSight = GUILayout.Toggle(AntennaRelay.requireLineOfSight, "Require Line of Sight");
 			if (requireLineOfSight != AntennaRelay.requireLineOfSight)
 			{
 				AntennaRelay.requireLineOfSight = requireLineOfSight;
 				this.SaveConfigValue("requireLineOfSight", requireLineOfSight);
+			}
+
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal(GUILayout.ExpandWidth(true));
+
+			bool requireConnectionForControl =
+				GUILayout.Toggle(
+					ARFlightController.requireConnectionForControl,
+					"Require Connection for Probe Control"
+				);
+			if (requireConnectionForControl != ARFlightController.requireConnectionForControl)
+			{
+				ARFlightController.requireConnectionForControl = requireConnectionForControl;
+				this.SaveConfigValue("requireConnectionForControl", requireConnectionForControl);
 			}
 
 			GUILayout.EndHorizontal();
@@ -105,22 +131,18 @@ namespace AntennaRange
 
 		private T LoadConfigValue<T>(string key, T defaultValue)
 		{
-			var config = KSP.IO.PluginConfiguration.CreateForType<AntennaRelay>();
-
-			config.load();
+			this.config.load();
 
 			return config.GetValue(key, defaultValue);
 		}
 
 		private void SaveConfigValue<T>(string key, T value)
 		{
-			var config = KSP.IO.PluginConfiguration.CreateForType<AntennaRelay>();
+			this.config.load();
 
-			config.load();
+			this.config.SetValue(key, value);
 
-			config.SetValue(key, value);
-
-			config.save();
+			this.config.save();
 		}
 	}
 }
