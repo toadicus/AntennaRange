@@ -25,15 +25,100 @@
 // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+using KSP;
 using System;
+using ToadicusTools;
+using UnityEngine;
 
 namespace AntennaRange
 {
-	public class ARFlightController
+	[KSPAddon(KSPAddon.Startup.Flight, false)]
+	public class ARFlightController : MonoBehaviour
 	{
-		public ARFlightController()
+		#region Static Members
+		public static bool requireConnectionForControl;
+		#endregion
+
+		#region Properties
+		public ControlTypes currentControlLock
 		{
+			get
+			{
+				if (this.lockID == string.Empty)
+				{
+					return ControlTypes.None;
+				}
+
+				return InputLockManager.GetControlLock(this.lockID);
+			}
 		}
+
+		public string lockID
+		{
+			get;
+			protected set;
+		}
+
+		public ControlTypes lockSet
+		{
+			get
+			{
+				return ControlTypes.GROUPS_ALL | ControlTypes.STAGING | ControlTypes.SAS | ControlTypes.RCS;
+			}
+		}
+
+		public Vessel vessel
+		{
+			get
+			{
+				if (FlightGlobals.ready && FlightGlobals.ActiveVessel != null)
+				{
+					return FlightGlobals.ActiveVessel;
+				}
+
+				return null;
+			}
+		}
+		#endregion
+
+		#region MonoBehaviour LifeCycle
+		protected void Awake()
+		{
+			this.lockID = "ARConnectionRequired";
+		}
+
+		protected void FixedUpdate()
+		{
+			if (
+				requireConnectionForControl &&
+				this.vessel != null &&
+				!this.vessel.hasCrewCommand() &&
+				this.vessel.IsControllable
+			)
+			{
+				if (this.vessel.HasConnectedRelay())
+				{
+					if (currentControlLock != ControlTypes.None)
+					{
+						InputLockManager.RemoveControlLock(this.lockID);
+					}
+				}
+				else
+				{
+					if (currentControlLock == ControlTypes.None)
+					{
+						InputLockManager.SetControlLock(this.lockSet, this.lockID);
+					}
+				}
+			}
+		}
+
+		protected void Destroy()
+		{
+
+		}
+		#endregion
 	}
 }
 
