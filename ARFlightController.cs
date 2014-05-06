@@ -90,33 +90,37 @@ namespace AntennaRange
 
 		protected void FixedUpdate()
 		{
+			// Do nothing if the vessel reference is invalid.
+			if (this.vessel == null)
+			{
+				return;
+			}
+
+			// If we are requiring a connection for control, the vessel does not have any adequately staffed pods,
+			// and the vessel does not have any connected relays...
 			if (
 				requireConnectionForControl &&
-				this.vessel != null &&
 				!this.vessel.hasCrewCommand() &&
-				this.vessel.IsControllable
-			)
+				!this.vessel.HasConnectedRelay())
 			{
-				if (this.vessel.HasConnectedRelay())
+				// ...and if the controls are not currently locked...
+				if (currentControlLock == ControlTypes.None)
 				{
-					if (currentControlLock != ControlTypes.None)
-					{
-						InputLockManager.RemoveControlLock(this.lockID);
-					}
+					// ...lock the controls.
+					InputLockManager.SetControlLock(this.lockSet, this.lockID);
 				}
-				else
-				{
-					if (currentControlLock == ControlTypes.None)
-					{
-						InputLockManager.SetControlLock(this.lockSet, this.lockID);
-					}
-				}
+			}
+			// ...otherwise, if the controls are locked...
+			else if (currentControlLock != ControlTypes.None)
+			{
+				// ...unlock the controls.
+				InputLockManager.RemoveControlLock(this.lockID);
 			}
 		}
 
 		protected void Destroy()
 		{
-
+			InputLockManager.RemoveControlLock(this.lockID);
 		}
 		#endregion
 	}
