@@ -93,17 +93,13 @@ namespace AntennaRange
 
 		protected void FixedUpdate()
 		{
-			// Do nothing if the vessel reference is invalid.
-			if (this.vessel == null)
-			{
-				return;
-			}
-
 			// If we are requiring a connection for control, the vessel does not have any adequately staffed pods,
 			// and the vessel does not have any connected relays...
 			if (
 				HighLogic.LoadedSceneIsFlight &&
 				requireConnectionForControl &&
+				this.vessel != null &&
+				this.vessel.vesselType != VesselType.EVA &&
 				!this.vessel.hasCrewCommand() &&
 				!this.vessel.HasConnectedRelay())
 			{
