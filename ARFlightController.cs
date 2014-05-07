@@ -64,7 +64,7 @@ namespace AntennaRange
 		{
 			get
 			{
-				return ControlTypes.GROUPS_ALL | ControlTypes.STAGING | ControlTypes.SAS | ControlTypes.RCS;
+				return ControlTypes.ALL_SHIP_CONTROLS;
 			}
 		}
 
@@ -86,6 +86,9 @@ namespace AntennaRange
 		protected void Awake()
 		{
 			this.lockID = "ARConnectionRequired";
+
+			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
+			GameEvents.onVesselChange.Add(this.onVesselChange);
 		}
 
 		protected void FixedUpdate()
@@ -99,6 +102,7 @@ namespace AntennaRange
 			// If we are requiring a connection for control, the vessel does not have any adequately staffed pods,
 			// and the vessel does not have any connected relays...
 			if (
+				HighLogic.LoadedSceneIsFlight &&
 				requireConnectionForControl &&
 				!this.vessel.hasCrewCommand() &&
 				!this.vessel.HasConnectedRelay())
@@ -119,6 +123,24 @@ namespace AntennaRange
 		}
 
 		protected void Destroy()
+		{
+			InputLockManager.RemoveControlLock(this.lockID);
+
+			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChangeRequested);
+			GameEvents.onVesselChange.Remove(this.onVesselChange);
+		}
+		#endregion
+
+		#region Event Handlers
+		protected void onSceneChangeRequested(GameScenes scene)
+		{
+			if (scene != GameScenes.FLIGHT)
+			{
+				InputLockManager.RemoveControlLock(this.lockID);
+			}
+		}
+
+		protected void onVesselChange(Vessel vessel)
 		{
 			InputLockManager.RemoveControlLock(this.lockID);
 		}
