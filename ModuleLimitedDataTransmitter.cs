@@ -74,6 +74,9 @@ namespace AntennaRange
 		[KSPField(isPersistant = false)]
 		public float nominalRange;
 
+		[KSPField(isPersistant = false, guiActive = true, guiName = "Relay")]
+		public string UIrelayStatus;
+
 		[KSPField(isPersistant = false, guiActive = true, guiName = "Transmission Distance")]
 		public string UItransmitDistance;
 
@@ -439,9 +442,27 @@ namespace AntennaRange
 		{
 			if (this.actionUIUpdate)
 			{
-				this.UItransmitDistance = Tools.MuMech_ToSI(this.transmitDistance) + "m";
-				this.UIpacketSize = this.CanTransmit() ? Tools.MuMech_ToSI(this.DataRate) + "MiT" : "N/A";
-				this.UIpacketCost = this.CanTransmit() ? Tools.MuMech_ToSI(this.DataResourceCost) + "E" : "N/A";
+				if (this.CanTransmit())
+				{
+					this.UIrelayStatus = string.Intern("Connected");
+					this.UItransmitDistance = Tools.MuMech_ToSI(this.transmitDistance) + "m";
+					this.UIpacketSize = Tools.MuMech_ToSI(this.DataRate) + "MiT";
+					this.UIpacketCost = Tools.MuMech_ToSI(this.DataResourceCost) + "E";
+				}
+				else
+				{
+					if (this.relay.firstOccludingBody == null)
+					{
+						this.UIrelayStatus = string.Intern("Out of range");
+					}
+					else
+					{
+						this.UIrelayStatus = string.Format("Blocked by {0}", this.relay.firstOccludingBody.bodyName);
+					}
+					this.UImaxTransmitDistance = "N/A";
+					this.UIpacketSize = "N/A";
+					this.UIpacketCost = "N/A";
+				}
 			}
 		}
 
