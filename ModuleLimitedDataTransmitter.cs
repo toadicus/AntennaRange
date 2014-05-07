@@ -300,6 +300,8 @@ namespace AntennaRange
 				base.packetResourceCost = this._basepacketResourceCost
 					* (float)Math.Pow (this.transmitDistance / this.nominalRange, 2);
 			}
+
+			base.packetResourceCost *= this.packetThrottle / 100f;
 		}
 
 		// Before transmission, set packetSize.  Per above, packet size increases with the inverse square of
