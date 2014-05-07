@@ -40,6 +40,8 @@ namespace AntennaRange
 		// We don't have a Bard, so we'll hide Kerbin here.
 		protected CelestialBody Kerbin;
 
+		protected CelestialBody _firstOccludingBody;
+
 		protected IAntennaRelay _nearestRelayCache;
 		protected IAntennaRelay moduleRef;
 
@@ -78,6 +80,18 @@ namespace AntennaRange
 			protected set
 			{
 				this._nearestRelayCache = value;
+			}
+		}
+
+		/// <summary>
+		/// Gets the first occluding body.
+		/// </summary>
+		/// <value>The first occluding body.</value>
+		public CelestialBody firstOccludingBody
+		{
+			get
+			{
+				return this._firstOccludingBody;
 			}
 		}
 
@@ -134,7 +148,11 @@ namespace AntennaRange
 		{
 			if (
 				this.transmitDistance > this.maxTransmitDistance ||
-				(requireLineOfSight && this.nearestRelay == null && !this.vessel.hasLineOfSightTo(this.Kerbin))
+				(
+					requireLineOfSight &&
+					this.nearestRelay == null &&
+					!this.vessel.hasLineOfSightTo(this.Kerbin, out this._firstOccludingBody)
+				)
 			)
 			{
 				return false;
@@ -170,6 +188,8 @@ namespace AntennaRange
 				this,
 				this.vessel.id
 			));
+
+			this._firstOccludingBody = null;
 
 			// Set this vessel as checked, so that we don't check it again.
 			RelayDatabase.Instance.CheckedVesselsTable[vessel.id] = true;
@@ -211,7 +231,7 @@ namespace AntennaRange
 				}
 
 				// Skip vessels to which we do not have line of sight.
-				if (requireLineOfSight && !this.vessel.hasLineOfSightTo(potentialVessel))
+				if (requireLineOfSight && !this.vessel.hasLineOfSightTo(potentialVessel, out this._firstOccludingBody))
 				{
 					Tools.PostDebugMessage(
 						this,
