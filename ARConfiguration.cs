@@ -20,6 +20,8 @@ namespace AntennaRange
 
 		private IButton toolbarButton;
 
+		private System.Version runningVersion;
+
 		private KSP.IO.PluginConfiguration _config;
 		private KSP.IO.PluginConfiguration config
 		{
@@ -46,8 +48,11 @@ namespace AntennaRange
 
 		public void OnGUI()
 		{
+			// Only runs once, if the Toolbar is available.
 			if (this.toolbarButton == null && ToolbarManager.ToolbarAvailable)
 			{
+				this.runningVersion = this.GetType().Assembly.GetName().Version;
+
 				Tools.PostDebugMessage(this, "Toolbar available; initializing button.");
 
 				this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConfiguration");
@@ -64,6 +69,8 @@ namespace AntennaRange
 				AntennaRelay.requireLineOfSight = this.LoadConfigValue("requireLineOfSight", false);
 				ARFlightController.requireConnectionForControl =
 					this.LoadConfigValue("requireConnectionForControl", false);
+
+				Debug.Log(string.Format("{0} v{1} - ARonfiguration loaded!", this.GetType().Name, this.runningVersion));
 			}
 
 			if (this.showConfigWindow)
@@ -71,7 +78,7 @@ namespace AntennaRange
 				Rect configPos = GUILayout.Window(354163056,
 					this.configWindowPos,
 					this.ConfigWindow,
-					"AntennaRange Configuration",
+					string.Format("AntennaRange {0}.{1}", this.runningVersion.Major, this.runningVersion.Minor),
 					GUILayout.ExpandHeight(true),
 					GUILayout.ExpandWidth(true)
 				);
