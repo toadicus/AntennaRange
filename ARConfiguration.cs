@@ -69,6 +69,7 @@ namespace AntennaRange
 				AntennaRelay.requireLineOfSight = this.LoadConfigValue("requireLineOfSight", false);
 				ARFlightController.requireConnectionForControl =
 					this.LoadConfigValue("requireConnectionForControl", false);
+				ModuleLimitedDataTransmitter.fixedPowerCost = this.LoadConfigValue("fixedPowerCost", false);
 
 				Debug.Log(string.Format("{0} v{1} - ARonfiguration loaded!", this.GetType().Name, this.runningVersion));
 			}
@@ -119,6 +120,17 @@ namespace AntennaRange
 			{
 				ARFlightController.requireConnectionForControl = requireConnectionForControl;
 				this.SaveConfigValue("requireConnectionForControl", requireConnectionForControl);
+			}
+
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
+
+			bool fixedPowerCost = GUILayout.Toggle(ModuleLimitedDataTransmitter.fixedPowerCost, "Use fixed power cost");
+			if (fixedPowerCost != ModuleLimitedDataTransmitter.fixedPowerCost)
+			{
+				ModuleLimitedDataTransmitter.fixedPowerCost = fixedPowerCost;
+				this.SaveConfigValue("fixedPowerCost", fixedPowerCost);
 			}
 
 			GUILayout.EndHorizontal();
