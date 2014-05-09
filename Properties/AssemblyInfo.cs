@@ -29,6 +29,8 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
+[assembly: KSPAssemblyDependency("ToadicusTools", 0, 0)]
+
 // Information about this assembly is defined by the following attributes.
 // Change them to the values specific to your project.
 [assembly: AssemblyTitle("AntennaRange")]
@@ -42,4 +44,3 @@ using System.Runtime.CompilerServices;
 // if desired. See the Mono documentation for more information about signing.
 //[assembly: AssemblyDelaySign(false)]
 //[assembly: AssemblyKeyFile("")]
-
