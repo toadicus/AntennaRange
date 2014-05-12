@@ -216,7 +216,7 @@ namespace AntennaRange
 		{
 			if (scene != GameScenes.FLIGHT)
 			{
-				InputLockManager.RemoveControlLock(this.lockID);
+				MonoBehaviour.Destroy(this);
 			}
 		}
 
