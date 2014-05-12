@@ -28,6 +28,7 @@
 
 using KSP;
 using System;
+using System.Collections.Generic;
 using ToadicusTools;
 using UnityEngine;
 
@@ -40,7 +41,27 @@ namespace AntennaRange
 		public static bool requireConnectionForControl;
 		#endregion
 
+		#region Fields
+		protected Dictionary<ConnectionStatus, string> connectionTextures;
+
+		protected IButton toolbarButton;
+		#endregion
+
 		#region Properties
+		public ConnectionStatus currentConnectionStatus
+		{
+			get;
+			protected set;
+		}
+
+		protected string currentConnectionTexture
+		{
+			get
+			{
+				return this.connectionTextures[this.currentConnectionStatus];
+			}
+		}
+
 		public ControlTypes currentControlLock
 		{
 			get
@@ -87,6 +108,22 @@ namespace AntennaRange
 		{
 			this.lockID = "ARConnectionRequired";
 
+			if (ToolbarManager.ToolbarAvailable)
+			{
+				this.connectionTextures = new Dictionary<ConnectionStatus, string>();
+
+				this.connectionTextures[ConnectionStatus.None] = "AntennaRange/Textures/toolbarIconNoConnection";
+				this.connectionTextures[ConnectionStatus.Suboptimal] = "AntennaRange/Textures/toolbarIconSubOptimal";
+				this.connectionTextures[ConnectionStatus.Optimal] = "AntennaRange/Textures/toolbarIcon";
+
+				this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConnectionStatus");
+
+				this.toolbarButton.TexturePath = this.connectionTextures[ConnectionStatus.None];
+				this.toolbarButton.Text = "AntennaRange";
+				this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.FLIGHT);
+				this.toolbarButton.Enabled = false;
+			}
+
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
 			GameEvents.onVesselChange.Add(this.onVesselChange);
 		}
@@ -116,11 +153,58 @@ namespace AntennaRange
 				// ...unlock the controls.
 				InputLockManager.RemoveControlLock(this.lockID);
 			}
+
+			if (this.toolbarButton != null && HighLogic.LoadedSceneIsFlight && FlightGlobals.ActiveVessel != null)
+			{
+				List<ModuleLimitedDataTransmitter> relays =
+					FlightGlobals.ActiveVessel.getModulesOfType<ModuleLimitedDataTransmitter>();
+
+				bool vesselCanTransmit = false;
+				bool vesselHasOptimalRelay = false;
+
+				foreach (ModuleLimitedDataTransmitter relay in relays)
+				{
+					if (!vesselCanTransmit && relay.CanTransmit())
+					{
+						vesselCanTransmit = true;
+					}
+
+					if (!vesselHasOptimalRelay && relay.transmitDistance <= (double)relay.nominalRange)
+					{
+						vesselHasOptimalRelay = true;
+					}
+
+					if (vesselCanTransmit && vesselHasOptimalRelay)
+					{
+						break;
+					}
+				}
+
+				if (vesselHasOptimalRelay)
+				{
+					this.currentConnectionStatus = ConnectionStatus.Optimal;
+				}
+				else if (vesselCanTransmit)
+				{
+					this.currentConnectionStatus = ConnectionStatus.Suboptimal;
+				}
+				else
+				{
+					this.currentConnectionStatus = ConnectionStatus.None;
+				}
+
+				this.toolbarButton.TexturePath = this.currentConnectionTexture;
+			}
 		}
 
 		protected void Destroy()
 		{
 			InputLockManager.RemoveControlLock(this.lockID);
+
+			if (this.toolbarButton != null)
+			{
+				this.toolbarButton.Destroy();
+			}
 
 			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChangeRequested);
 			GameEvents.onVesselChange.Remove(this.onVesselChange);
@@ -141,6 +225,13 @@ namespace AntennaRange
 			InputLockManager.RemoveControlLock(this.lockID);
 		}
 		#endregion
+
+		public enum ConnectionStatus
+		{
+			None,
+			Suboptimal,
+			Optimal
+		}
 	}
 }
 
