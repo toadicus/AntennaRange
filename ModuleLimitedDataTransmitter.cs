@@ -126,6 +126,19 @@ namespace AntennaRange
 			}
 		}
 
+		public IAntennaRelay nearestRelay
+		{
+			get
+			{
+				if (this.relay == null)
+				{
+					return null;
+				}
+
+				return this.relay.nearestRelay;
+			}
+		}
+
 		// Returns the distance to the nearest relay or Kerbin, whichever is closer.
 		public double transmitDistance
 		{
