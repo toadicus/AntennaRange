@@ -38,7 +38,7 @@ namespace AntennaRange
 		public static bool requireLineOfSight;
 
 		// We don't have a Bard, so we'll hide Kerbin here.
-		protected CelestialBody Kerbin;
+		public static CelestialBody Kerbin;
 
 		protected CelestialBody _firstOccludingBody;
 
@@ -109,7 +109,7 @@ namespace AntennaRange
 				if (this.nearestRelay == null)
 				{
 					// .. return the distance to Kerbin
-					return this.DistanceTo(this.Kerbin);
+					return this.DistanceTo(Kerbin);
 				}
 				else
 				{
@@ -151,7 +151,7 @@ namespace AntennaRange
 				(
 					requireLineOfSight &&
 					this.nearestRelay == null &&
-					!this.vessel.hasLineOfSightTo(this.Kerbin, out this._firstOccludingBody)
+					!this.vessel.hasLineOfSightTo(Kerbin, out this._firstOccludingBody)
 				)
 			)
 			{
@@ -298,11 +298,14 @@ namespace AntennaRange
 			this.moduleRef = module;
 
 			this.searchTimer = new System.Diagnostics.Stopwatch();
-			this.millisecondsBetweenSearches = 5000;
+			this.millisecondsBetweenSearches = 1250;
 
 			// HACK: This might not be safe in all circumstances, but since AntennaRelays are not built until Start,
 			// we hope it is safe enough.
-			this.Kerbin = FlightGlobals.Bodies.FirstOrDefault(b => b.name == "Kerbin");
+			if (AntennaRelay.Kerbin == null)
+			{
+				AntennaRelay.Kerbin = FlightGlobals.Bodies.FirstOrDefault(b => b.name == "Kerbin");
+			}
 		}
 
 		static AntennaRelay()
