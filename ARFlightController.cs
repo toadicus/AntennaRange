@@ -233,7 +233,7 @@ namespace AntennaRange
 			log.Print();
 		}
 
-		protected void Destroy()
+		protected void OnDestroy()
 		{
 			InputLockManager.RemoveControlLock(this.lockID);
 
@@ -249,6 +249,8 @@ namespace AntennaRange
 
 			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChangeRequested);
 			GameEvents.onVesselChange.Remove(this.onVesselChange);
+
+			print("ARFlightController: Destroyed.");
 		}
 		#endregion
 
@@ -257,7 +259,8 @@ namespace AntennaRange
 		{
 			if (scene != GameScenes.FLIGHT)
 			{
-				MonoBehaviour.DestroyImmediate(this, true);
+				print("ARFlightController: Requesting Destruction.");
+				MonoBehaviour.Destroy(this);
 			}
 		}
 
