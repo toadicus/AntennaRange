@@ -73,6 +73,7 @@ namespace AntennaRange
 		#region MonoBehaviour Lifecycle
 		private void Awake()
 		{
+			this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
 			this.vesselFrameCache = new Dictionary<Guid, bool>();
 		}
 
@@ -89,29 +90,12 @@ namespace AntennaRange
 			{
 				log.AppendFormat("OnPreCull.\n");
 
-				double sma;
-
-				switch (MapView.MapCamera.target.type)
-				{
-					case MapObject.MapObjectType.CELESTIALBODY:
-						sma = MapView.MapCamera.target.celestialBody.orbit.semiMajorAxis;
-						break;
-					case MapObject.MapObjectType.VESSEL:
-						sma = MapView.MapCamera.target.vessel.orbit.semiMajorAxis;
-						break;
-					default:
-						sma = ScaledSpace.ScaleFactor;
-						break;
-				}
-
 				log.AppendFormat("\tMapView: Draw3DLines: {0}\n" +
 					"\tMapView.MapCamera.camera.fieldOfView: {1}\n" +
-					"\tMapView.MapCamera.Distance: {2}\n" +
-					"\tDistanceVSSMAFactor: {3}\n",
+					"\tMapView.MapCamera.Distance: {2}\n",
 					MapView.Draw3DLines,
 					MapView.MapCamera.camera.fieldOfView,
-					MapView.MapCamera.Distance,
-					(float)((double)MapView.MapCamera.Distance / Math.Abs(sma) * ScaledSpace.InverseScaleFactor)
+					MapView.MapCamera.Distance
 				);
 
 				this.vesselFrameCache.Clear();
@@ -142,6 +126,8 @@ namespace AntennaRange
 									vessel.vesselType);
 								continue;
 						}
+
+						log.Append("\tChecking connection status...\n");
 
 						if (vessel.HasConnectedRelay())
 						{
@@ -185,10 +171,11 @@ namespace AntennaRange
 			}
 		}
 
-		private void Destroy()
+		private void OnDestroy()
 		{
 			this.vesselLineRenderers.Clear();
 			this.vesselLineRenderers = null;
+			print("ARMapRenderer: Destroyed.");
 		}
 		#endregion
 
@@ -209,6 +196,15 @@ namespace AntennaRange
 					Vector3d end;
 
 					renderer.enabled = true;
+
+					if (relay.transmitDistance < relay.nominalTransmitDistance)
+					{
+						renderer.SetColors(Color.green, Color.green);
+					}
+					else
+					{
+						renderer.SetColors(Color.yellow, Color.yellow);
+					}
 
 					start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());
 
@@ -235,8 +231,10 @@ namespace AntennaRange
 						end = MapView.MapCamera.camera.WorldToScreenPoint(end);
 
 						float d = Screen.height / 2f + 0.01f;
-						start.z = start.z >= 0.15f ? d : -d;
-						end.z = end.z >= 0.15f ? d : -d;
+						start.z = start.z >= 0f ? d : -d;
+						end.z = end.z >= 0f ? d : -d;
+
+						Debug.Log(string.Format("start.z: {0}", start.z));
 					}
 
 					renderer.SetWidth(lineWidth, lineWidth);
