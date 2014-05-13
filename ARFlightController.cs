@@ -44,6 +44,8 @@ namespace AntennaRange
 		#region Fields
 		protected Dictionary<ConnectionStatus, string> connectionTextures;
 
+		protected ARMapRenderer mapRenderer;
+
 		protected IButton toolbarButton;
 		#endregion
 
@@ -128,6 +130,11 @@ namespace AntennaRange
 			GameEvents.onVesselChange.Add(this.onVesselChange);
 		}
 
+		protected void Start()
+		{
+			this.mapRenderer = MapView.MapCamera.gameObject.AddComponent<ARMapRenderer>();
+		}
+
 		protected void FixedUpdate()
 		{
 			// If we are requiring a connection for control, the vessel does not have any adequately staffed pods,
@@ -154,7 +161,7 @@ namespace AntennaRange
 				InputLockManager.RemoveControlLock(this.lockID);
 			}
 
-			if (this.toolbarButton != null && HighLogic.LoadedSceneIsFlight && FlightGlobals.ActiveVessel != null)
+			if (HighLogic.LoadedSceneIsFlight && this.toolbarButton != null && FlightGlobals.ActiveVessel != null)
 			{
 				List<ModuleLimitedDataTransmitter> relays =
 					FlightGlobals.ActiveVessel.getModulesOfType<ModuleLimitedDataTransmitter>();
@@ -206,6 +213,11 @@ namespace AntennaRange
 				this.toolbarButton.Destroy();
 			}
 
+			if (this.mapRenderer != null)
+			{
+				GameObject.Destroy(this.mapRenderer);
+			}
+
 			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChangeRequested);
 			GameEvents.onVesselChange.Remove(this.onVesselChange);
 		}
@@ -216,7 +228,7 @@ namespace AntennaRange
 		{
 			if (scene != GameScenes.FLIGHT)
 			{
-				MonoBehaviour.Destroy(this);
+				MonoBehaviour.DestroyImmediate(this, true);
 			}
 		}
 
