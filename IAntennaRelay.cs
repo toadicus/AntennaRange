@@ -42,6 +42,8 @@ namespace AntennaRange
 		/// <value>The parent Vessel.</value>
 		Vessel vessel { get; }
 
+		IAntennaRelay nearestRelay { get; }
+
 		/// <summary>
 		/// Gets the distance to the nearest relay or Kerbin, whichever is closer.
 		/// </summary>
