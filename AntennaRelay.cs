@@ -119,6 +119,12 @@ namespace AntennaRange
 			}
 		}
 
+		public virtual double nominalTransmitDistance
+		{
+			get;
+			set;
+		}
+
 		/// <summary>
 		/// The maximum distance at which this relay can operate.
 		/// </summary>

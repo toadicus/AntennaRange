@@ -50,6 +50,14 @@ namespace AntennaRange
 			}
 		}
 
+		public override double nominalTransmitDistance
+		{
+			get
+			{
+				return this.moduleRef.nominalTransmitDistance;
+			}
+		}
+
 		/// <summary>
 		/// The maximum distance at which this transmitter can operate.
 		/// </summary>

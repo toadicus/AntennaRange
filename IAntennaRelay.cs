@@ -50,6 +50,8 @@ namespace AntennaRange
 		/// <value>The distance to the nearest relay or Kerbin, whichever is closer.</value>
 		double transmitDistance { get; }
 
+		double nominalTransmitDistance { get; }
+
 		/// <summary>
 		/// The maximum distance at which this relay can operate.
 		/// </summary>

@@ -148,6 +148,14 @@ namespace AntennaRange
 			}
 		}
 
+		public double nominalTransmitDistance
+		{
+			get
+			{
+				return this.nominalRange;
+			}
+		}
+
 		// Returns the maximum distance this module can transmit
 		public float maxTransmitDistance
 		{
@@ -249,6 +257,7 @@ namespace AntennaRange
 			{
 				this.relay = new AntennaRelay(this);
 				this.relay.maxTransmitDistance = this.maxTransmitDistance;
+				this.relay.nominalTransmitDistance = this.nominalRange;
 
 				this.UImaxTransmitDistance = Tools.MuMech_ToSI(this.maxTransmitDistance) + "m";
 
@@ -354,6 +363,11 @@ namespace AntennaRange
 		// Override ModuleDataTransmitter.CanTransmit to return false when transmission is not possible.
 		public new bool CanTransmit()
 		{
+			if (this.relay == null)
+			{
+				return false;
+			}
+
 			PartStates partState = this.part.State;
 			if (partState == PartStates.DEAD || partState == PartStates.DEACTIVATED)
 			{
