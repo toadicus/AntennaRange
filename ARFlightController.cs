@@ -137,6 +137,8 @@ namespace AntennaRange
 
 		protected void FixedUpdate()
 		{
+			Tools.DebugLogger log = Tools.DebugLogger.New(this);
+
 			// If we are requiring a connection for control, the vessel does not have any adequately staffed pods,
 			// and the vessel does not have any connected relays...
 			if (
@@ -163,20 +165,39 @@ namespace AntennaRange
 
 			if (HighLogic.LoadedSceneIsFlight && this.toolbarButton != null && FlightGlobals.ActiveVessel != null)
 			{
+				log.Append("Checking vessel relay status.\n");
+
 				List<ModuleLimitedDataTransmitter> relays =
 					FlightGlobals.ActiveVessel.getModulesOfType<ModuleLimitedDataTransmitter>();
+
+				log.AppendFormat("\t...found {0} relays\n", relays.Count);
 
 				bool vesselCanTransmit = false;
 				bool vesselHasOptimalRelay = false;
 
 				foreach (ModuleLimitedDataTransmitter relay in relays)
 				{
-					if (!vesselCanTransmit && relay.CanTransmit())
+					log.AppendFormat("\tvesselCanTransmit: {0}, vesselHasOptimalRelay: {1}\n",
+						vesselCanTransmit, vesselHasOptimalRelay);
+
+					log.AppendFormat("\tChecking relay {0}\n" +
+						"\t\tCanTransmit: {1}, transmitDistance: {2}, nominalRange: {3}\n",
+						relay,
+						relay.CanTransmit(),
+						relay.transmitDistance,
+						relay.nominalRange
+					);
+
+					bool relayCanTransmit = relay.CanTransmit();
+
+					if (!vesselCanTransmit && relayCanTransmit)
 					{
 						vesselCanTransmit = true;
 					}
 
-					if (!vesselHasOptimalRelay && relay.transmitDistance <= (double)relay.nominalRange)
+					if (!vesselHasOptimalRelay &&
+						relayCanTransmit &&
+						relay.transmitDistance <= (double)relay.nominalRange)
 					{
 						vesselHasOptimalRelay = true;
 					}
@@ -186,6 +207,9 @@ namespace AntennaRange
 						break;
 					}
 				}
+
+				log.AppendFormat("Done checking.  vesselCanTransmit: {0}, vesselHasOptimalRelay: {1}\n",
+					vesselCanTransmit, vesselHasOptimalRelay);
 
 				if (vesselHasOptimalRelay)
 				{
@@ -200,8 +224,13 @@ namespace AntennaRange
 					this.currentConnectionStatus = ConnectionStatus.None;
 				}
 
+				log.AppendFormat("currentConnectionStatus: {0}, setting texture to {1}",
+					this.currentConnectionStatus, this.currentConnectionTexture);
+
 				this.toolbarButton.TexturePath = this.currentConnectionTexture;
 			}
+
+			log.Print();
 		}
 
 		protected void Destroy()
