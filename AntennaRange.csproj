@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>AntennaRange</RootNamespace>
     <AssemblyName>AntennaRange</AssemblyName>
-    <ReleaseVersion>1.1</ReleaseVersion>
+    <ReleaseVersion>1.3</ReleaseVersion>
     <SynchReleaseVersion>false</SynchReleaseVersion>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <UseMSBuildEngine>False</UseMSBuildEngine>
