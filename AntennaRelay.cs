@@ -36,6 +36,7 @@ namespace AntennaRange
 	public class AntennaRelay
 	{
 		public static bool requireLineOfSight;
+		public static double radiusRatio;
 
 		// We don't have a Bard, so we'll hide Kerbin here.
 		protected CelestialBody Kerbin;
@@ -151,7 +152,7 @@ namespace AntennaRange
 				(
 					requireLineOfSight &&
 					this.nearestRelay == null &&
-					!this.vessel.hasLineOfSightTo(this.Kerbin, out this._firstOccludingBody)
+					!this.vessel.hasLineOfSightTo(this.Kerbin, out this._firstOccludingBody, radiusRatio)
 				)
 			)
 			{
@@ -231,7 +232,8 @@ namespace AntennaRange
 				}
 
 				// Skip vessels to which we do not have line of sight.
-				if (requireLineOfSight && !this.vessel.hasLineOfSightTo(potentialVessel, out this._firstOccludingBody))
+				if (requireLineOfSight &&
+					!this.vessel.hasLineOfSightTo(potentialVessel, out this._firstOccludingBody, radiusRatio))
 				{
 					Tools.PostDebugMessage(
 						this,
