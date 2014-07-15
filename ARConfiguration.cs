@@ -64,9 +64,15 @@ namespace AntennaRange
 				};
 
 				this.configWindowPos = this.LoadConfigValue("configWindowPos", this.configWindowPos);
+
 				AntennaRelay.requireLineOfSight = this.LoadConfigValue("requireLineOfSight", false);
+
+				AntennaRelay.radiusRatio = (1 - this.LoadConfigValue("graceRatio", .05d));
+				AntennaRelay.radiusRatio *= AntennaRelay.radiusRatio;
+
 				ARFlightController.requireConnectionForControl =
 					this.LoadConfigValue("requireConnectionForControl", false);
+
 				ModuleLimitedDataTransmitter.fixedPowerCost = this.LoadConfigValue("fixedPowerCost", false);
 
 				Debug.Log(string.Format("{0} v{1} - ARonfiguration loaded!", this.GetType().Name, this.runningVersion));
@@ -124,7 +130,7 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal();
 
-			bool fixedPowerCost = GUILayout.Toggle(ModuleLimitedDataTransmitter.fixedPowerCost, "Use fixed power cost");
+			bool fixedPowerCost = GUILayout.Toggle(ModuleLimitedDataTransmitter.fixedPowerCost, "Use Fixed Power Cost");
 			if (fixedPowerCost != ModuleLimitedDataTransmitter.fixedPowerCost)
 			{
 				ModuleLimitedDataTransmitter.fixedPowerCost = fixedPowerCost;
@@ -132,6 +138,31 @@ namespace AntennaRange
 			}
 
 			GUILayout.EndHorizontal();
+
+			if (requireLineOfSight)
+			{
+				GUILayout.BeginHorizontal();
+
+				double graceRatio = 1d - Math.Sqrt(AntennaRelay.radiusRatio);
+				double newRatio;
+
+				GUILayout.Label(string.Format("Line of Sight 'Fudge Factor': {0:P0}", graceRatio));
+
+				GUILayout.EndHorizontal();
+
+				GUILayout.BeginHorizontal();
+
+				newRatio = GUILayout.HorizontalSlider((float)graceRatio, 0f, 1f, GUILayout.ExpandWidth(true));
+				newRatio = Math.Round(newRatio, 2);
+
+				if (newRatio != graceRatio)
+				{
+					AntennaRelay.radiusRatio = (1d - newRatio) * (1d - newRatio);
+					this.SaveConfigValue("graceRatio", newRatio);
+				}
+
+				GUILayout.EndHorizontal();
+			}
 
 			GUILayout.EndVertical();
 
