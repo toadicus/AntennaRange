@@ -67,19 +67,22 @@ namespace AntennaRange
 		public void OnGUI()
 		{
 			// Only runs once, if the Toolbar is available.
-			if (this.toolbarButton == null && ToolbarManager.ToolbarAvailable)
+			if (ToolbarManager.ToolbarAvailable)
 			{
-				Tools.PostDebugMessage(this, "Toolbar available; initializing toolbar button.");
-
-				this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConfiguration");
-				this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.SPACECENTER);
-				this.toolbarButton.Text = "AR";
-				this.toolbarButton.TexturePath = "AntennaRange/Textures/toolbarIcon";
-				this.toolbarButton.TextColor = (Color)XKCDColors.Amethyst;
-				this.toolbarButton.OnClick += delegate(ClickEvent e)
+				if (this.toolbarButton == null)
 				{
-					this.toggleConfigWindow();
-				};
+					Tools.PostDebugMessage(this, "Toolbar available; initializing toolbar button.");
+
+					this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConfiguration");
+					this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.SPACECENTER);
+					this.toolbarButton.Text = "AR";
+					this.toolbarButton.TexturePath = "AntennaRange/Textures/toolbarIcon";
+					this.toolbarButton.TextColor = (Color)XKCDColors.Amethyst;
+					this.toolbarButton.OnClick += delegate(ClickEvent e)
+					{
+						this.toggleConfigWindow();
+					};
+				}
 			}
 			else if (this.appLauncherButton == null && ApplicationLauncher.Ready)
 			{
@@ -90,7 +93,7 @@ namespace AntennaRange
 					this.toggleConfigWindow,
 					ApplicationLauncher.AppScenes.SPACECENTER,
 					GameDatabase.Instance.GetTexture(
-						"AntennaRange/Textures/toolbarIcon",
+						"AntennaRange/Textures/appLauncherIcon",
 						false
 					)
 				);

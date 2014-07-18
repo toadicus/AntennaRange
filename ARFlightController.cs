@@ -43,6 +43,7 @@ namespace AntennaRange
 
 		#region Fields
 		protected Dictionary<ConnectionStatus, string> connectionTextures;
+		protected Dictionary<ConnectionStatus, Texture> appLauncherTextures;
 
 		protected IButton toolbarButton;
 
@@ -61,6 +62,14 @@ namespace AntennaRange
 			get
 			{
 				return this.connectionTextures[this.currentConnectionStatus];
+			}
+		}
+
+		protected Texture currentAppLauncherTexture
+		{
+			get
+			{
+				return this.appLauncherTextures[this.currentConnectionStatus];
 			}
 		}
 
@@ -116,6 +125,15 @@ namespace AntennaRange
 			this.connectionTextures[ConnectionStatus.Suboptimal] = "AntennaRange/Textures/toolbarIconSubOptimal";
 			this.connectionTextures[ConnectionStatus.Optimal] = "AntennaRange/Textures/toolbarIcon";
 
+			this.appLauncherTextures = new Dictionary<ConnectionStatus, Texture>();
+
+			this.appLauncherTextures[ConnectionStatus.None] =
+				GameDatabase.Instance.GetTexture("AntennaRange/Textures/appLauncherIconNoConnection", false);
+			this.appLauncherTextures[ConnectionStatus.Suboptimal] =
+				GameDatabase.Instance.GetTexture("AntennaRange/Textures/appLauncherIconSubOptimal", false);
+			this.appLauncherTextures[ConnectionStatus.Optimal] =
+				GameDatabase.Instance.GetTexture("AntennaRange/Textures/appLauncherIcon", false);
+
 			if (ToolbarManager.ToolbarAvailable)
 			{
 				this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConnectionStatus");
@@ -136,7 +154,7 @@ namespace AntennaRange
 			{
 				this.appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
 					ApplicationLauncher.AppScenes.FLIGHT,
-					GameDatabase.Instance.GetTexture("AntennaRange/Textures/toolbarIconNoConnection", false)
+					this.appLauncherTextures[ConnectionStatus.None]
 				);
 			}
 
@@ -240,8 +258,7 @@ namespace AntennaRange
 				}
 				if (this.appLauncherButton != null)
 				{
-					this.appLauncherButton.SetTexture(
-						GameDatabase.Instance.GetTexture(this.currentConnectionTexture, false));
+					this.appLauncherButton.SetTexture(this.currentAppLauncherTexture);
 				}
 			}
 
