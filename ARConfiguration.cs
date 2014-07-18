@@ -17,6 +17,7 @@ namespace AntennaRange
 		private Rect configWindowPos;
 
 		private IButton toolbarButton;
+		private ApplicationLauncherButton appLauncherButton;
 
 		private System.Version runningVersion;
 
@@ -38,8 +39,27 @@ namespace AntennaRange
 		{
 			Tools.PostDebugMessage(this, "Waking up.");
 
+			this.runningVersion = this.GetType().Assembly.GetName().Version;
+
 			this.showConfigWindow = false;
 			this.configWindowPos = new Rect(Screen.width / 4, Screen.height / 2, 180, 15);
+
+
+			this.configWindowPos = this.LoadConfigValue("configWindowPos", this.configWindowPos);
+
+			AntennaRelay.requireLineOfSight = this.LoadConfigValue("requireLineOfSight", false);
+
+			AntennaRelay.radiusRatio = (1 - this.LoadConfigValue("graceRatio", .05d));
+			AntennaRelay.radiusRatio *= AntennaRelay.radiusRatio;
+
+			ARFlightController.requireConnectionForControl =
+				this.LoadConfigValue("requireConnectionForControl", false);
+
+			ModuleLimitedDataTransmitter.fixedPowerCost = this.LoadConfigValue("fixedPowerCost", false);
+
+			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
+
+			Debug.Log(string.Format("{0} v{1} - ARConfiguration loaded!", this.GetType().Name, this.runningVersion));
 
 			Tools.PostDebugMessage(this, "Awake.");
 		}
@@ -49,9 +69,7 @@ namespace AntennaRange
 			// Only runs once, if the Toolbar is available.
 			if (this.toolbarButton == null && ToolbarManager.ToolbarAvailable)
 			{
-				this.runningVersion = this.GetType().Assembly.GetName().Version;
-
-				Tools.PostDebugMessage(this, "Toolbar available; initializing button.");
+				Tools.PostDebugMessage(this, "Toolbar available; initializing toolbar button.");
 
 				this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConfiguration");
 				this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.SPACECENTER);
@@ -60,22 +78,22 @@ namespace AntennaRange
 				this.toolbarButton.TextColor = (Color)XKCDColors.Amethyst;
 				this.toolbarButton.OnClick += delegate(ClickEvent e)
 				{
-					this.showConfigWindow = !this.showConfigWindow;
+					this.toggleConfigWindow();
 				};
+			}
+			else if (this.appLauncherButton == null && ApplicationLauncher.Ready)
+			{
+				Tools.PostDebugMessage(this, "Toolbar available; initializing AppLauncher button.");
 
-				this.configWindowPos = this.LoadConfigValue("configWindowPos", this.configWindowPos);
-
-				AntennaRelay.requireLineOfSight = this.LoadConfigValue("requireLineOfSight", false);
-
-				AntennaRelay.radiusRatio = (1 - this.LoadConfigValue("graceRatio", .05d));
-				AntennaRelay.radiusRatio *= AntennaRelay.radiusRatio;
-
-				ARFlightController.requireConnectionForControl =
-					this.LoadConfigValue("requireConnectionForControl", false);
-
-				ModuleLimitedDataTransmitter.fixedPowerCost = this.LoadConfigValue("fixedPowerCost", false);
-
-				Debug.Log(string.Format("{0} v{1} - ARonfiguration loaded!", this.GetType().Name, this.runningVersion));
+				this.appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
+					this.toggleConfigWindow,
+					this.toggleConfigWindow,
+					ApplicationLauncher.AppScenes.SPACECENTER,
+					GameDatabase.Instance.GetTexture(
+						"AntennaRange/Textures/toolbarIcon",
+						false
+					)
+				);
 			}
 
 			if (this.showConfigWindow)
@@ -169,12 +187,33 @@ namespace AntennaRange
 			GUI.DragWindow();
 		}
 
-		public void Destroy()
+		public void OnDestroy()
 		{
+			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChangeRequested);
+
 			if (this.toolbarButton != null)
 			{
 				this.toolbarButton.Destroy();
 			}
+
+			if (this.appLauncherButton != null)
+			{
+				ApplicationLauncher.Instance.RemoveModApplication(this.appLauncherButton);
+			}
+		}
+
+		protected void onSceneChangeRequested(GameScenes scene)
+		{
+			if (scene != GameScenes.SPACECENTER)
+			{
+				print("ARConfiguration: Requesting Destruction.");
+				MonoBehaviour.Destroy(this);
+			}
+		}
+
+		private void toggleConfigWindow()
+		{
+			this.showConfigWindow = !this.showConfigWindow;
 		}
 
 		private T LoadConfigValue<T>(string key, T defaultValue)
