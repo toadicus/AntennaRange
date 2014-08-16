@@ -341,6 +341,11 @@ namespace AntennaRange
 		// Override ModuleDataTransmitter.CanTransmit to return false when transmission is not possible.
 		public new bool CanTransmit()
 		{
+			if (this.part == null || this.relay == null)
+			{
+				return false;
+			}
+
 			PartStates partState = this.part.State;
 			if (partState == PartStates.DEAD || partState == PartStates.DEACTIVATED)
 			{
