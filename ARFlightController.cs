@@ -276,7 +276,8 @@ namespace AntennaRange
 
 			if (this.appLauncherButton != null)
 			{
-				ApplicationLauncher.Instance.RemoveApplication(this.appLauncherButton);
+				ApplicationLauncher.Instance.RemoveModApplication(this.appLauncherButton);
+				this.appLauncherButton = null;
 			}
 
 			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChangeRequested);
@@ -289,11 +290,8 @@ namespace AntennaRange
 		#region Event Handlers
 		protected void onSceneChangeRequested(GameScenes scene)
 		{
-			if (scene != GameScenes.FLIGHT)
-			{
-				print("ARFlightController: Requesting Destruction.");
-				MonoBehaviour.Destroy(this);
-			}
+			print("ARFlightController: Requesting Destruction.");
+			MonoBehaviour.Destroy(this);
 		}
 
 		protected void onVesselChange(Vessel vessel)
