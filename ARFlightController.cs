@@ -166,15 +166,25 @@ namespace AntennaRange
 				HighLogic.LoadedSceneIsFlight &&
 				requireConnectionForControl &&
 				this.vessel != null &&
-				this.vessel.vesselType != VesselType.EVA &&
-				!this.vessel.hasCrewCommand() &&
-				!this.vessel.HasConnectedRelay())
+				this.vessel.vesselType != VesselType.EVA
+			)
 			{
-				// ...and if the controls are not currently locked...
-				if (currentControlLock == ControlTypes.None)
-				{
-					// ...lock the controls.
-					InputLockManager.SetControlLock(this.lockSet, this.lockID);
+				VesselCommand availableCommand = this.vessel.CurrentCommand();
+
+				Tools.PostDebugMessage(this, "availableCommand: {0}", (int)availableCommand);
+
+				if (
+					!(
+						(availableCommand & VesselCommand.Crew) == VesselCommand.Crew ||
+						(availableCommand & VesselCommand.Probe) == VesselCommand.Probe && vessel.HasConnectedRelay()
+					)
+				)
+				{// ...and if the controls are not currently locked...
+					if (currentControlLock == ControlTypes.None)
+					{
+						// ...lock the controls.
+						InputLockManager.SetControlLock(this.lockSet, this.lockID);
+					}
 				}
 			}
 			// ...otherwise, if the controls are locked...
