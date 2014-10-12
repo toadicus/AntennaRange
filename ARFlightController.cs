@@ -160,31 +160,44 @@ namespace AntennaRange
 
 			Tools.DebugLogger log = Tools.DebugLogger.New(this);
 
+			VesselCommand availableCommand;
+
+			if (requireConnectionForControl)
+			{
+				availableCommand = this.vessel.CurrentCommand();
+			}
+			else
+			{
+				availableCommand = VesselCommand.Crew;
+			}
+
+			log.AppendFormat("availableCommand: {0}\n\t" +
+				"(availableCommand & VesselCommand.Crew) == VesselCommand.Crew: {1}\n\t" +
+				"(availableCommand & VesselCommand.Probe) == VesselCommand.Probe: {2}\n\t" +
+				"vessel.HasConnectedRelay(): {3}",
+				(int)availableCommand,
+				(availableCommand & VesselCommand.Crew) == VesselCommand.Crew,
+				(availableCommand & VesselCommand.Probe) == VesselCommand.Probe,
+				vessel.HasConnectedRelay()
+			);
+
 			// If we are requiring a connection for control, the vessel does not have any adequately staffed pods,
 			// and the vessel does not have any connected relays...
 			if (
 				HighLogic.LoadedSceneIsFlight &&
 				requireConnectionForControl &&
 				this.vessel != null &&
-				this.vessel.vesselType != VesselType.EVA
-			)
+				this.vessel.vesselType != VesselType.EVA &&
+				!(
+				    (availableCommand & VesselCommand.Crew) == VesselCommand.Crew ||
+				    (availableCommand & VesselCommand.Probe) == VesselCommand.Probe && vessel.HasConnectedRelay()
+				))
 			{
-				VesselCommand availableCommand = this.vessel.CurrentCommand();
-
-				Tools.PostDebugMessage(this, "availableCommand: {0}", (int)availableCommand);
-
-				if (
-					!(
-						(availableCommand & VesselCommand.Crew) == VesselCommand.Crew ||
-						(availableCommand & VesselCommand.Probe) == VesselCommand.Probe && vessel.HasConnectedRelay()
-					)
-				)
-				{// ...and if the controls are not currently locked...
-					if (currentControlLock == ControlTypes.None)
-					{
-						// ...lock the controls.
-						InputLockManager.SetControlLock(this.lockSet, this.lockID);
-					}
+				// ...and if the controls are not currently locked...
+				if (currentControlLock == ControlTypes.None)
+				{
+					// ...lock the controls.
+					InputLockManager.SetControlLock(this.lockSet, this.lockID);
 				}
 			}
 			// ...otherwise, if the controls are locked...
