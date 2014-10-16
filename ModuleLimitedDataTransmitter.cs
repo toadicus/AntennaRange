@@ -394,6 +394,44 @@ namespace AntennaRange
 			}
 			else
 			{
+				foreach (ModuleScienceContainer	scienceContainer in this.vessel.getModulesOfType<ModuleScienceContainer>())
+				{
+					if (scienceContainer.GetScienceCount() >= scienceContainer.capacity)
+					{
+						continue;
+					}
+
+					foreach (ScienceData data in dataQueue)
+					{
+						if (scienceContainer.HasData(data))
+						{
+							break;
+						}
+
+						if (scienceContainer.AddData(data))
+						{
+							dataQueue.Remove(data);
+						}
+					}
+				}
+
+				if (dataQueue.Count > 0)
+				{
+					StringBuilder msg = new StringBuilder();
+
+					msg.Append('[');
+					msg.Append(this.part.partInfo.title);
+					msg.AppendFormat("]: {0} data items could not be saved: no space available in data containers.\n");
+					msg.Append("Data to be discarded:\n");
+
+					foreach (ScienceData data in dataQueue)
+					{
+						msg.AppendFormat("\n{0}\n", data.title);
+					}
+
+					ScreenMessages.PostScreenMessage(msg.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
+				}
+
 				this.PostCannotTransmitError ();
 			}
 
