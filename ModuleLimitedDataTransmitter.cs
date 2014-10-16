@@ -396,16 +396,19 @@ namespace AntennaRange
 			{
 				foreach (ModuleScienceContainer	scienceContainer in this.vessel.getModulesOfType<ModuleScienceContainer>())
 				{
-					if (scienceContainer.GetScienceCount() >= scienceContainer.capacity)
+					if (
+						scienceContainer.capacity != 0 &&
+						scienceContainer.GetScienceCount() >= scienceContainer.capacity
+					)
 					{
 						continue;
 					}
 
 					foreach (ScienceData data in dataQueue)
 					{
-						if (scienceContainer.HasData(data))
+						if (!scienceContainer.allowRepeatedSubjects && scienceContainer.HasData(data))
 						{
-							break;
+							continue;
 						}
 
 						if (scienceContainer.AddData(data))
