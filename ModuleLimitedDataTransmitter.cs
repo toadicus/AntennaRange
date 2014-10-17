@@ -394,29 +394,55 @@ namespace AntennaRange
 			}
 			else
 			{
+				Tools.PostDebugMessage(this, "{0} unable to transmit during TransmitData.", this.part.partInfo.title);
+
+				var logger = Tools.DebugLogger.New(this);
+
 				foreach (ModuleScienceContainer	scienceContainer in this.vessel.getModulesOfType<ModuleScienceContainer>())
 				{
+					logger.AppendFormat("Checking ModuleScienceContainer in {0}\n",
+						scienceContainer.part.partInfo.title);
+
 					if (
 						scienceContainer.capacity != 0 &&
 						scienceContainer.GetScienceCount() >= scienceContainer.capacity
 					)
 					{
+						logger.Append("\tInsufficient capacity, skipping.\n");
 						continue;
 					}
+
+					List<ScienceData> dataStored = new List<ScienceData>();
 
 					foreach (ScienceData data in dataQueue)
 					{
 						if (!scienceContainer.allowRepeatedSubjects && scienceContainer.HasData(data))
 						{
+							logger.Append("\tAlready contains subject and repeated subjects not allowed, skipping.\n");
 							continue;
 						}
 
+						logger.AppendFormat("\tAcceptable, adding data on subject {0}... ", data.subjectID);
 						if (scienceContainer.AddData(data))
 						{
-							dataQueue.Remove(data);
+							logger.Append("done, removing from queue.\n");
+
+							dataStored.Add(data);
 						}
+						#if DEBUG
+						else
+						{
+							logger.Append("failed.\n");
+						}
+						#endif
 					}
+
+					dataQueue.RemoveAll(i => dataStored.Contains(i));
+
+					logger.AppendFormat("\t{0} data left in queue.", dataQueue.Count);
 				}
+
+				logger.Print();
 
 				if (dataQueue.Count > 0)
 				{
@@ -433,6 +459,8 @@ namespace AntennaRange
 					}
 
 					ScreenMessages.PostScreenMessage(msg.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
+
+					Tools.PostDebugMessage(msg.ToString());
 				}
 
 				this.PostCannotTransmitError ();
