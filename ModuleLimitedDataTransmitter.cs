@@ -522,7 +522,7 @@ namespace AntennaRange
 			{
 				if (this.CanTransmit())
 				{
-					this.UIrelayStatus = string.Format("Connected via {0}", this.relay);
+					this.UIrelayStatus = string.Intern("Connected");
 					this.UItransmitDistance = Tools.MuMech_ToSI(this.transmitDistance) + "m";
 					this.UIpacketSize = Tools.MuMech_ToSI(this.DataRate) + "MiT";
 					this.UIpacketCost = Tools.MuMech_ToSI(this.DataResourceCost) + "E";
@@ -535,16 +535,7 @@ namespace AntennaRange
 					}
 					else
 					{
-						if (this.relay.losStatus == LineOfSightStatus.Blocked)
-						{
-							this.UIrelayStatus =
-								string.Format("Blocked by {0}", this.relay.firstOccludingBody.bodyName);
-						}
-						else if (this.relay.losStatus == LineOfSightStatus.Marginal)
-						{
-							this.UIrelayStatus =
-								string.Format("Almost blocked by {0}", this.relay.firstOccludingBody.bodyName);
-						}
+						this.UIrelayStatus = string.Format("Blocked by {0}", this.relay.firstOccludingBody.bodyName);
 					}
 					this.UImaxTransmitDistance = "N/A";
 					this.UIpacketSize = "N/A";

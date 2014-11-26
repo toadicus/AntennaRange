@@ -97,15 +97,6 @@ namespace AntennaRange
 		}
 
 		/// <summary>
-		/// Gets the <see cref="ToadicusTools.LineOfSightStatus"/> of this relay.
-		/// </summary>
-		public LineOfSightStatus losStatus
-		{
-			get;
-			protected set;
-		}
-
-		/// <summary>
 		/// Gets the transmit distance.
 		/// </summary>
 		/// <value>The transmit distance.</value>
@@ -160,13 +151,12 @@ namespace AntennaRange
 				this.transmitDistance > this.maxTransmitDistance ||
 				(
 					requireLineOfSight &&
-					this.nearestRelay == null
+					this.nearestRelay == null &&
+					!this.vessel.hasLineOfSightTo(this.Kerbin, out this._firstOccludingBody, radiusRatio)
 				)
 			)
 			{
-				this.losStatus = this.vessel.getLineOfSightTo(this.Kerbin, out this._firstOccludingBody, radiusRatio);
-
-				return this.losStatus != LineOfSightStatus.Blocked;
+				return false;
 			}
 			else
 			{
@@ -242,19 +232,15 @@ namespace AntennaRange
 				}
 
 				// Skip vessels to which we do not have line of sight.
-				if (requireLineOfSight)
+				if (requireLineOfSight &&
+					!this.vessel.hasLineOfSightTo(potentialVessel, out this._firstOccludingBody, radiusRatio))
 				{
-					this.losStatus = this.vessel.getLineOfSightTo(potentialVessel, out this._firstOccludingBody, radiusRatio);
-
-					if (this.losStatus == LineOfSightStatus.Blocked)
-					{
-						Tools.PostDebugMessage(
-							this,
-							"Vessel {0} discarded because we do not have line of sight.",
-							potentialVessel.vesselName
-						);
-						continue;
-					}
+					Tools.PostDebugMessage(
+						this,
+						"Vessel {0} discarded because we do not have line of sight.",
+						potentialVessel.vesselName
+					);
+					continue;
 				}
 
 				// Find the distance from here to the vessel...
@@ -319,8 +305,6 @@ namespace AntennaRange
 			// HACK: This might not be safe in all circumstances, but since AntennaRelays are not built until Start,
 			// we hope it is safe enough.
 			this.Kerbin = FlightGlobals.Bodies.FirstOrDefault(b => b.name == "Kerbin");
-
-			this.losStatus = LineOfSightStatus.Clear;
 		}
 
 		static AntennaRelay()
