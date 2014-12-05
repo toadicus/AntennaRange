@@ -309,8 +309,17 @@ namespace AntennaRange
 			}
 			else
 			{
+				double rangeFactor = (this.transmitDistance / this.nominalRange);
+				rangeFactor *= rangeFactor;
+
 				base.packetResourceCost = this._basepacketResourceCost
-					* (float)Math.Pow (this.transmitDistance / this.nominalRange, 2);
+					* (float)rangeFactor;
+
+				Tools.PostDebugMessage(
+					this,
+					"Pretransmit: packet cost set to {0} before throttle (rangeFactor = {1}).",
+					base.packetResourceCost,
+					rangeFactor);
 			}
 
 			base.packetResourceCost *= this.packetThrottle / 100f;
@@ -326,9 +335,18 @@ namespace AntennaRange
 			}
 			else
 			{
+				double rangeFactor = (this.nominalRange / this.transmitDistance);
+				rangeFactor *= rangeFactor;
+
 				base.packetSize = Math.Min(
-					this._basepacketSize * (float)Math.Pow (this.nominalRange / this.transmitDistance, 2),
+					this._basepacketSize * (float)rangeFactor,
 					this._basepacketSize * this.maxDataFactor);
+
+				Tools.PostDebugMessage(
+					this,
+					"Pretransmit: packet size set to {0} before throttle (rangeFactor = {1}).",
+					base.packetSize,
+					rangeFactor);
 			}
 
 			base.packetSize *= this.packetThrottle / 100f;
