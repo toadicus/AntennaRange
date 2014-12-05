@@ -227,6 +227,29 @@ namespace AntennaRange
 			this.packetThrottle = 100f;
 		}
 
+		public override void OnAwake()
+		{
+			base.OnAwake();
+
+			this._basepacketSize = base.packetSize;
+			this._basepacketResourceCost = base.packetResourceCost;
+
+			Tools.PostDebugMessage(string.Format(
+				"{0} loaded:\n" +
+				"packetSize: {1}\n" +
+				"packetResourceCost: {2}\n" +
+				"nominalRange: {3}\n" +
+				"maxPowerFactor: {4}\n" +
+				"maxDataFactor: {5}\n",
+				this.name,
+				base.packetSize,
+				this._basepacketResourceCost,
+				this.nominalRange,
+				this.maxPowerFactor,
+				this.maxDataFactor
+			));
+		}
+
 		// At least once, when the module starts with a state on the launch pad or later, go find Kerbin.
 		public override void OnStart (StartState state)
 		{
@@ -253,24 +276,6 @@ namespace AntennaRange
 			base.Fields.Load(node);
 
 			base.OnLoad (node);
-
-			this._basepacketSize = base.packetSize;
-			this._basepacketResourceCost = base.packetResourceCost;
-
-			Tools.PostDebugMessage(string.Format(
-				"{0} loaded:\n" +
-				"packetSize: {1}\n" +
-				"packetResourceCost: {2}\n" +
-				"nominalRange: {3}\n" +
-				"maxPowerFactor: {4}\n" +
-				"maxDataFactor: {5}\n",
-				this.name,
-				base.packetSize,
-				this._basepacketResourceCost,
-				this.nominalRange,
-				this.maxPowerFactor,
-				this.maxDataFactor
-			));
 		}
 
 		// Post an error in the communication messages describing the reason transmission has failed.  Currently there
