@@ -55,7 +55,7 @@ namespace AntennaRange
 		/// <param name="body">A <see cref="CelestialBody"/></param>
 		public static double DistanceTo(this AntennaRelay relay, CelestialBody body)
 		{
-			return relay.vessel.DistanceTo(body);
+			return relay.vessel.DistanceTo(body) - body.Radius;
 		}
 
 		/// <summary>
