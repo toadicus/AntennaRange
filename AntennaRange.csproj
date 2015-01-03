@@ -83,11 +83,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <None Include="AntennaRange.cfg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\_KSPAssemblies\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
@@ -106,5 +101,9 @@
       <Project>{D48A5542-6655-4149-BC27-B27DF0466F1C}</Project>
       <Name>ToadicusTools</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GameData\AntennaRange\AntennaRange.cfg" />
+    <None Include="GameData\AntennaRange\ATM_AntennaRange.cfg" />
   </ItemGroup>
 </Project>
