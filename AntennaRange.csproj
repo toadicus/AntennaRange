@@ -25,7 +25,6 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="xcopy /y ${ProjectDir}\AntennaRange.cfg ${ProjectDir}\GameData\AntennaRange\" />
         <Command type="AfterBuild" command="xcopy /y ${TargetFile} ${ProjectDir}\GameData\AntennaRange\" />
       </CustomCommands>
     </CustomCommands>
@@ -38,7 +37,6 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="xcopy /y ${ProjectDir}\AntennaRange.cfg ${ProjectDir}\GameData\AntennaRange\" />
         <Command type="AfterBuild" command="xcopy /y ${TargetFile} ${ProjectDir}\GameData\AntennaRange\" />
       </CustomCommands>
     </CustomCommands>
@@ -54,7 +52,7 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/${ProjectName}.cfg ${ProjectDir}/GameData/${ProjectName}/" />
+        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/GameData/${ProjectName}/" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -65,7 +63,7 @@
     <WarningLevel>4</WarningLevel>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/${ProjectName}.cfg ${ProjectDir}/GameData/${ProjectName}/" />
+        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/GameData/${ProjectName}/" />
       </CustomCommands>
     </CustomCommands>
     <ConsolePause>false</ConsolePause>
