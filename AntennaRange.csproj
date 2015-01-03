@@ -54,7 +54,7 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/${ProjectName}.cfg /opt/games/KSP_linux/GameData/${ProjectName}/" />
+        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/${ProjectName}.cfg ${ProjectDir}/GameData/${ProjectName}/" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -65,7 +65,7 @@
     <WarningLevel>4</WarningLevel>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/${ProjectName}.cfg /opt/games/KSP_linux/GameData/${ProjectName}/" />
+        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/${ProjectName}.cfg ${ProjectDir}/GameData/${ProjectName}/" />
       </CustomCommands>
     </CustomCommands>
     <ConsolePause>false</ConsolePause>
