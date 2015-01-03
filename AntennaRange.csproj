@@ -25,8 +25,8 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="xcopy /y ${ProjectDir}\AntennaRange.cfg C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
-        <Command type="AfterBuild" command="xcopy /y ${TargetFile} C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
+        <Command type="AfterBuild" command="xcopy /y ${ProjectDir}\AntennaRange.cfg ${ProjectDir}\GameData\AntennaRange\" />
+        <Command type="AfterBuild" command="xcopy /y ${TargetFile} ${ProjectDir}\GameData\AntennaRange\" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -38,8 +38,8 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="xcopy /y ${ProjectDir}\AntennaRange.cfg C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
-        <Command type="AfterBuild" command="xcopy /y ${TargetFile} C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
+        <Command type="AfterBuild" command="xcopy /y ${ProjectDir}\AntennaRange.cfg ${ProjectDir}\GameData\AntennaRange\" />
+        <Command type="AfterBuild" command="xcopy /y ${TargetFile} ${ProjectDir}\GameData\AntennaRange\" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
