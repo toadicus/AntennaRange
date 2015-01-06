@@ -274,6 +274,15 @@ namespace AntennaRange
 				if (this.toolbarButton != null)
 				{
 					this.toolbarButton.TexturePath = this.currentConnectionTexture;
+
+					if (this.currentConnectionStatus == ConnectionStatus.None)
+					{
+						this.toolbarButton.Important = true;
+					}
+					else
+					{
+						this.toolbarButton.Important = false;
+					}
 				}
 				if (this.appLauncherButton != null)
 				{
