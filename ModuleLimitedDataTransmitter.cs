@@ -54,10 +54,6 @@ namespace AntennaRange
 	 * */
 	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, IScienceDataTransmitter, IAntennaRelay
 	{
-		// If true, use a fixed power cost at the configured value and degrade data rates instead of increasing power
-		// requirements.
-		public static bool fixedPowerCost;
-
 		// Stores the packetResourceCost as defined in the .cfg file.
 		protected float _basepacketResourceCost;
 
@@ -303,7 +299,7 @@ namespace AntennaRange
 		// transmission fails (see CanTransmit).
 		protected void PreTransmit_SetPacketResourceCost()
 		{
-			if (fixedPowerCost || this.transmitDistance <= this.nominalRange)
+			if (ARConfiguration.FixedPowerCost || this.transmitDistance <= this.nominalRange)
 			{
 				base.packetResourceCost = this._basepacketResourceCost;
 			}
@@ -329,7 +325,7 @@ namespace AntennaRange
 		// distance.  packetSize maxes out at _basepacketSize * maxDataFactor.
 		protected void PreTransmit_SetPacketSize()
 		{
-			if (!fixedPowerCost && this.transmitDistance >= this.nominalRange)
+			if (!ARConfiguration.FixedPowerCost && this.transmitDistance >= this.nominalRange)
 			{
 				base.packetSize = this._basepacketSize;
 			}

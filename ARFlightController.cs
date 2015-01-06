@@ -37,10 +37,6 @@ namespace AntennaRange
 	[KSPAddon(KSPAddon.Startup.Flight, false)]
 	public class ARFlightController : MonoBehaviour
 	{
-		#region Static Members
-		public static bool requireConnectionForControl;
-		#endregion
-
 		#region Fields
 		protected Dictionary<ConnectionStatus, string> connectionTextures;
 		protected Dictionary<ConnectionStatus, Texture> appLauncherTextures;
@@ -162,7 +158,7 @@ namespace AntennaRange
 
 			VesselCommand availableCommand;
 
-			if (requireConnectionForControl)
+			if (ARConfiguration.RequireConnectionForControl)
 			{
 				availableCommand = this.vessel.CurrentCommand();
 			}
@@ -185,7 +181,7 @@ namespace AntennaRange
 			// and the vessel does not have any connected relays...
 			if (
 				HighLogic.LoadedSceneIsFlight &&
-				requireConnectionForControl &&
+				ARConfiguration.RequireConnectionForControl &&
 				this.vessel != null &&
 				this.vessel.vesselType != VesselType.EVA &&
 				!(

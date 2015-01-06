@@ -35,9 +35,6 @@ namespace AntennaRange
 {
 	public class AntennaRelay
 	{
-		public static bool requireLineOfSight;
-		public static double radiusRatio;
-
 		// We don't have a Bard, so we'll hide Kerbin here.
 		protected CelestialBody Kerbin;
 
@@ -150,9 +147,9 @@ namespace AntennaRange
 			if (
 				this.transmitDistance > this.maxTransmitDistance ||
 				(
-					requireLineOfSight &&
+					ARConfiguration.RequireLineOfSight &&
 					this.nearestRelay == null &&
-					!this.vessel.hasLineOfSightTo(this.Kerbin, out this._firstOccludingBody, radiusRatio)
+					!this.vessel.hasLineOfSightTo(this.Kerbin, out this._firstOccludingBody, ARConfiguration.RadiusRatio)
 				)
 			)
 			{
@@ -232,8 +229,8 @@ namespace AntennaRange
 				}
 
 				// Skip vessels to which we do not have line of sight.
-				if (requireLineOfSight &&
-					!this.vessel.hasLineOfSightTo(potentialVessel, out this._firstOccludingBody, radiusRatio))
+				if (ARConfiguration.RequireLineOfSight &&
+					!this.vessel.hasLineOfSightTo(potentialVessel, out this._firstOccludingBody, ARConfiguration.RadiusRatio))
 				{
 					Tools.PostDebugMessage(
 						this,
@@ -305,17 +302,6 @@ namespace AntennaRange
 			// HACK: This might not be safe in all circumstances, but since AntennaRelays are not built until Start,
 			// we hope it is safe enough.
 			this.Kerbin = FlightGlobals.Bodies.FirstOrDefault(b => b.name == "Kerbin");
-		}
-
-		static AntennaRelay()
-		{
-			var config = KSP.IO.PluginConfiguration.CreateForType<AntennaRelay>();
-
-			config.load();
-
-			AntennaRelay.requireLineOfSight = config.GetValue<bool>("requireLineOfSight", false);
-
-			config.save();
 		}
 	}
 }

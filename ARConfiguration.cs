@@ -13,6 +13,30 @@ namespace AntennaRange
 	[KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
 	public class ARConfiguration : MonoBehaviour
 	{
+		public static bool RequireLineOfSight
+		{
+			get;
+			private set;
+		}
+
+		public static double RadiusRatio
+		{
+			get;
+			private set;
+		}
+
+		public static bool RequireConnectionForControl
+		{
+			get;
+			private set;
+		}
+
+		public static bool FixedPowerCost
+		{
+			get;
+			private set;
+		}
+
 		private bool showConfigWindow;
 		private Rect configWindowPos;
 
@@ -47,15 +71,15 @@ namespace AntennaRange
 
 			this.configWindowPos = this.LoadConfigValue("configWindowPos", this.configWindowPos);
 
-			AntennaRelay.requireLineOfSight = this.LoadConfigValue("requireLineOfSight", false);
+			ARConfiguration.RequireLineOfSight = this.LoadConfigValue("requireLineOfSight", false);
 
-			AntennaRelay.radiusRatio = (1 - this.LoadConfigValue("graceRatio", .05d));
-			AntennaRelay.radiusRatio *= AntennaRelay.radiusRatio;
+			ARConfiguration.RadiusRatio = (1 - this.LoadConfigValue("graceRatio", .05d));
+			ARConfiguration.RadiusRatio *= ARConfiguration.RadiusRatio;
 
-			ARFlightController.requireConnectionForControl =
+			ARConfiguration.RequireConnectionForControl =
 				this.LoadConfigValue("requireConnectionForControl", false);
 
-			ModuleLimitedDataTransmitter.fixedPowerCost = this.LoadConfigValue("fixedPowerCost", false);
+			ARConfiguration.FixedPowerCost = this.LoadConfigValue("fixedPowerCost", false);
 
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
 
@@ -125,10 +149,10 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal(GUILayout.ExpandWidth(true));
 
-			bool requireLineOfSight = GUILayout.Toggle(AntennaRelay.requireLineOfSight, "Require Line of Sight");
-			if (requireLineOfSight != AntennaRelay.requireLineOfSight)
+			bool requireLineOfSight = GUILayout.Toggle(ARConfiguration.RequireLineOfSight, "Require Line of Sight");
+			if (requireLineOfSight != ARConfiguration.RequireLineOfSight)
 			{
-				AntennaRelay.requireLineOfSight = requireLineOfSight;
+				ARConfiguration.RequireLineOfSight = requireLineOfSight;
 				this.SaveConfigValue("requireLineOfSight", requireLineOfSight);
 			}
 
@@ -138,12 +162,12 @@ namespace AntennaRange
 
 			bool requireConnectionForControl =
 				GUILayout.Toggle(
-					ARFlightController.requireConnectionForControl,
+					ARConfiguration.RequireConnectionForControl,
 					"Require Connection for Probe Control"
 				);
-			if (requireConnectionForControl != ARFlightController.requireConnectionForControl)
+			if (requireConnectionForControl != ARConfiguration.RequireConnectionForControl)
 			{
-				ARFlightController.requireConnectionForControl = requireConnectionForControl;
+				ARConfiguration.RequireConnectionForControl = requireConnectionForControl;
 				this.SaveConfigValue("requireConnectionForControl", requireConnectionForControl);
 			}
 
@@ -151,10 +175,10 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal();
 
-			bool fixedPowerCost = GUILayout.Toggle(ModuleLimitedDataTransmitter.fixedPowerCost, "Use Fixed Power Cost");
-			if (fixedPowerCost != ModuleLimitedDataTransmitter.fixedPowerCost)
+			bool fixedPowerCost = GUILayout.Toggle(ARConfiguration.FixedPowerCost, "Use Fixed Power Cost");
+			if (fixedPowerCost != ARConfiguration.FixedPowerCost)
 			{
-				ModuleLimitedDataTransmitter.fixedPowerCost = fixedPowerCost;
+				ARConfiguration.FixedPowerCost = fixedPowerCost;
 				this.SaveConfigValue("fixedPowerCost", fixedPowerCost);
 			}
 
@@ -164,7 +188,7 @@ namespace AntennaRange
 			{
 				GUILayout.BeginHorizontal();
 
-				double graceRatio = 1d - Math.Sqrt(AntennaRelay.radiusRatio);
+				double graceRatio = 1d - Math.Sqrt(ARConfiguration.RadiusRatio);
 				double newRatio;
 
 				GUILayout.Label(string.Format("Line of Sight 'Fudge Factor': {0:P0}", graceRatio));
@@ -178,7 +202,7 @@ namespace AntennaRange
 
 				if (newRatio != graceRatio)
 				{
-					AntennaRelay.radiusRatio = (1d - newRatio) * (1d - newRatio);
+					ARConfiguration.RadiusRatio = (1d - newRatio) * (1d - newRatio);
 					this.SaveConfigValue("graceRatio", newRatio);
 				}
 
