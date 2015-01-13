@@ -149,7 +149,7 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal(GUILayout.ExpandWidth(true));
 
-			bool requireLineOfSight = GUILayout.Toggle(ARConfiguration.RequireLineOfSight, "Require Line of Sight");
+			bool requireLineOfSight = GUITools.Toggle(ARConfiguration.RequireLineOfSight, "Require Line of Sight");
 			if (requireLineOfSight != ARConfiguration.RequireLineOfSight)
 			{
 				ARConfiguration.RequireLineOfSight = requireLineOfSight;
@@ -161,7 +161,7 @@ namespace AntennaRange
 			GUILayout.BeginHorizontal(GUILayout.ExpandWidth(true));
 
 			bool requireConnectionForControl =
-				GUILayout.Toggle(
+				GUITools.Toggle(
 					ARConfiguration.RequireConnectionForControl,
 					"Require Connection for Probe Control"
 				);
@@ -175,7 +175,7 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal();
 
-			bool fixedPowerCost = GUILayout.Toggle(ARConfiguration.FixedPowerCost, "Use Fixed Power Cost");
+			bool fixedPowerCost = GUITools.Toggle(ARConfiguration.FixedPowerCost, "Use Fixed Power Cost");
 			if (fixedPowerCost != ARConfiguration.FixedPowerCost)
 			{
 				ARConfiguration.FixedPowerCost = fixedPowerCost;
