@@ -161,6 +161,14 @@ namespace AntennaRange
 			}
 		}
 
+		public CelestialBody firstOccludingBody
+		{
+			get
+			{
+				return this.relay.firstOccludingBody;
+			}
+		}
+
 		/*
 		 * The next two functions overwrite the behavior of the stock functions and do not perform equivalently, except
 		 * in that they both return floats.  Here's some quick justification:
