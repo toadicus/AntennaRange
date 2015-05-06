@@ -55,6 +55,12 @@ namespace AntennaRange
 		float maxTransmitDistance { get; }
 
 		/// <summary>
+		/// The first CelestialBody blocking line of sight to a 
+		/// </summary>
+		/// <value>The first occluding body.</value>
+		CelestialBody firstOccludingBody { get; }
+
+		/// <summary>
 		/// Gets a value indicating whether this <see cref="AntennaRange.ProtoDataTransmitter"/> has been checked during
 		/// the current relay attempt.
 		/// </summary>

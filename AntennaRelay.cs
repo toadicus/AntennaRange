@@ -38,8 +38,6 @@ namespace AntennaRange
 		// We don't have a Bard, so we'll hide Kerbin here.
 		protected CelestialBody Kerbin;
 
-		protected CelestialBody _firstOccludingBody;
-
 		protected IAntennaRelay _nearestRelayCache;
 		protected IAntennaRelay moduleRef;
 
@@ -87,10 +85,8 @@ namespace AntennaRange
 		/// <value>The first occluding body.</value>
 		public CelestialBody firstOccludingBody
 		{
-			get
-			{
-				return this._firstOccludingBody;
-			}
+			get;
+			protected set;
 		}
 
 		/// <summary>
@@ -144,19 +140,23 @@ namespace AntennaRange
 		/// <returns><c>true</c> if this instance can transmit; otherwise, <c>false</c>.</returns>
 		public virtual bool CanTransmit()
 		{
+			CelestialBody fob = null;
+
 			if (
 				this.transmitDistance > this.maxTransmitDistance ||
 				(
 					ARConfiguration.RequireLineOfSight &&
 					this.nearestRelay == null &&
-					!this.vessel.hasLineOfSightTo(this.Kerbin, out this._firstOccludingBody, ARConfiguration.RadiusRatio)
+					!this.vessel.hasLineOfSightTo(this.Kerbin, out fob, ARConfiguration.RadiusRatio)
 				)
 			)
 			{
+				this.firstOccludingBody = fob;
 				return false;
 			}
 			else
 			{
+				this.firstOccludingBody = null;
 				return true;
 			}
 		}
@@ -187,7 +187,7 @@ namespace AntennaRange
 				this.vessel.id
 			));
 
-			this._firstOccludingBody = null;
+			this.firstOccludingBody = null;
 
 			// Set this vessel as checked, so that we don't check it again.
 			RelayDatabase.Instance.CheckedVesselsTable[vessel.id] = true;
@@ -229,9 +229,12 @@ namespace AntennaRange
 				}
 
 				// Skip vessels to which we do not have line of sight.
+				CelestialBody fob = null;
+
 				if (ARConfiguration.RequireLineOfSight &&
-					!this.vessel.hasLineOfSightTo(potentialVessel, out this._firstOccludingBody, ARConfiguration.RadiusRatio))
+					!this.vessel.hasLineOfSightTo(potentialVessel, out fob, ARConfiguration.RadiusRatio))
 				{
+					this.firstOccludingBody = fob;
 					Tools.PostDebugMessage(
 						this,
 						"Vessel {0} discarded because we do not have line of sight.",
@@ -239,6 +242,8 @@ namespace AntennaRange
 					);
 					continue;
 				}
+
+				this.firstOccludingBody = null;
 
 				// Find the distance from here to the vessel...
 				double potentialSqrDistance = (potentialVessel.GetWorldPos3D() - vessel.GetWorldPos3D()).sqrMagnitude;

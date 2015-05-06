@@ -62,6 +62,16 @@ namespace AntennaRange
 			}
 		}
 
+
+		public CelestialBody firstOccludingBody
+		{
+			get
+			{
+				return base.firstOccludingBody;
+			}
+		}
+
+
 		/// <summary>
 		/// Gets a value indicating whether this <see cref="AntennaRange.ProtoDataTransmitter"/> has been checked during
 		/// the current relay attempt.
