@@ -9,7 +9,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>AntennaRange</RootNamespace>
     <AssemblyName>AntennaRange</AssemblyName>
-    <ReleaseVersion>1.1</ReleaseVersion>
+    <ReleaseVersion>1.3</ReleaseVersion>
     <SynchReleaseVersion>false</SynchReleaseVersion>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <UseMSBuildEngine>False</UseMSBuildEngine>
@@ -25,8 +25,7 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="xcopy /y ${ProjectDir}\AntennaRange.cfg C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
-        <Command type="AfterBuild" command="xcopy /y ${TargetFile} C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
+        <Command type="AfterBuild" command="xcopy /y ${TargetFile} ${ProjectDir}\GameData\AntennaRange\" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -38,8 +37,7 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="xcopy /y ${ProjectDir}\AntennaRange.cfg C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
-        <Command type="AfterBuild" command="xcopy /y ${TargetFile} C:\Users\andy\Games\KSP_win\GameData\AntennaRange\" />
+        <Command type="AfterBuild" command="xcopy /y ${TargetFile} ${ProjectDir}\GameData\AntennaRange\" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -54,7 +52,7 @@
     <ConsolePause>false</ConsolePause>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/${ProjectName}.cfg /opt/games/KSP_linux/GameData/${ProjectName}/" />
+        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/GameData/${ProjectName}/" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -65,7 +63,7 @@
     <WarningLevel>4</WarningLevel>
     <CustomCommands>
       <CustomCommands>
-        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/${ProjectName}.cfg /opt/games/KSP_linux/GameData/${ProjectName}/" />
+        <Command type="AfterBuild" command="cp -afv ${TargetFile} ${ProjectDir}/GameData/${ProjectName}/" />
       </CustomCommands>
     </CustomCommands>
     <ConsolePause>false</ConsolePause>
@@ -83,11 +81,6 @@
     <Compile Include="ARMapRenderer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <None Include="AntennaRange.cfg">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\_KSPAssemblies\Assembly-CSharp.dll</HintPath>
@@ -107,5 +100,9 @@
       <Project>{D48A5542-6655-4149-BC27-B27DF0466F1C}</Project>
       <Name>ToadicusTools</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="GameData\AntennaRange\AntennaRange.cfg" />
+    <None Include="GameData\AntennaRange\ATM_AntennaRange.cfg" />
   </ItemGroup>
 </Project>

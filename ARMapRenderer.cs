@@ -221,7 +221,7 @@ namespace AntennaRange
 
 					if (MapView.Draw3DLines)
 					{
-						lineWidth = 0.002f * MapView.MapCamera.Distance;
+						lineWidth = 0.004f * MapView.MapCamera.Distance;
 					}
 					else
 					{
@@ -233,8 +233,6 @@ namespace AntennaRange
 						float d = Screen.height / 2f + 0.01f;
 						start.z = start.z >= 0f ? d : -d;
 						end.z = end.z >= 0f ? d : -d;
-
-						Debug.Log(string.Format("start.z: {0}", start.z));
 					}
 
 					renderer.SetWidth(lineWidth, lineWidth);

@@ -54,10 +54,6 @@ namespace AntennaRange
 	 * */
 	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, IScienceDataTransmitter, IAntennaRelay
 	{
-		// If true, use a fixed power cost at the configured value and degrade data rates instead of increasing power
-		// requirements.
-		public static bool fixedPowerCost;
-
 		// Stores the packetResourceCost as defined in the .cfg file.
 		protected float _basepacketResourceCost;
 
@@ -248,6 +244,29 @@ namespace AntennaRange
 			this.packetThrottle = 100f;
 		}
 
+		public override void OnAwake()
+		{
+			base.OnAwake();
+
+			this._basepacketSize = base.packetSize;
+			this._basepacketResourceCost = base.packetResourceCost;
+
+			Tools.PostDebugMessage(string.Format(
+				"{0} loaded:\n" +
+				"packetSize: {1}\n" +
+				"packetResourceCost: {2}\n" +
+				"nominalRange: {3}\n" +
+				"maxPowerFactor: {4}\n" +
+				"maxDataFactor: {5}\n",
+				this.name,
+				base.packetSize,
+				this._basepacketResourceCost,
+				this.nominalRange,
+				this.maxPowerFactor,
+				this.maxDataFactor
+			));
+		}
+
 		// At least once, when the module starts with a state on the launch pad or later, go find Kerbin.
 		public override void OnStart (StartState state)
 		{
@@ -275,24 +294,6 @@ namespace AntennaRange
 			base.Fields.Load(node);
 
 			base.OnLoad (node);
-
-			this._basepacketSize = base.packetSize;
-			this._basepacketResourceCost = base.packetResourceCost;
-
-			Tools.PostDebugMessage(string.Format(
-				"{0} loaded:\n" +
-				"packetSize: {1}\n" +
-				"packetResourceCost: {2}\n" +
-				"nominalRange: {3}\n" +
-				"maxPowerFactor: {4}\n" +
-				"maxDataFactor: {5}\n",
-				this.name,
-				base.packetSize,
-				this._basepacketResourceCost,
-				this.nominalRange,
-				this.maxPowerFactor,
-				this.maxDataFactor
-			));
 		}
 
 		// Post an error in the communication messages describing the reason transmission has failed.  Currently there
@@ -320,14 +321,23 @@ namespace AntennaRange
 		// transmission fails (see CanTransmit).
 		protected void PreTransmit_SetPacketResourceCost()
 		{
-			if (fixedPowerCost || this.transmitDistance <= this.nominalRange)
+			if (ARConfiguration.FixedPowerCost || this.transmitDistance <= this.nominalRange)
 			{
 				base.packetResourceCost = this._basepacketResourceCost;
 			}
 			else
 			{
+				double rangeFactor = (this.transmitDistance / this.nominalRange);
+				rangeFactor *= rangeFactor;
+
 				base.packetResourceCost = this._basepacketResourceCost
-					* (float)Math.Pow (this.transmitDistance / this.nominalRange, 2);
+					* (float)rangeFactor;
+
+				Tools.PostDebugMessage(
+					this,
+					"Pretransmit: packet cost set to {0} before throttle (rangeFactor = {1}).",
+					base.packetResourceCost,
+					rangeFactor);
 			}
 
 			base.packetResourceCost *= this.packetThrottle / 100f;
@@ -337,15 +347,24 @@ namespace AntennaRange
 		// distance.  packetSize maxes out at _basepacketSize * maxDataFactor.
 		protected void PreTransmit_SetPacketSize()
 		{
-			if (!fixedPowerCost && this.transmitDistance >= this.nominalRange)
+			if (!ARConfiguration.FixedPowerCost && this.transmitDistance >= this.nominalRange)
 			{
 				base.packetSize = this._basepacketSize;
 			}
 			else
 			{
+				double rangeFactor = (this.nominalRange / this.transmitDistance);
+				rangeFactor *= rangeFactor;
+
 				base.packetSize = Math.Min(
-					this._basepacketSize * (float)Math.Pow (this.nominalRange / this.transmitDistance, 2),
+					this._basepacketSize * (float)rangeFactor,
 					this._basepacketSize * this.maxDataFactor);
+
+				Tools.PostDebugMessage(
+					this,
+					"Pretransmit: packet size set to {0} before throttle (rangeFactor = {1}).",
+					base.packetSize,
+					rangeFactor);
 			}
 
 			base.packetSize *= this.packetThrottle / 100f;
@@ -363,7 +382,7 @@ namespace AntennaRange
 		// Override ModuleDataTransmitter.CanTransmit to return false when transmission is not possible.
 		public new bool CanTransmit()
 		{
-			if (this.relay == null)
+			if (this.part == null || this.relay == null)
 			{
 				return false;
 			}
@@ -416,6 +435,75 @@ namespace AntennaRange
 			}
 			else
 			{
+				Tools.PostDebugMessage(this, "{0} unable to transmit during TransmitData.", this.part.partInfo.title);
+
+				var logger = Tools.DebugLogger.New(this);
+
+				foreach (ModuleScienceContainer	scienceContainer in this.vessel.getModulesOfType<ModuleScienceContainer>())
+				{
+					logger.AppendFormat("Checking ModuleScienceContainer in {0}\n",
+						scienceContainer.part.partInfo.title);
+
+					if (
+						scienceContainer.capacity != 0 &&
+						scienceContainer.GetScienceCount() >= scienceContainer.capacity
+					)
+					{
+						logger.Append("\tInsufficient capacity, skipping.\n");
+						continue;
+					}
+
+					List<ScienceData> dataStored = new List<ScienceData>();
+
+					foreach (ScienceData data in dataQueue)
+					{
+						if (!scienceContainer.allowRepeatedSubjects && scienceContainer.HasData(data))
+						{
+							logger.Append("\tAlready contains subject and repeated subjects not allowed, skipping.\n");
+							continue;
+						}
+
+						logger.AppendFormat("\tAcceptable, adding data on subject {0}... ", data.subjectID);
+						if (scienceContainer.AddData(data))
+						{
+							logger.Append("done, removing from queue.\n");
+
+							dataStored.Add(data);
+						}
+						#if DEBUG
+						else
+						{
+							logger.Append("failed.\n");
+						}
+						#endif
+					}
+
+					dataQueue.RemoveAll(i => dataStored.Contains(i));
+
+					logger.AppendFormat("\t{0} data left in queue.", dataQueue.Count);
+				}
+
+				logger.Print();
+
+				if (dataQueue.Count > 0)
+				{
+					StringBuilder msg = new StringBuilder();
+
+					msg.Append('[');
+					msg.Append(this.part.partInfo.title);
+					msg.AppendFormat("]: {0} data items could not be saved: no space available in data containers.\n");
+					msg.Append("Data to be discarded:\n");
+
+					foreach (ScienceData data in dataQueue)
+					{
+						msg.AppendFormat("\n{0}\n", data.title);
+					}
+
+					ScreenMessages.PostScreenMessage(msg.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
+
+					Tools.PostDebugMessage(msg.ToString());
+				}
+
 				this.PostCannotTransmitError ();
 			}
 

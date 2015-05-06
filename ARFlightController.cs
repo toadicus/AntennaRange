@@ -37,16 +37,15 @@ namespace AntennaRange
 	[KSPAddon(KSPAddon.Startup.Flight, false)]
 	public class ARFlightController : MonoBehaviour
 	{
-		#region Static Members
-		public static bool requireConnectionForControl;
-		#endregion
-
 		#region Fields
 		protected Dictionary<ConnectionStatus, string> connectionTextures;
+		protected Dictionary<ConnectionStatus, Texture> appLauncherTextures;
 
 		protected ARMapRenderer mapRenderer;
 
 		protected IButton toolbarButton;
+
+		protected ApplicationLauncherButton appLauncherButton;
 		#endregion
 
 		#region Properties
@@ -61,6 +60,14 @@ namespace AntennaRange
 			get
 			{
 				return this.connectionTextures[this.currentConnectionStatus];
+			}
+		}
+
+		protected Texture currentAppLauncherTexture
+		{
+			get
+			{
+				return this.appLauncherTextures[this.currentConnectionStatus];
 			}
 		}
 
@@ -110,14 +117,23 @@ namespace AntennaRange
 		{
 			this.lockID = "ARConnectionRequired";
 
+			this.connectionTextures = new Dictionary<ConnectionStatus, string>();
+
+			this.connectionTextures[ConnectionStatus.None] = "AntennaRange/Textures/toolbarIconNoConnection";
+			this.connectionTextures[ConnectionStatus.Suboptimal] = "AntennaRange/Textures/toolbarIconSubOptimal";
+			this.connectionTextures[ConnectionStatus.Optimal] = "AntennaRange/Textures/toolbarIcon";
+
+			this.appLauncherTextures = new Dictionary<ConnectionStatus, Texture>();
+
+			this.appLauncherTextures[ConnectionStatus.None] =
+				GameDatabase.Instance.GetTexture("AntennaRange/Textures/appLauncherIconNoConnection", false);
+			this.appLauncherTextures[ConnectionStatus.Suboptimal] =
+				GameDatabase.Instance.GetTexture("AntennaRange/Textures/appLauncherIconSubOptimal", false);
+			this.appLauncherTextures[ConnectionStatus.Optimal] =
+				GameDatabase.Instance.GetTexture("AntennaRange/Textures/appLauncherIcon", false);
+
 			if (ToolbarManager.ToolbarAvailable)
 			{
-				this.connectionTextures = new Dictionary<ConnectionStatus, string>();
-
-				this.connectionTextures[ConnectionStatus.None] = "AntennaRange/Textures/toolbarIconNoConnection";
-				this.connectionTextures[ConnectionStatus.Suboptimal] = "AntennaRange/Textures/toolbarIconSubOptimal";
-				this.connectionTextures[ConnectionStatus.Optimal] = "AntennaRange/Textures/toolbarIcon";
-
 				this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConnectionStatus");
 
 				this.toolbarButton.TexturePath = this.connectionTextures[ConnectionStatus.None];
@@ -137,17 +153,48 @@ namespace AntennaRange
 
 		protected void FixedUpdate()
 		{
+			if (this.appLauncherButton == null && !ToolbarManager.ToolbarAvailable && ApplicationLauncher.Ready)
+			{
+				this.appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
+					ApplicationLauncher.AppScenes.FLIGHT,
+					this.appLauncherTextures[ConnectionStatus.None]
+				);
+			}
+
 			Tools.DebugLogger log = Tools.DebugLogger.New(this);
+
+			VesselCommand availableCommand;
+
+			if (ARConfiguration.RequireConnectionForControl)
+			{
+				availableCommand = this.vessel.CurrentCommand();
+			}
+			else
+			{
+				availableCommand = VesselCommand.Crew;
+			}
+
+			log.AppendFormat("availableCommand: {0}\n\t" +
+				"(availableCommand & VesselCommand.Crew) == VesselCommand.Crew: {1}\n\t" +
+				"(availableCommand & VesselCommand.Probe) == VesselCommand.Probe: {2}\n\t" +
+				"vessel.HasConnectedRelay(): {3}",
+				(int)availableCommand,
+				(availableCommand & VesselCommand.Crew) == VesselCommand.Crew,
+				(availableCommand & VesselCommand.Probe) == VesselCommand.Probe,
+				vessel.HasConnectedRelay()
+			);
 
 			// If we are requiring a connection for control, the vessel does not have any adequately staffed pods,
 			// and the vessel does not have any connected relays...
 			if (
 				HighLogic.LoadedSceneIsFlight &&
-				requireConnectionForControl &&
+				ARConfiguration.RequireConnectionForControl &&
 				this.vessel != null &&
 				this.vessel.vesselType != VesselType.EVA &&
-				!this.vessel.hasCrewCommand() &&
-				!this.vessel.HasConnectedRelay())
+				!(
+				    (availableCommand & VesselCommand.Crew) == VesselCommand.Crew ||
+				    (availableCommand & VesselCommand.Probe) == VesselCommand.Probe && vessel.HasConnectedRelay()
+				))
 			{
 				// ...and if the controls are not currently locked...
 				if (currentControlLock == ControlTypes.None)
@@ -162,8 +209,12 @@ namespace AntennaRange
 				// ...unlock the controls.
 				InputLockManager.RemoveControlLock(this.lockID);
 			}
-
-			if (HighLogic.LoadedSceneIsFlight && this.toolbarButton != null && FlightGlobals.ActiveVessel != null)
+				
+			if (
+				(this.toolbarButton != null || this.appLauncherButton != null) &&
+				HighLogic.LoadedSceneIsFlight &&
+				FlightGlobals.ActiveVessel != null
+			)
 			{
 				log.Append("Checking vessel relay status.\n");
 
@@ -227,7 +278,23 @@ namespace AntennaRange
 				log.AppendFormat("currentConnectionStatus: {0}, setting texture to {1}",
 					this.currentConnectionStatus, this.currentConnectionTexture);
 
-				this.toolbarButton.TexturePath = this.currentConnectionTexture;
+				if (this.toolbarButton != null)
+				{
+					this.toolbarButton.TexturePath = this.currentConnectionTexture;
+
+					if (this.currentConnectionStatus == ConnectionStatus.None)
+					{
+						this.toolbarButton.Important = true;
+					}
+					else
+					{
+						this.toolbarButton.Important = false;
+					}
+				}
+				if (this.appLauncherButton != null)
+				{
+					this.appLauncherButton.SetTexture(this.currentAppLauncherTexture);
+				}
 			}
 
 			log.Print();
@@ -237,14 +304,20 @@ namespace AntennaRange
 		{
 			InputLockManager.RemoveControlLock(this.lockID);
 
+			if (this.mapRenderer != null)
+			{
+				GameObject.Destroy(this.mapRenderer);
+			}
+
 			if (this.toolbarButton != null)
 			{
 				this.toolbarButton.Destroy();
 			}
 
-			if (this.mapRenderer != null)
+			if (this.appLauncherButton != null)
 			{
-				GameObject.Destroy(this.mapRenderer);
+				ApplicationLauncher.Instance.RemoveModApplication(this.appLauncherButton);
+				this.appLauncherButton = null;
 			}
 
 			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChangeRequested);
@@ -257,11 +330,8 @@ namespace AntennaRange
 		#region Event Handlers
 		protected void onSceneChangeRequested(GameScenes scene)
 		{
-			if (scene != GameScenes.FLIGHT)
-			{
-				print("ARFlightController: Requesting Destruction.");
-				MonoBehaviour.Destroy(this);
-			}
+			print("ARFlightController: Requesting Destruction.");
+			MonoBehaviour.Destroy(this);
 		}
 
 		protected void onVesselChange(Vessel vessel)
@@ -278,4 +348,3 @@ namespace AntennaRange
 		}
 	}
 }
-

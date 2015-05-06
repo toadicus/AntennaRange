@@ -13,10 +13,35 @@ namespace AntennaRange
 	[KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
 	public class ARConfiguration : MonoBehaviour
 	{
+		public static bool RequireLineOfSight
+		{
+			get;
+			private set;
+		}
+
+		public static double RadiusRatio
+		{
+			get;
+			private set;
+		}
+
+		public static bool RequireConnectionForControl
+		{
+			get;
+			private set;
+		}
+
+		public static bool FixedPowerCost
+		{
+			get;
+			private set;
+		}
+
 		private bool showConfigWindow;
 		private Rect configWindowPos;
 
 		private IButton toolbarButton;
+		private ApplicationLauncherButton appLauncherButton;
 
 		private System.Version runningVersion;
 
@@ -38,8 +63,27 @@ namespace AntennaRange
 		{
 			Tools.PostDebugMessage(this, "Waking up.");
 
+			this.runningVersion = this.GetType().Assembly.GetName().Version;
+
 			this.showConfigWindow = false;
 			this.configWindowPos = new Rect(Screen.width / 4, Screen.height / 2, 180, 15);
+
+
+			this.configWindowPos = this.LoadConfigValue("configWindowPos", this.configWindowPos);
+
+			ARConfiguration.RequireLineOfSight = this.LoadConfigValue("requireLineOfSight", false);
+
+			ARConfiguration.RadiusRatio = (1 - this.LoadConfigValue("graceRatio", .05d));
+			ARConfiguration.RadiusRatio *= ARConfiguration.RadiusRatio;
+
+			ARConfiguration.RequireConnectionForControl =
+				this.LoadConfigValue("requireConnectionForControl", false);
+
+			ARConfiguration.FixedPowerCost = this.LoadConfigValue("fixedPowerCost", false);
+
+			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
+
+			Debug.Log(string.Format("{0} v{1} - ARConfiguration loaded!", this.GetType().Name, this.runningVersion));
 
 			Tools.PostDebugMessage(this, "Awake.");
 		}
@@ -47,29 +91,36 @@ namespace AntennaRange
 		public void OnGUI()
 		{
 			// Only runs once, if the Toolbar is available.
-			if (this.toolbarButton == null && ToolbarManager.ToolbarAvailable)
+			if (ToolbarManager.ToolbarAvailable)
 			{
-				this.runningVersion = this.GetType().Assembly.GetName().Version;
-
-				Tools.PostDebugMessage(this, "Toolbar available; initializing button.");
-
-				this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConfiguration");
-				this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.SPACECENTER);
-				this.toolbarButton.Text = "AR";
-				this.toolbarButton.TexturePath = "AntennaRange/Textures/toolbarIcon";
-				this.toolbarButton.TextColor = (Color)XKCDColors.Amethyst;
-				this.toolbarButton.OnClick += delegate(ClickEvent e)
+				if (this.toolbarButton == null)
 				{
-					this.showConfigWindow = !this.showConfigWindow;
-				};
+					Tools.PostDebugMessage(this, "Toolbar available; initializing toolbar button.");
 
-				this.configWindowPos = this.LoadConfigValue("configWindowPos", this.configWindowPos);
-				AntennaRelay.requireLineOfSight = this.LoadConfigValue("requireLineOfSight", false);
-				ARFlightController.requireConnectionForControl =
-					this.LoadConfigValue("requireConnectionForControl", false);
-				ModuleLimitedDataTransmitter.fixedPowerCost = this.LoadConfigValue("fixedPowerCost", false);
+					this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConfiguration");
+					this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.SPACECENTER);
+					this.toolbarButton.Text = "AR";
+					this.toolbarButton.TexturePath = "AntennaRange/Textures/toolbarIcon";
+					this.toolbarButton.TextColor = (Color)XKCDColors.Amethyst;
+					this.toolbarButton.OnClick += delegate(ClickEvent e)
+					{
+						this.toggleConfigWindow();
+					};
+				}
+			}
+			else if (this.appLauncherButton == null && ApplicationLauncher.Ready)
+			{
+				Tools.PostDebugMessage(this, "Toolbar available; initializing AppLauncher button.");
 
-				Debug.Log(string.Format("{0} v{1} - ARonfiguration loaded!", this.GetType().Name, this.runningVersion));
+				this.appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
+					this.toggleConfigWindow,
+					this.toggleConfigWindow,
+					ApplicationLauncher.AppScenes.SPACECENTER,
+					GameDatabase.Instance.GetTexture(
+						"AntennaRange/Textures/appLauncherIcon",
+						false
+					)
+				);
 			}
 
 			if (this.showConfigWindow)
@@ -98,10 +149,10 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal(GUILayout.ExpandWidth(true));
 
-			bool requireLineOfSight = GUILayout.Toggle(AntennaRelay.requireLineOfSight, "Require Line of Sight");
-			if (requireLineOfSight != AntennaRelay.requireLineOfSight)
+			bool requireLineOfSight = GUITools.Toggle(ARConfiguration.RequireLineOfSight, "Require Line of Sight");
+			if (requireLineOfSight != ARConfiguration.RequireLineOfSight)
 			{
-				AntennaRelay.requireLineOfSight = requireLineOfSight;
+				ARConfiguration.RequireLineOfSight = requireLineOfSight;
 				this.SaveConfigValue("requireLineOfSight", requireLineOfSight);
 			}
 
@@ -110,13 +161,13 @@ namespace AntennaRange
 			GUILayout.BeginHorizontal(GUILayout.ExpandWidth(true));
 
 			bool requireConnectionForControl =
-				GUILayout.Toggle(
-					ARFlightController.requireConnectionForControl,
+				GUITools.Toggle(
+					ARConfiguration.RequireConnectionForControl,
 					"Require Connection for Probe Control"
 				);
-			if (requireConnectionForControl != ARFlightController.requireConnectionForControl)
+			if (requireConnectionForControl != ARConfiguration.RequireConnectionForControl)
 			{
-				ARFlightController.requireConnectionForControl = requireConnectionForControl;
+				ARConfiguration.RequireConnectionForControl = requireConnectionForControl;
 				this.SaveConfigValue("requireConnectionForControl", requireConnectionForControl);
 			}
 
@@ -124,26 +175,72 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal();
 
-			bool fixedPowerCost = GUILayout.Toggle(ModuleLimitedDataTransmitter.fixedPowerCost, "Use fixed power cost");
-			if (fixedPowerCost != ModuleLimitedDataTransmitter.fixedPowerCost)
+			bool fixedPowerCost = GUITools.Toggle(ARConfiguration.FixedPowerCost, "Use Fixed Power Cost");
+			if (fixedPowerCost != ARConfiguration.FixedPowerCost)
 			{
-				ModuleLimitedDataTransmitter.fixedPowerCost = fixedPowerCost;
+				ARConfiguration.FixedPowerCost = fixedPowerCost;
 				this.SaveConfigValue("fixedPowerCost", fixedPowerCost);
 			}
 
 			GUILayout.EndHorizontal();
+
+			if (requireLineOfSight)
+			{
+				GUILayout.BeginHorizontal();
+
+				double graceRatio = 1d - Math.Sqrt(ARConfiguration.RadiusRatio);
+				double newRatio;
+
+				GUILayout.Label(string.Format("Line of Sight 'Fudge Factor': {0:P0}", graceRatio));
+
+				GUILayout.EndHorizontal();
+
+				GUILayout.BeginHorizontal();
+
+				newRatio = GUILayout.HorizontalSlider((float)graceRatio, 0f, 1f, GUILayout.ExpandWidth(true));
+				newRatio = Math.Round(newRatio, 2);
+
+				if (newRatio != graceRatio)
+				{
+					ARConfiguration.RadiusRatio = (1d - newRatio) * (1d - newRatio);
+					this.SaveConfigValue("graceRatio", newRatio);
+				}
+
+				GUILayout.EndHorizontal();
+			}
 
 			GUILayout.EndVertical();
 
 			GUI.DragWindow();
 		}
 
-		public void Destroy()
+		public void OnDestroy()
 		{
+			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChangeRequested);
+
 			if (this.toolbarButton != null)
 			{
 				this.toolbarButton.Destroy();
 			}
+
+			if (this.appLauncherButton != null)
+			{
+				ApplicationLauncher.Instance.RemoveModApplication(this.appLauncherButton);
+			}
+		}
+
+		protected void onSceneChangeRequested(GameScenes scene)
+		{
+			if (scene != GameScenes.SPACECENTER)
+			{
+				print("ARConfiguration: Requesting Destruction.");
+				MonoBehaviour.Destroy(this);
+			}
+		}
+
+		private void toggleConfigWindow()
+		{
+			this.showConfigWindow = !this.showConfigWindow;
 		}
 
 		private T LoadConfigValue<T>(string key, T defaultValue)
