@@ -81,6 +81,8 @@ namespace AntennaRange
 		{
 			if (!HighLogic.LoadedSceneIsFlight || !MapView.MapIsEnabled)
 			{
+				this.Cleanup();
+
 				return;
 			}
 
@@ -173,8 +175,8 @@ namespace AntennaRange
 
 		private void OnDestroy()
 		{
-			this.vesselLineRenderers.Clear();
-			this.vesselLineRenderers = null;
+			this.Cleanup();
+
 			print("ARMapRenderer: Destroyed.");
 		}
 		#endregion
@@ -246,6 +248,17 @@ namespace AntennaRange
 				}
 			}
 			while (relay != null);
+		}
+
+		public void Cleanup()
+		{
+			foreach (LineRenderer lineRenderer in this.vesselLineRenderers.Values)
+			{
+				lineRenderer.enabled = false;
+				GameObject.Destroy(lineRenderer.gameObject);
+			}
+			this.vesselLineRenderers.Clear();
+			this.vesselFrameCache.Clear();
 		}
 	}
 }
