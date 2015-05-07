@@ -252,13 +252,20 @@ namespace AntennaRange
 
 		public void Cleanup()
 		{
-			foreach (LineRenderer lineRenderer in this.vesselLineRenderers.Values)
+			if (this.vesselLineRenderers != null && this.vesselLineRenderers.Count > 0)
 			{
-				lineRenderer.enabled = false;
-				GameObject.Destroy(lineRenderer.gameObject);
+				foreach (LineRenderer lineRenderer in this.vesselLineRenderers.Values)
+				{
+					lineRenderer.enabled = false;
+					GameObject.Destroy(lineRenderer.gameObject);
+				}
+				this.vesselLineRenderers.Clear();
 			}
-			this.vesselLineRenderers.Clear();
-			this.vesselFrameCache.Clear();
+
+			if (this.vesselFrameCache != null && this.vesselFrameCache.Count > 0)
+			{
+				this.vesselFrameCache.Clear();
+			}
 		}
 	}
 }
