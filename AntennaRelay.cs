@@ -80,10 +80,9 @@ namespace AntennaRange
 		}
 
 		/// <summary>
-		/// Gets the first occluding body.
+		/// Gets the first <see cref="CelestialBody"/> found to be blocking line of sight.
 		/// </summary>
-		/// <value>The first occluding body.</value>
-		public CelestialBody firstOccludingBody
+		public virtual CelestialBody firstOccludingBody
 		{
 			get;
 			protected set;
