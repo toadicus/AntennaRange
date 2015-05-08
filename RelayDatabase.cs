@@ -35,27 +35,8 @@ using UnityEngine;
 
 namespace AntennaRange
 {
-	public class RelayDatabase
+	public class RelayDatabase : Singleton<RelayDatabase>
 	{
-		/*
-		 * Static members
-		 * */
-		// Singleton storage
-		protected static RelayDatabase _instance;
-		// Gets the singleton
-		public static RelayDatabase Instance
-		{
-			get
-			{	
-				if (_instance == null)
-				{
-					_instance = new RelayDatabase();
-				}
-
-				return _instance;
-			}
-		}
-
 		/*
 		 * Instance members
 		 * */
