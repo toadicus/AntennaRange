@@ -68,6 +68,21 @@ namespace AntennaRange
 			return relayOne.DistanceTo(relayTwo.vessel);
 		}
 
+		public static double sqrDistanceTo(this AntennaRelay relay, Vessel vessel)
+		{
+			return relay.vessel.sqrDistanceTo(vessel);
+		}
+
+		public static double sqrDistanceTo(this AntennaRelay relay, CelestialBody body)
+		{
+			return relay.vessel.sqrDistanceTo(body);
+		}
+
+		public static double sqrDistanceTo(this AntennaRelay relayOne, AntennaRelay relayTwo)
+		{
+			return relayOne.vessel.sqrDistanceTo(relayTwo.vessel);
+		}
+
 		/// <summary>
 		/// Returns all of the PartModules or ProtoPartModuleSnapshots implementing IAntennaRelay in this Vessel.
 		/// </summary>

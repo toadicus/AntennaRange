@@ -31,14 +31,30 @@ using System.Collections.Generic;
 using System.Linq;
 using ToadicusTools;
 
+// @DONE TODO: Retool nearestRelay to always contain the nearest relay, even if out of range.
+// @DONE TODO: Retool CanTransmit to not rely on nearestRelay == null.
+// TODO: Track occluded vessels somehow.
+
 namespace AntennaRange
 {
 	public class AntennaRelay
 	{
 		// We don't have a Bard, so we'll hide Kerbin here.
-		protected CelestialBody Kerbin;
+		private static CelestialBody _Kerbin;
+		protected static CelestialBody Kerbin
+		{
+			get
+			{
+				if (_Kerbin == null && FlightGlobals.ready)
+				{
+					_Kerbin = FlightGlobals.GetHomeBody();
+				}
 
-		protected IAntennaRelay _nearestRelayCache;
+				return _Kerbin;
+			}
+		}
+
+		private IAntennaRelay _nearestRelayCache;
 		protected IAntennaRelay moduleRef;
 
 		protected System.Diagnostics.Stopwatch searchTimer;
@@ -64,10 +80,11 @@ namespace AntennaRange
 		{
 			get
 			{
-				if (this.searchTimer.IsRunning &&
+				if (!this.searchTimer.IsRunning ||
 					this.searchTimer.ElapsedMilliseconds > this.millisecondsBetweenSearches)
 				{
 					this._nearestRelayCache = this.FindNearestRelay();
+
 					this.searchTimer.Restart();
 				}
 
@@ -96,19 +113,28 @@ namespace AntennaRange
 		{
 			get
 			{
-				this.nearestRelay = this.FindNearestRelay();
-
 				// If there is no available relay nearby...
-				if (this.nearestRelay == null)
+				// @DONE TODO: Remove nearestRelay == null
+				double kerbinDistance = this.DistanceTo(Kerbin);
+
+				if (this.nearestRelay != null)
 				{
-					// .. return the distance to Kerbin
-					return this.DistanceTo(this.Kerbin);
+					double relayDistance = this.DistanceTo(this.nearestRelay);
+
+					// If our nearest relay is nearer than Kerbin, use its distance.
+					if (relayDistance < kerbinDistance)
+					{
+						this.KerbinDirect = false;
+
+						return relayDistance;
+					}
 				}
-				else
-				{
-					/// ...otherwise, return the distance to the nearest available relay.
-					return this.DistanceTo(nearestRelay);
-				}
+
+				this.KerbinDirect = true;
+				
+
+				// .. return the distance to Kerbin
+				return kerbinDistance;
 			}
 		}
 
@@ -133,6 +159,12 @@ namespace AntennaRange
 			protected set;
 		}
 
+		public virtual bool KerbinDirect
+		{
+			get;
+			protected set;
+		}
+
 		/// <summary>
 		/// Determines whether this instance can transmit.
 		/// </summary>
@@ -141,20 +173,30 @@ namespace AntennaRange
 		{
 			CelestialBody fob = null;
 
-			if (
-				this.transmitDistance > this.maxTransmitDistance ||
-				(
-					ARConfiguration.RequireLineOfSight &&
-					this.nearestRelay == null &&
-					!this.vessel.hasLineOfSightTo(this.Kerbin, out fob, ARConfiguration.RadiusRatio)
-				)
-			)
+			// @DONE TODO: Remove nearestRelay == null
+			// Because we're correctly falling back to Kerbin in transmitDistance the first test should always fail
+			// when we're out of range of anything, and the second will fail when LOS is blocked (and enforced).
+
+			// If our transmit distance is greater than our maximum range, we can't transmit and it doesn't matter why.
+			if (this.transmitDistance > this.maxTransmitDistance)
 			{
-				this.firstOccludingBody = fob;
+				this.firstOccludingBody = null;
 				return false;
 			}
+			// ...if we're in range...
 			else
 			{
+				// ...check for LOS problems...
+				if (
+					ARConfiguration.RequireLineOfSight
+					&& this.KerbinDirect &&
+					!this.vessel.hasLineOfSightTo(Kerbin, out fob, ARConfiguration.RadiusRatio)
+				)
+				{
+					this.firstOccludingBody = fob;
+					return false;
+				}
+
 				this.firstOccludingBody = null;
 				return true;
 			}
@@ -164,9 +206,9 @@ namespace AntennaRange
 		/// Finds the nearest relay.
 		/// </summary>
 		/// <returns>The nearest relay or null, if no relays in range.</returns>
-		public IAntennaRelay FindNearestRelay()
+		private IAntennaRelay FindNearestRelay()
 		{
-			if (this.searchTimer.IsRunning && this.searchTimer.ElapsedMilliseconds < this.millisecondsBetweenSearches)
+			/*if (this.searchTimer.IsRunning && this.searchTimer.ElapsedMilliseconds < this.millisecondsBetweenSearches)
 			{
 				return this.nearestRelay;
 			}
@@ -177,7 +219,7 @@ namespace AntennaRange
 				this.searchTimer.Reset();
 			}
 
-			this.searchTimer.Start();
+			this.searchTimer.Start();*/
 
 			Tools.PostDebugMessage(string.Format(
 				"{0}: finding nearest relay for {1} ({2})",
@@ -192,6 +234,7 @@ namespace AntennaRange
 			RelayDatabase.Instance.CheckedVesselsTable[vessel.id] = true;
 
 			double nearestSqrDistance = double.PositiveInfinity;
+
 			IAntennaRelay _nearestRelay = null;
 
 			/*
@@ -248,16 +291,9 @@ namespace AntennaRange
 				double potentialSqrDistance = (potentialVessel.GetWorldPos3D() - vessel.GetWorldPos3D()).sqrMagnitude;
 
 				/*
-				 * ...so that we can skip the vessel if it is further away than Kerbin, our transmit distance, or a
-				 * vessel we've already checked.
+				 * ...so that we can skip the vessel if it is further away than a vessel we've already checked.
 				 * */
-				if (
-					potentialSqrDistance > Tools.Min(
-						this.maxTransmitDistance * this.maxTransmitDistance,
-						nearestSqrDistance,
-						this.vessel.sqrDistanceTo(Kerbin)
-					)
-				)
+				if (potentialSqrDistance > nearestSqrDistance)
 				{
 					Tools.PostDebugMessage(
 						this,
@@ -302,10 +338,6 @@ namespace AntennaRange
 
 			this.searchTimer = new System.Diagnostics.Stopwatch();
 			this.millisecondsBetweenSearches = 5000;
-
-			// HACK: This might not be safe in all circumstances, but since AntennaRelays are not built until Start,
-			// we hope it is safe enough.
-			this.Kerbin = FlightGlobals.Bodies.FirstOrDefault(b => b.name == "Kerbin");
 		}
 	}
 }
