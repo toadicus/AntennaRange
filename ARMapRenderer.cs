@@ -131,9 +131,9 @@ namespace AntennaRange
 
 						log.Append("\tChecking connection status...\n");
 
-						if (vessel.HasConnectedRelay())
+						/*if (vessel.HasConnectedRelay())
 						{
-							log.AppendLine("\tHas a connection, checking for the best relay to use for the line.");
+							log.AppendLine("\tHas a connection, checking for the best relay to use for the line.");*/
 
 							IAntennaRelay vesselRelay = null;
 							float bestScore = float.PositiveInfinity;
@@ -158,12 +158,12 @@ namespace AntennaRange
 
 								this.SetRelayVertices(vesselRelay);
 							}
-						}
+						/*}
 						else if (this.vesselLineRenderers.ContainsKey(vessel.id))
 						{
 							log.AppendLine("\tDisabling line because vessel has no connection.");
 							this[vessel.id].enabled = false;
-						}
+						}*/
 					}
 				}
 			}
@@ -197,18 +197,29 @@ namespace AntennaRange
 
 				renderer.enabled = true;
 
-				if (relay.transmitDistance < relay.nominalTransmitDistance)
+				if (!relay.CanTransmit())
 				{
-					renderer.SetColors(Color.green, Color.green);
+					renderer.SetColors(Color.red, Color.red);
 				}
 				else
 				{
-					renderer.SetColors(Color.yellow, Color.yellow);
+					if (relay.transmitDistance < relay.nominalTransmitDistance)
+					{
+						renderer.SetColors(Color.green, Color.green);
+					}
+					else
+					{
+						renderer.SetColors(Color.yellow, Color.yellow);
+					}
 				}
 
 				start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());
 
 				if (relay.KerbinDirect)
+				{
+					end = ScaledSpace.LocalToScaledSpace(AntennaRelay.Kerbin.position);
+				}
+				else
 				{
 					if (relay.firstOccludingBody != null && relay.bestOccludedRelay != null)
 					{
@@ -216,12 +227,8 @@ namespace AntennaRange
 					}
 					else
 					{
-						end = ScaledSpace.LocalToScaledSpace(AntennaRelay.Kerbin.position);
+						end = ScaledSpace.LocalToScaledSpace(relay.nearestRelay.vessel.GetWorldPos3D());
 					}
-				}
-				else
-				{
-					end = ScaledSpace.LocalToScaledSpace(relay.nearestRelay.vessel.GetWorldPos3D());
 				}
 
 				float lineWidth;

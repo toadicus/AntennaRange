@@ -176,8 +176,11 @@ namespace AntennaRange
 		// Returns the maximum distance this module can transmit
 		public float maxTransmitDistance
 		{
-			get;
-			private set;
+			get
+			{
+				// TODO: Cache this in a way that doesn't break everything.
+				return Mathf.Sqrt(this.maxPowerFactor) * this.nominalRange;
+			}
 		}
 
 		public CelestialBody firstOccludingBody
@@ -296,7 +299,6 @@ namespace AntennaRange
 
 			this._basepacketSize = base.packetSize;
 			this._basepacketResourceCost = base.packetResourceCost;
-			this.maxTransmitDistance = Mathf.Sqrt(this.maxPowerFactor) * this.nominalRange;
 
 			Tools.PostDebugMessage(string.Format(
 				"{0} loaded:\n" +

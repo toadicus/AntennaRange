@@ -136,8 +136,13 @@ namespace AntennaRange
 					}
 				}
 
+				if (this.firstOccludingBody != null && this.bestOccludedRelay != null)
+				{
+					this.KerbinDirect = false;
+					return this.DistanceTo(this.bestOccludedRelay);
+				}
+
 				this.KerbinDirect = true;
-				
 
 				// .. return the distance to Kerbin
 				return kerbinDistance;
@@ -188,6 +193,12 @@ namespace AntennaRange
 			// @DONE TODO: Remove nearestRelay == null
 			// Because we're correctly falling back to Kerbin in transmitDistance the first test should always fail
 			// when we're out of range of anything, and the second will fail when LOS is blocked (and enforced).
+
+			Tools.PostDebugMessage(this.moduleRef, "Checking if CanTransmit with maxTransmitDistance={0}" +
+				"\n\ttransmitDistance={1}; KerbinDirect={2}, nearestRelay={3}, bestOccludedRelay={4}",
+				this.maxTransmitDistance, this.transmitDistance, this.KerbinDirect,
+				this.nearestRelay, this.bestOccludedRelay
+			);
 
 			// If our transmit distance is greater than our maximum range, we can't transmit and it doesn't matter why.
 			if (this.transmitDistance > this.maxTransmitDistance)

@@ -78,7 +78,7 @@ namespace AntennaRange
 			return relay.vessel.sqrDistanceTo(body);
 		}
 
-		public static double sqrDistanceTo(this AntennaRelay relayOne, AntennaRelay relayTwo)
+		public static double sqrDistanceTo(this AntennaRelay relayOne, IAntennaRelay relayTwo)
 		{
 			return relayOne.vessel.sqrDistanceTo(relayTwo.vessel);
 		}
