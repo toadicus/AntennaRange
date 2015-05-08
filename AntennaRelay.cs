@@ -296,24 +296,47 @@ namespace AntennaRange
 				)
 				{
 					this.firstOccludingBody = fob;
+
 					Tools.PostDebugMessage(
 						this,
-						"Vessel {0} discarded because we do not have line of sight.",
-						potentialVessel.vesselName
+						"Vessel {0} discarded because we do not have line of sight." +
+						"\npotentialSqrDistance: {1}, bestOccludedSqrDistance: {2}, maxTransmitSqrDistance: {3}" +
+						"\npotentialSqrDistance < bestOccludedSqrDistance: {4}" +
+						"\npotentialSqrDistance < (this.maxTransmitDistance * this.maxTransmitDistance): {5}",
+						potentialVessel.vesselName,
+						potentialSqrDistance, bestOccludedSqrDistance, this.maxTransmitDistance * this.maxTransmitDistance,
+						potentialSqrDistance < bestOccludedSqrDistance,
+						potentialSqrDistance < (this.maxTransmitDistance * this.maxTransmitDistance)
 					);
 
 					if (
-						potentialSqrDistance < bestOccludedSqrDistance &&
-						potentialSqrDistance < this.maxTransmitDistance
+						(potentialSqrDistance < bestOccludedSqrDistance) &&
+						(potentialSqrDistance < (this.maxTransmitDistance * this.maxTransmitDistance))
 					)
 					{
+						Tools.PostDebugMessage(
+							this,
+							"Checking {0} relays on {1}.",
+							potentialVessel.GetAntennaRelays().Count(),
+							potentialVessel
+						);
+
 						foreach (IAntennaRelay occludedRelay in potentialVessel.GetAntennaRelays())
 						{
+							Tools.PostDebugMessage(this, "Checking candidate for bestOccludedRelay: {0}" +
+								"\n\tCanTransmit: {1}", occludedRelay, occludedRelay.CanTransmit());
 							if (occludedRelay.CanTransmit())
 							{
 								this.bestOccludedRelay = occludedRelay;
 								this.firstOccludingBody = fob;
 								bestOccludedSqrDistance = potentialSqrDistance;
+								Tools.PostDebugMessage(this, "Found new bestOccludedRelay: {0}" +
+									"\nfirstOccludingBodoy: {1}" +
+									"\nbestOccludedSqrDistance: {2}",
+									occludedRelay,
+									fob,
+									potentialSqrDistance
+								);
 								break;
 							}
 						}
@@ -369,7 +392,7 @@ namespace AntennaRange
 			this.moduleRef = module;
 
 			this.searchTimer = new System.Diagnostics.Stopwatch();
-			this.millisecondsBetweenSearches = 5000;
+			this.millisecondsBetweenSearches = 1250;
 		}
 	}
 }

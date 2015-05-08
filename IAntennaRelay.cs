@@ -44,6 +44,8 @@ namespace AntennaRange
 
 		IAntennaRelay nearestRelay { get; }
 
+		IAntennaRelay bestOccludedRelay { get; }
+
 		/// <summary>
 		/// Gets the distance to the nearest relay or Kerbin, whichever is closer.
 		/// </summary>

@@ -138,11 +138,29 @@ namespace AntennaRange
 			}
 		}
 
+		public IAntennaRelay bestOccludedRelay
+		{
+			get
+			{
+				if (this.relay == null)
+				{
+					return null;
+				}
+
+				return this.relay.bestOccludedRelay;
+			}
+		}
+
 		// Returns the distance to the nearest relay or Kerbin, whichever is closer.
 		public double transmitDistance
 		{
 			get
 			{
+				if (this.relay == null)
+				{
+					return double.PositiveInfinity;
+				}
+
 				return this.relay.transmitDistance;
 			}
 		}
@@ -158,10 +176,8 @@ namespace AntennaRange
 		// Returns the maximum distance this module can transmit
 		public float maxTransmitDistance
 		{
-			get
-			{
-				return Mathf.Sqrt (this.maxPowerFactor) * this.nominalRange;
-			}
+			get;
+			private set;
 		}
 
 		public CelestialBody firstOccludingBody
@@ -280,6 +296,7 @@ namespace AntennaRange
 
 			this._basepacketSize = base.packetSize;
 			this._basepacketResourceCost = base.packetResourceCost;
+			this.maxTransmitDistance = Mathf.Sqrt(this.maxPowerFactor) * this.nominalRange;
 
 			Tools.PostDebugMessage(string.Format(
 				"{0} loaded:\n" +
@@ -667,7 +684,7 @@ namespace AntennaRange
 		}
 
 		// When debugging, it's nice to have a button that just tells you everything.
-		#if DEBUG
+
 		[KSPEvent (guiName = "Show Debug Info", active = true, guiActive = true)]
 		public void DebugInfo()
 		{
@@ -688,7 +705,9 @@ namespace AntennaRange
 				"DataResourceCost: {10}\n" +
 				"TransmitterScore: {11}\n" +
 				"NearestRelay: {12}\n" +
-				"Vessel ID: {13}",
+				"BestOccludedRelay: {13}\n" +
+				"KerbinDirect: {14}\n" +
+				"Vessel ID: {15}",
 				this.name,
 				this._basepacketSize,
 				base.packetSize,
@@ -701,10 +720,13 @@ namespace AntennaRange
 				this.DataRate,
 				this.DataResourceCost,
 				ScienceUtil.GetTransmitterScore(this),
-				this.relay.FindNearestRelay(),
+				this.relay.nearestRelay == null ? "null" : this.relay.nearestRelay.ToString(),
+				this.relay.bestOccludedRelay == null ? "null" : this.relay.bestOccludedRelay.ToString(),
+				this.KerbinDirect,
 				this.vessel.id
 				);
-			Tools.PostDebugMessage(msg);
+
+			Tools.PostLogMessage(msg);
 		}
 
 		[KSPEvent (guiName = "Dump Vessels", active = true, guiActive = true)]
@@ -722,11 +744,10 @@ namespace AntennaRange
 			Tools.PostDebugMessage(sb.ToString());
 		}
 
-		[KSPEvent (guiName = "Dump RelayDB", active = true, guiActive = true)]
+		/*[KSPEvent (guiName = "Dump RelayDB", active = true, guiActive = true)]
 		public void DumpRelayDB()
 		{
 			RelayDatabase.Instance.Dump();
-		}
-		#endif
+		}*/
 	}
 }
