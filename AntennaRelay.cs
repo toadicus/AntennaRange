@@ -96,6 +96,12 @@ namespace AntennaRange
 			}
 		}
 
+		public IAntennaRelay bestOccludedRelay
+		{
+			get;
+			protected set;
+		}
+
 		/// <summary>
 		/// Gets the first <see cref="CelestialBody"/> found to be blocking line of sight.
 		/// </summary>
@@ -229,11 +235,13 @@ namespace AntennaRange
 			));
 
 			this.firstOccludingBody = null;
+			this.bestOccludedRelay = null;
 
 			// Set this vessel as checked, so that we don't check it again.
 			RelayDatabase.Instance.CheckedVesselsTable[vessel.id] = true;
 
 			double nearestSqrDistance = double.PositiveInfinity;
+			double bestOccludedSqrDistance = double.PositiveInfinity;
 
 			IAntennaRelay _nearestRelay = null;
 
@@ -270,25 +278,42 @@ namespace AntennaRange
 					continue;
 				}
 
+				// Find the distance from here to the vessel...
+				double potentialSqrDistance = this.sqrDistanceTo(potentialVessel);
+
 				// Skip vessels to which we do not have line of sight.
 				CelestialBody fob = null;
 
-				if (ARConfiguration.RequireLineOfSight &&
-					!this.vessel.hasLineOfSightTo(potentialVessel, out fob, ARConfiguration.RadiusRatio))
+				if (
+					ARConfiguration.RequireLineOfSight &&
+					!this.vessel.hasLineOfSightTo(potentialVessel, out fob, ARConfiguration.RadiusRatio)
+				)
 				{
-					this.firstOccludingBody = fob;
 					Tools.PostDebugMessage(
 						this,
 						"Vessel {0} discarded because we do not have line of sight.",
 						potentialVessel.vesselName
 					);
+
+					if (
+						potentialSqrDistance < bestOccludedSqrDistance &&
+						potentialSqrDistance < this.maxTransmitDistance
+					)
+					{
+						foreach (IAntennaRelay occludedRelay in potentialVessel.GetAntennaRelays())
+						{
+							if (occludedRelay.CanTransmit())
+							{
+								this.bestOccludedRelay = occludedRelay;
+								this.firstOccludingBody = fob;
+								bestOccludedSqrDistance = potentialSqrDistance;
+								break;
+							}
+						}
+					}
+
 					continue;
 				}
-
-				this.firstOccludingBody = null;
-
-				// Find the distance from here to the vessel...
-				double potentialSqrDistance = (potentialVessel.GetWorldPos3D() - vessel.GetWorldPos3D()).sqrMagnitude;
 
 				/*
 				 * ...so that we can skip the vessel if it is further away than a vessel we've already checked.

@@ -597,7 +597,14 @@ namespace AntennaRange
 
 				if (this.KerbinDirect)
 				{
-					this.UIrelayTarget = "Kerbin";
+					if (this.relay.bestOccludedRelay != null)
+					{
+						this.UIrelayTarget = this.relay.bestOccludedRelay.ToString();
+					}
+					else
+					{
+						this.UIrelayTarget = "Kerbin";
+					}
 				}
 				else
 				{
