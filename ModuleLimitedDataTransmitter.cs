@@ -74,8 +74,11 @@ namespace AntennaRange
 		[KSPField(isPersistant = false)]
 		public float nominalRange;
 
-		[KSPField(isPersistant = false, guiActive = true, guiName = "Relay")]
+		[KSPField(isPersistant = false, guiActive = true, guiName = "Status")]
 		public string UIrelayStatus;
+
+		[KSPField(isPersistant = false, guiActive = true, guiName = "Relay")]
+		public string UIrelayTarget;
 
 		[KSPField(isPersistant = false, guiActive = true, guiName = "Transmission Distance")]
 		public string UItransmitDistance;
@@ -238,7 +241,26 @@ namespace AntennaRange
 		{
 			get
 			{
-				return this.relay.relayChecked;
+				if (this.relay != null)
+				{
+					return this.relay.relayChecked;
+				}
+
+				// If our relay is null, always return null so we're never checked.
+				return true;
+			}
+		}
+
+		public bool KerbinDirect
+		{
+			get
+			{
+				if (this.relay != null)
+				{
+					return this.relay.KerbinDirect;
+				}
+
+				return false;
 			}
 		}
 
@@ -427,7 +449,9 @@ namespace AntennaRange
 
 				message.Append("Beginning transmission ");
 
-				if (this.relay.nearestRelay == null)
+				// @DONE TODO: Fix this to fall back to Kerbin if nearestRelay cannot be contacted.
+				// @DONE TODO: Remove nearestRelay == null
+				if (this.KerbinDirect)
 				{
 					message.Append("directly to Kerbin.");
 				}
@@ -545,7 +569,9 @@ namespace AntennaRange
 
 				message.Append("Beginning transmission ");
 
-				if (this.relay.nearestRelay == null)
+				// @DONE TODO: Fix this to fall back to Kerbin if nearestRelay cannot be contacted.
+				// @DONE TODO: Remove nearestRelay == null
+				if (this.KerbinDirect)
 				{
 					message.Append("directly to Kerbin.");
 				}
@@ -571,7 +597,7 @@ namespace AntennaRange
 			{
 				if (this.CanTransmit())
 				{
-					this.UIrelayStatus = string.Intern("Connected");
+					this.UIrelayStatus = "Connected";
 					this.UItransmitDistance = Tools.MuMech_ToSI(this.transmitDistance) + "m";
 					this.UIpacketSize = Tools.MuMech_ToSI(this.DataRate) + "MiT";
 					this.UIpacketCost = Tools.MuMech_ToSI(this.DataResourceCost) + "E";
@@ -580,7 +606,7 @@ namespace AntennaRange
 				{
 					if (this.relay.firstOccludingBody == null)
 					{
-						this.UIrelayStatus = string.Intern("Out of range");
+						this.UIrelayStatus = "Out of range";
 					}
 					else
 					{
@@ -589,6 +615,22 @@ namespace AntennaRange
 					this.UImaxTransmitDistance = "N/A";
 					this.UIpacketSize = "N/A";
 					this.UIpacketCost = "N/A";
+				}
+
+				if (this.KerbinDirect)
+				{
+					if (this.relay.bestOccludedRelay != null)
+					{
+						this.UIrelayTarget = this.relay.bestOccludedRelay.ToString();
+					}
+					else
+					{
+						this.UIrelayTarget = "Kerbin";
+					}
+				}
+				else
+				{
+					this.UIrelayTarget = this.relay.nearestRelay.ToString();
 				}
 			}
 		}

@@ -113,7 +113,7 @@ namespace AntennaRange
 		public override string ToString()
 		{
 			return string.Format(
-				"{0} on {1} (proto)",
+				"{0} on {1}",
 				this.title,
 				this.protoPart.pVesselRef.vesselName
 			);

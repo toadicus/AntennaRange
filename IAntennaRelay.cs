@@ -72,6 +72,12 @@ namespace AntennaRange
 		bool relayChecked { get; }
 
 		/// <summary>
+		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
+		/// directly with Kerbin.
+		/// </summary>
+		bool KerbinDirect { get; }
+
+		/// <summary>
 		/// Determines whether this instance can transmit.
 		/// </summary>
 		/// <returns><c>true</c> if this instance can transmit; otherwise, <c>false</c>.</returns>
