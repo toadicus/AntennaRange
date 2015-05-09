@@ -54,7 +54,8 @@ namespace AntennaRange
 			}
 		}
 
-		private IAntennaRelay _nearestRelayCache;
+		protected bool canTransmit;
+
 		protected IAntennaRelay moduleRef;
 
 		protected System.Diagnostics.Stopwatch searchTimer;
@@ -78,25 +79,17 @@ namespace AntennaRange
 		/// <value>The nearest relay</value>
 		public IAntennaRelay nearestRelay
 		{
-			get
-			{
-				if (!this.searchTimer.IsRunning ||
-					this.searchTimer.ElapsedMilliseconds > this.millisecondsBetweenSearches)
-				{
-					this._nearestRelayCache = this.FindNearestRelay();
-
-					this.searchTimer.Restart();
-				}
-
-				return this._nearestRelayCache;
-			}
-			protected set
-			{
-				this._nearestRelayCache = value;
-			}
+			get;
+			protected set;
 		}
 
 		public IAntennaRelay bestOccludedRelay
+		{
+			get;
+			protected set;
+		}
+
+		public IAntennaRelay targetRelay
 		{
 			get;
 			protected set;
@@ -119,33 +112,16 @@ namespace AntennaRange
 		{
 			get
 			{
-				// If there is no available relay nearby...
-				// @DONE TODO: Remove nearestRelay == null
-				double kerbinDistance = this.DistanceTo(Kerbin);
+				this.FindNearestRelay();
 
-				if (this.nearestRelay != null)
+				if (this.KerbinDirect || this.targetRelay == null)
 				{
-					double relayDistance = this.DistanceTo(this.nearestRelay);
-
-					// If our nearest relay is nearer than Kerbin, use its distance.
-					if (relayDistance < kerbinDistance)
-					{
-						this.KerbinDirect = false;
-
-						return relayDistance;
-					}
+					return this.DistanceTo(Kerbin);
 				}
-
-				if (this.firstOccludingBody != null && this.bestOccludedRelay != null)
+				else
 				{
-					this.KerbinDirect = false;
-					return this.DistanceTo(this.bestOccludedRelay);
+					return this.DistanceTo(this.targetRelay);
 				}
-
-				this.KerbinDirect = true;
-
-				// .. return the distance to Kerbin
-				return kerbinDistance;
 			}
 		}
 
@@ -188,84 +164,53 @@ namespace AntennaRange
 		/// <returns><c>true</c> if this instance can transmit; otherwise, <c>false</c>.</returns>
 		public virtual bool CanTransmit()
 		{
-			CelestialBody fob = null;
-
-			// @DONE TODO: Remove nearestRelay == null
-			// Because we're correctly falling back to Kerbin in transmitDistance the first test should always fail
-			// when we're out of range of anything, and the second will fail when LOS is blocked (and enforced).
-
-			Tools.PostDebugMessage(this.moduleRef, "Checking if CanTransmit with maxTransmitDistance={0}" +
-				"\n\ttransmitDistance={1}; KerbinDirect={2}, nearestRelay={3}, bestOccludedRelay={4}",
-				this.maxTransmitDistance, this.transmitDistance, this.KerbinDirect,
-				this.nearestRelay, this.bestOccludedRelay
-			);
-
-			// If our transmit distance is greater than our maximum range, we can't transmit and it doesn't matter why.
-			if (this.transmitDistance > this.maxTransmitDistance)
-			{
-				this.firstOccludingBody = null;
-				return false;
-			}
-			// ...if we're in range...
-			else
-			{
-				// ...check for LOS problems...
-				if (
-					ARConfiguration.RequireLineOfSight
-					&& this.KerbinDirect &&
-					!this.vessel.hasLineOfSightTo(Kerbin, out fob, ARConfiguration.RadiusRatio)
-				)
-				{
-					this.firstOccludingBody = fob;
-					return false;
-				}
-
-				this.firstOccludingBody = null;
-				return true;
-			}
+			this.FindNearestRelay();
+			return this.canTransmit;
 		}
 
 		/// <summary>
 		/// Finds the nearest relay.
 		/// </summary>
 		/// <returns>The nearest relay or null, if no relays in range.</returns>
-		private IAntennaRelay FindNearestRelay()
+		private void FindNearestRelay()
 		{
-			/*if (this.searchTimer.IsRunning && this.searchTimer.ElapsedMilliseconds < this.millisecondsBetweenSearches)
+			if (!this.searchTimer.IsRunning || this.searchTimer.ElapsedMilliseconds > this.millisecondsBetweenSearches)
 			{
-				return this.nearestRelay;
-			}
-
-			if (this.searchTimer.IsRunning)
-			{
-				this.searchTimer.Stop();
 				this.searchTimer.Reset();
 			}
+			else
+			{
+				return;
+			}
 
-			this.searchTimer.Start();*/
-
-			Tools.PostDebugMessage(string.Format(
-				"{0}: finding nearest relay for {1} ({2})",
-				this.GetType().Name,
-				this,
-				this.vessel.id
-			));
-
-			this.firstOccludingBody = null;
-			this.bestOccludedRelay = null;
+			if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
+			{
+				Tools.PostLogMessage(string.Format(
+					"{0}: finding nearest relay for {1}",
+					this.GetType().Name,
+					this.moduleRef.ToString()
+				));
+			}
 
 			// Set this vessel as checked, so that we don't check it again.
 			RelayDatabase.Instance.CheckedVesselsTable[vessel.id] = true;
 
-			double nearestSqrDistance = double.PositiveInfinity;
-			double bestOccludedSqrDistance = double.PositiveInfinity;
+			// Blank everything we're trying to find before the search.
+			this.firstOccludingBody = null;
+			this.bestOccludedRelay = null;
+			this.targetRelay = null;
+			this.nearestRelay = null;
 
-			IAntennaRelay _nearestRelay = null;
+			CelestialBody bodyOccludingBestOccludedRelay = null;
+
+			double nearestRelaySqrDistance = double.PositiveInfinity;
+			double bestOccludedSqrDistance = double.PositiveInfinity;
+			double maxTransmitSqrDistance = this.maxTransmitDistance * this.maxTransmitDistance;
 
 			/*
 			 * Loop through all the vessels and exclude this vessel, vessels of the wrong type, and vessels that are too
 			 * far away.  When we find a candidate, get through its antennae for relays which have not been checked yet
-			 * and that can transmit.  Once we find a suitable candidate, assign it to _nearestRelay for comparison
+			 * and that can transmit.  Once we find a suitable candidate, assign it to nearestRelay for comparison
 			 * against future finds.
 			 * */
 			foreach (Vessel potentialVessel in FlightGlobals.Vessels)
@@ -298,9 +243,9 @@ namespace AntennaRange
 				// Find the distance from here to the vessel...
 				double potentialSqrDistance = this.sqrDistanceTo(potentialVessel);
 
-				// Skip vessels to which we do not have line of sight.
 				CelestialBody fob = null;
 
+				// Skip vessels to which we do not have line of sight.
 				if (
 					ARConfiguration.RequireLineOfSight &&
 					!this.vessel.hasLineOfSightTo(potentialVessel, out fob, ARConfiguration.RadiusRatio)
@@ -308,46 +253,60 @@ namespace AntennaRange
 				{
 					this.firstOccludingBody = fob;
 
-					Tools.PostDebugMessage(
-						this,
-						"Vessel {0} discarded because we do not have line of sight." +
-						"\npotentialSqrDistance: {1}, bestOccludedSqrDistance: {2}, maxTransmitSqrDistance: {3}" +
-						"\npotentialSqrDistance < bestOccludedSqrDistance: {4}" +
-						"\npotentialSqrDistance < (this.maxTransmitDistance * this.maxTransmitDistance): {5}",
-						potentialVessel.vesselName,
-						potentialSqrDistance, bestOccludedSqrDistance, this.maxTransmitDistance * this.maxTransmitDistance,
-						potentialSqrDistance < bestOccludedSqrDistance,
-						potentialSqrDistance < (this.maxTransmitDistance * this.maxTransmitDistance)
-					);
+					if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
+					{
+						Tools.PostLogMessage(
+							this.moduleRef.ToString() + 
+							"Vessel {0} discarded because we do not have line of sight." +
+							"\npotentialSqrDistance: {1}, bestOccludedSqrDistance: {2}, maxTransmitSqrDistance: {3}" +
+							"\npotentialSqrDistance < bestOccludedSqrDistance: {4}" +
+							"\npotentialSqrDistance < (this.maxTransmitDistance * this.maxTransmitDistance): {5}",
+							potentialVessel.vesselName,
+							potentialSqrDistance, bestOccludedSqrDistance, this.maxTransmitDistance * this.maxTransmitDistance,
+							potentialSqrDistance < bestOccludedSqrDistance,
+							potentialSqrDistance < (this.maxTransmitDistance * this.maxTransmitDistance)
+						);
+					}
 
 					if (
 						(potentialSqrDistance < bestOccludedSqrDistance) &&
-						(potentialSqrDistance < (this.maxTransmitDistance * this.maxTransmitDistance))
+						(potentialSqrDistance < maxTransmitSqrDistance)
 					)
 					{
-						Tools.PostDebugMessage(
-							this,
-							"Checking {0} relays on {1}.",
-							potentialVessel.GetAntennaRelays().Count(),
-							potentialVessel
-						);
+						if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
+						{
+							Tools.PostLogMessage(
+								this.moduleRef.ToString() +
+								"Checking {0} relays on {1}.",
+								potentialVessel.GetAntennaRelays().Count(),
+								potentialVessel
+							);
+						}
 
 						foreach (IAntennaRelay occludedRelay in potentialVessel.GetAntennaRelays())
 						{
-							Tools.PostDebugMessage(this, "Checking candidate for bestOccludedRelay: {0}" +
-								"\n\tCanTransmit: {1}", occludedRelay, occludedRelay.CanTransmit());
+							if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
+							{
+								Tools.PostLogMessage(this.moduleRef.ToString() +  " Checking candidate for bestOccludedRelay: {0}" +
+									"\n\tCanTransmit: {1}", occludedRelay, occludedRelay.CanTransmit());
+							}
+
 							if (occludedRelay.CanTransmit())
 							{
 								this.bestOccludedRelay = occludedRelay;
-								this.firstOccludingBody = fob;
+								bodyOccludingBestOccludedRelay = fob;
 								bestOccludedSqrDistance = potentialSqrDistance;
-								Tools.PostDebugMessage(this, "Found new bestOccludedRelay: {0}" +
-									"\nfirstOccludingBodoy: {1}" +
-									"\nbestOccludedSqrDistance: {2}",
-									occludedRelay,
-									fob,
-									potentialSqrDistance
-								);
+
+								if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
+								{
+									Tools.PostLogMessage(this.moduleRef.ToString() + " Found new bestOccludedRelay: {0}" +
+										"\nfirstOccludingBody: {1}" +
+										"\nbestOccludedSqrDistance: {2}",
+										occludedRelay,
+										fob,
+										potentialSqrDistance
+									);
+								}
 								break;
 							}
 						}
@@ -359,28 +318,35 @@ namespace AntennaRange
 				/*
 				 * ...so that we can skip the vessel if it is further away than a vessel we've already checked.
 				 * */
-				if (potentialSqrDistance > nearestSqrDistance)
+				if (potentialSqrDistance > nearestRelaySqrDistance)
 				{
-					Tools.PostDebugMessage(
-						this,
-						"Vessel {0} discarded because it is out of range, or farther than another relay.",
-						potentialVessel.vesselName
-					);
+					if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
+					{
+						Tools.PostLogMessage(
+							this.moduleRef.ToString() +
+							" Vessel {0} discarded because it is out of range, or farther than another relay.",
+							potentialVessel.vesselName
+						);
+					}
 					continue;
 				}
 
-				nearestSqrDistance = potentialSqrDistance;
+				nearestRelaySqrDistance = potentialSqrDistance;
 
 				foreach (IAntennaRelay potentialRelay in potentialVessel.GetAntennaRelays())
 				{
 					if (potentialRelay.CanTransmit())
 					{
-						_nearestRelay = potentialRelay;
-						Tools.PostDebugMessage(string.Format("{0}: found new best relay {1} ({2})",
-							this.GetType().Name,
-							_nearestRelay.ToString(),
-							_nearestRelay.vessel.id
-						));
+						this.nearestRelay = potentialRelay;
+
+						if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
+						{
+							Tools.PostLogMessage(string.Format("{0}: found new best relay {1} ({2})",
+								this.moduleRef.ToString(),
+								this.nearestRelay.ToString(),
+								this.nearestRelay.vessel.id
+							));
+						}
 						break;
 					}
 				}
@@ -390,8 +356,150 @@ namespace AntennaRange
 			// used next time.
 			RelayDatabase.Instance.CheckedVesselsTable.Remove(vessel.id);
 
-			// Return the nearest available relay, or null if there are no available relays nearby.
-			return _nearestRelay;
+			CelestialBody bodyOccludingKerbin = null;
+
+			double kerbinSqrDistance = this.vessel.sqrDistanceTo(Kerbin);
+
+			System.Text.StringBuilder log = new System.Text.StringBuilder();
+
+			log.AppendFormat("{0}: Search done, figuring status.", this.moduleRef.ToString());
+
+			// If we don't have LOS to Kerbin, focus on relays
+			if (!this.vessel.hasLineOfSightTo(Kerbin, out bodyOccludingKerbin, ARConfiguration.RadiusRatio))
+			{
+				log.AppendFormat("\n\tKerbin LOS is blocked by {0}.", bodyOccludingKerbin.bodyName);
+
+				// nearestRelaySqrDistance will be infinity if all relays are occluded or none exist.
+				// Therefore, this will only be true if a valid relay is in range.
+				if (nearestRelaySqrDistance <= maxTransmitSqrDistance)
+				{
+					log.AppendFormat("\n\tCan transmit to nearby relay {0} ({1} <= {2}).",
+						this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
+							nearestRelaySqrDistance, maxTransmitSqrDistance);
+
+					this.KerbinDirect = false;
+					this.canTransmit = true;
+					this.targetRelay = this.nearestRelay;
+				}
+				// If this isn't true, we can't transmit, but pick a second best of bestOccludedRelay and Kerbin anyway
+				else
+				{
+					log.AppendFormat("\n\tCan't transmit to nearby relay {0} ({1} > {2}).",
+						this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
+							nearestRelaySqrDistance, maxTransmitSqrDistance);
+
+					this.canTransmit = false;
+
+					// If the best occluded relay is closer than Kerbin, target it.
+					if (bestOccludedSqrDistance < kerbinSqrDistance)
+					{
+						log.AppendFormat("\n\t\tPicking occluded relay {0} as target ({1} < {2}).",
+							this.bestOccludedRelay == null ? "null" : this.bestOccludedRelay.ToString(),
+							bestOccludedSqrDistance, kerbinSqrDistance);
+
+						this.KerbinDirect = false;
+						this.targetRelay = this.bestOccludedRelay;
+						this.firstOccludingBody = bodyOccludingBestOccludedRelay;
+					}
+					// Otherwise, target Kerbin and report the first body blocking it.
+					else
+					{
+						log.AppendFormat("\n\t\tPicking Kerbin as target ({0} >= {1}).",
+							bestOccludedSqrDistance, kerbinSqrDistance);
+
+						this.KerbinDirect = true;
+						this.targetRelay = null;
+						this.firstOccludingBody = bodyOccludingKerbin;
+					}
+				}
+			}
+			// If we do have LOS to Kerbin, try to prefer the closest of nearestRelay and Kerbin
+			else
+			{
+				log.AppendFormat("\n\tKerbin is in LOS.");
+
+				// If the nearest relay is closer than Kerbin and in range, transmit to it.
+				if (nearestRelaySqrDistance <= maxTransmitSqrDistance)
+				{
+					log.AppendFormat("\n\tCan transmit to nearby relay {0} ({1} <= {2}).",
+						this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
+							nearestRelaySqrDistance, maxTransmitSqrDistance);
+
+					this.canTransmit = true;
+
+					// If the nearestRelay is closer than Kerbin, use it.
+					if (nearestRelaySqrDistance < kerbinSqrDistance)
+					{
+						this.KerbinDirect = false;
+						this.targetRelay = this.nearestRelay;
+					}
+					// Otherwise, Kerbin is closer, so use it.
+					else
+					{
+						log.AppendFormat("\n\tBut picking Kerbin over nearby relay {0} ({1} >= {2}).",
+							this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
+								nearestRelaySqrDistance, kerbinSqrDistance);
+
+						this.KerbinDirect = true;
+						this.targetRelay = null;
+					}
+				}
+				// If the nearest relay is out of range, we still need to check on Kerbin.
+				else
+				{
+					log.AppendFormat("\n\tCan't transmit to nearby relay {0} ({1} > {2}).",
+						this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
+							nearestRelaySqrDistance, maxTransmitSqrDistance);
+
+					// If Kerbin is in range, use it.
+					if (kerbinSqrDistance <= maxTransmitSqrDistance)
+					{
+						log.AppendFormat("\n\tCan transmit to Kerbin ({0} <= {1}).",
+							kerbinSqrDistance, maxTransmitSqrDistance);
+
+						this.canTransmit = true;
+						this.KerbinDirect = true;
+						this.targetRelay = null;
+					}
+					// If Kerbin is out of range and the nearest relay is out of range, pick a second best between
+					// Kerbin and bestOccludedRelay
+					else
+					{
+						log.AppendFormat("\n\tCan't transmit to Kerbin ({0} > {1}).",
+							kerbinSqrDistance, maxTransmitSqrDistance);
+
+						this.canTransmit = false;
+
+						// If the best occluded relay is closer than Kerbin, use it.
+						// Since bestOccludedSqrDistance is infinity if there are no occluded relays,
+						// this is safe
+						if (bestOccludedSqrDistance < kerbinSqrDistance)
+						{
+							log.AppendFormat("\n\t\tPicking occluded relay {0} as target ({1} < {2}).",
+								this.bestOccludedRelay == null ? "null" : this.bestOccludedRelay.ToString(),
+									bestOccludedSqrDistance, kerbinSqrDistance);
+
+							this.KerbinDirect = false;
+							this.targetRelay = bestOccludedRelay;
+							this.firstOccludingBody = bodyOccludingBestOccludedRelay;
+						}
+						// Otherwise, target Kerbin.  Since we have LOS, blank the first occluding body.
+						else
+						{
+							log.AppendFormat("\n\t\tPicking Kerbin as target ({0} >= {1}).",
+								bestOccludedSqrDistance, kerbinSqrDistance);
+
+							this.KerbinDirect = true;
+							this.targetRelay = null;
+							this.firstOccludingBody = null;
+						}
+					}
+				}
+			}
+
+			log.AppendFormat("{0}: Status determination complete.", this.moduleRef.ToString());
+
+			Tools.PostLogMessage(log.ToString());
 		}
 
 		/// <summary>

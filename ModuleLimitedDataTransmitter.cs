@@ -151,6 +151,19 @@ namespace AntennaRange
 			}
 		}
 
+		public IAntennaRelay targetRelay
+		{
+			get
+			{
+				if (this.relay == null)
+				{
+					return null;
+				}
+
+				return this.relay.targetRelay;
+			}
+		}
+
 		// Returns the distance to the nearest relay or Kerbin, whichever is closer.
 		public double transmitDistance
 		{
@@ -638,18 +651,11 @@ namespace AntennaRange
 
 				if (this.KerbinDirect)
 				{
-					if (this.relay.bestOccludedRelay != null)
-					{
-						this.UIrelayTarget = this.relay.bestOccludedRelay.ToString();
-					}
-					else
-					{
-						this.UIrelayTarget = "Kerbin";
-					}
+					this.UIrelayTarget = AntennaRelay.Kerbin.bodyName;
 				}
 				else
 				{
-					this.UIrelayTarget = this.relay.nearestRelay.ToString();
+					this.UIrelayTarget = this.targetRelay.ToString();
 				}
 			}
 		}

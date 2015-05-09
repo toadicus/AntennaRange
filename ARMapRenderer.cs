@@ -221,14 +221,7 @@ namespace AntennaRange
 				}
 				else
 				{
-					if (relay.firstOccludingBody != null && relay.bestOccludedRelay != null)
-					{
-						end = ScaledSpace.LocalToScaledSpace(relay.bestOccludedRelay.vessel.GetWorldPos3D());
-					}
-					else
-					{
-						end = ScaledSpace.LocalToScaledSpace(relay.nearestRelay.vessel.GetWorldPos3D());
-					}
+					end = ScaledSpace.LocalToScaledSpace(relay.targetRelay.vessel.GetWorldPos3D());
 				}
 
 				float lineWidth;
