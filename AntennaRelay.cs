@@ -183,6 +183,12 @@ namespace AntennaRange
 				return;
 			}
 
+			// Skip vessels that have already been checked for a nearest relay this pass.
+			if (RelayDatabase.Instance.CheckedVesselsTable.ContainsKey(this.vessel.id))
+			{
+				return;
+			}
+
 			if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
 			{
 				Tools.PostLogMessage(string.Format(
@@ -215,12 +221,6 @@ namespace AntennaRange
 			 * */
 			foreach (Vessel potentialVessel in FlightGlobals.Vessels)
 			{
-				// Skip vessels that have already been checked for a nearest relay this pass.
-				if (RelayDatabase.Instance.CheckedVesselsTable.ContainsKey(potentialVessel.id))
-				{
-					continue;
-				}
-
 				// Skip vessels of the wrong type.
 				switch (potentialVessel.vesselType)
 				{
