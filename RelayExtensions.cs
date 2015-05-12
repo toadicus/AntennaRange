@@ -109,6 +109,39 @@ namespace AntennaRange
 
 			return false;
 		}
+
+		public static ConnectionStatus GetConnectionStatus(this Vessel vessel)
+		{
+			bool canTransmit = false;
+
+			foreach (IAntennaRelay relay in RelayDatabase.Instance[vessel].Values)
+			{
+				if (relay.CanTransmit())
+				{
+					canTransmit = true;
+					if (relay.transmitDistance <= relay.nominalTransmitDistance)
+					{
+						return ConnectionStatus.Optimal;
+					}
+				}
+			}
+
+			if (canTransmit)
+			{
+				return ConnectionStatus.Suboptimal;
+			}
+			else
+			{
+				return ConnectionStatus.None;
+			}
+		}
+	}
+
+	public enum ConnectionStatus
+	{
+		None,
+		Suboptimal,
+		Optimal
 	}
 }
 

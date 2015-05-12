@@ -46,6 +46,9 @@ namespace AntennaRange
 		protected IButton toolbarButton;
 
 		protected ApplicationLauncherButton appLauncherButton;
+		protected Tools.DebugLogger log;
+
+		protected System.Diagnostics.Stopwatch updateTimer;
 		#endregion
 
 		#region Properties
@@ -117,6 +120,10 @@ namespace AntennaRange
 		{
 			this.lockID = "ARConnectionRequired";
 
+			this.log = Tools.DebugLogger.New(this);
+
+			this.updateTimer = new System.Diagnostics.Stopwatch();
+
 			this.connectionTextures = new Dictionary<ConnectionStatus, string>();
 
 			this.connectionTextures[ConnectionStatus.None] = "AntennaRange/Textures/toolbarIconNoConnection";
@@ -161,7 +168,7 @@ namespace AntennaRange
 				);
 			}
 
-			Tools.DebugLogger log = Tools.DebugLogger.New(this);
+			this.log.Clear();
 
 			VesselCommand availableCommand;
 
@@ -209,7 +216,23 @@ namespace AntennaRange
 				// ...unlock the controls.
 				InputLockManager.RemoveControlLock(this.lockID);
 			}
-				
+
+			log.Print();
+		}
+
+		protected void Update()
+		{
+			if (!this.updateTimer.IsRunning || this.updateTimer.ElapsedMilliseconds > 125L)
+			{
+				this.updateTimer.Reset();
+			}
+			else
+			{
+				return;
+			}
+
+			this.log.Clear();
+
 			if (
 				(this.toolbarButton != null || this.appLauncherButton != null) &&
 				HighLogic.LoadedSceneIsFlight &&
@@ -218,62 +241,7 @@ namespace AntennaRange
 			{
 				log.Append("Checking vessel relay status.\n");
 
-				List<ModuleLimitedDataTransmitter> relays =
-					FlightGlobals.ActiveVessel.getModulesOfType<ModuleLimitedDataTransmitter>();
-
-				log.AppendFormat("\t...found {0} relays\n", relays.Count);
-
-				bool vesselCanTransmit = false;
-				bool vesselHasOptimalRelay = false;
-
-				foreach (ModuleLimitedDataTransmitter relay in relays)
-				{
-					log.AppendFormat("\tvesselCanTransmit: {0}, vesselHasOptimalRelay: {1}\n",
-						vesselCanTransmit, vesselHasOptimalRelay);
-
-					log.AppendFormat("\tChecking relay {0}\n" +
-						"\t\tCanTransmit: {1}, transmitDistance: {2}, nominalRange: {3}\n",
-						relay,
-						relay.CanTransmit(),
-						relay.transmitDistance,
-						relay.nominalRange
-					);
-
-					bool relayCanTransmit = relay.CanTransmit();
-
-					if (!vesselCanTransmit && relayCanTransmit)
-					{
-						vesselCanTransmit = true;
-					}
-
-					if (!vesselHasOptimalRelay &&
-						relayCanTransmit &&
-						relay.transmitDistance <= (double)relay.nominalRange)
-					{
-						vesselHasOptimalRelay = true;
-					}
-
-					if (vesselCanTransmit && vesselHasOptimalRelay)
-					{
-						break;
-					}
-				}
-
-				log.AppendFormat("Done checking.  vesselCanTransmit: {0}, vesselHasOptimalRelay: {1}\n",
-					vesselCanTransmit, vesselHasOptimalRelay);
-
-				if (vesselHasOptimalRelay)
-				{
-					this.currentConnectionStatus = ConnectionStatus.Optimal;
-				}
-				else if (vesselCanTransmit)
-				{
-					this.currentConnectionStatus = ConnectionStatus.Suboptimal;
-				}
-				else
-				{
-					this.currentConnectionStatus = ConnectionStatus.None;
-				}
+				this.currentConnectionStatus = FlightGlobals.ActiveVessel.GetConnectionStatus();
 
 				log.AppendFormat("currentConnectionStatus: {0}, setting texture to {1}",
 					this.currentConnectionStatus, this.currentConnectionTexture);
@@ -339,12 +307,5 @@ namespace AntennaRange
 			InputLockManager.RemoveControlLock(this.lockID);
 		}
 		#endregion
-
-		public enum ConnectionStatus
-		{
-			None,
-			Suboptimal,
-			Optimal
-		}
 	}
 }
