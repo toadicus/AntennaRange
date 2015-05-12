@@ -183,75 +183,71 @@ namespace AntennaRange
 
 		private void SetRelayVertices(IAntennaRelay relay)
 		{
-			do
+			if (relay == null)
 			{
-				if (this.vesselFrameCache.ContainsKey(relay.vessel.id))
-				{
-					break;
-				}
-
-				LineRenderer renderer = this[relay.vessel.id];
-
-				Vector3d start;
-				Vector3d end;
-
-				renderer.enabled = true;
-
-				if (!relay.CanTransmit())
-				{
-					renderer.SetColors(Color.red, Color.red);
-				}
-				else
-				{
-					if (relay.transmitDistance < relay.nominalTransmitDistance)
-					{
-						renderer.SetColors(Color.green, Color.green);
-					}
-					else
-					{
-						renderer.SetColors(Color.yellow, Color.yellow);
-					}
-				}
-
-				start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());
-
-				if (relay.KerbinDirect)
-				{
-					end = ScaledSpace.LocalToScaledSpace(AntennaRelay.Kerbin.position);
-				}
-				else
-				{
-					end = ScaledSpace.LocalToScaledSpace(relay.targetRelay.vessel.GetWorldPos3D());
-				}
-
-				float lineWidth;
-
-				if (MapView.Draw3DLines)
-				{
-					lineWidth = 0.004f * MapView.MapCamera.Distance;
-				}
-				else
-				{
-					lineWidth = 1f;
-
-					start = MapView.MapCamera.camera.WorldToScreenPoint(start);
-					end = MapView.MapCamera.camera.WorldToScreenPoint(end);
-
-					float d = Screen.height / 2f + 0.01f;
-					start.z = start.z >= 0f ? d : -d;
-					end.z = end.z >= 0f ? d : -d;
-				}
-
-				renderer.SetWidth(lineWidth, lineWidth);
-
-				renderer.SetPosition(0, start);
-				renderer.SetPosition(1, end);
-
-				this.vesselFrameCache[relay.vessel.id] = true;
-
-				relay = relay.nearestRelay;
+				return;
 			}
-			while (relay != null);
+
+			LineRenderer renderer = this[relay.vessel.id];
+
+			Vector3d start;
+			Vector3d end;
+
+			renderer.enabled = true;
+
+			if (!relay.CanTransmit())
+			{
+				renderer.SetColors(Color.red, Color.red);
+			}
+			else
+			{
+				if (relay.transmitDistance < relay.nominalTransmitDistance)
+				{
+					renderer.SetColors(Color.green, Color.green);
+				}
+				else
+				{
+					renderer.SetColors(Color.yellow, Color.yellow);
+				}
+			}
+
+			start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());
+
+			if (relay.KerbinDirect)
+			{
+				end = ScaledSpace.LocalToScaledSpace(AntennaRelay.Kerbin.position);
+			}
+			else
+			{
+				if (relay.targetRelay == null)
+				{
+					return;
+				}
+				end = ScaledSpace.LocalToScaledSpace(relay.targetRelay.vessel.GetWorldPos3D());
+			}
+
+			float lineWidth;
+
+			if (MapView.Draw3DLines)
+			{
+				lineWidth = 0.004f * MapView.MapCamera.Distance;
+			}
+			else
+			{
+				lineWidth = 1f;
+
+				start = MapView.MapCamera.camera.WorldToScreenPoint(start);
+				end = MapView.MapCamera.camera.WorldToScreenPoint(end);
+
+				float d = Screen.height / 2f + 0.01f;
+				start.z = start.z >= 0f ? d : -d;
+				end.z = end.z >= 0f ? d : -d;
+			}
+
+			renderer.SetWidth(lineWidth, lineWidth);
+
+			renderer.SetPosition(0, start);
+			renderer.SetPosition(1, end);
 		}
 
 		public void Cleanup()

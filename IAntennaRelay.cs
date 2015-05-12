@@ -86,6 +86,10 @@ namespace AntennaRange
 		/// </summary>
 		/// <returns><c>true</c> if this instance can transmit; otherwise, <c>false</c>.</returns>
 		bool CanTransmit();
+
+		string ToString();
+
+		string Title { get; }
 	}
 }
 

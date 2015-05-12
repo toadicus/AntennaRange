@@ -121,7 +121,19 @@ namespace AntennaRange
 		{
 			get
 			{
-				return base.vessel;
+				if (base.vessel != null)
+				{
+					return base.vessel;
+				}
+				else if (this.part != null)
+				{
+					return this.part.vessel;
+				}
+
+				else
+				{
+					return null;
+				}
 			}
 		}
 
@@ -293,6 +305,19 @@ namespace AntennaRange
 				}
 
 				return false;
+			}
+		}
+
+		public string Title
+		{
+			get
+			{
+				if (this.part != null && this.part.partInfo != null)
+				{
+					return this.part.partInfo.title;
+				}
+
+				return string.Empty;
 			}
 		}
 
@@ -686,6 +711,16 @@ namespace AntennaRange
 			{
 				msg.Append(" on ");
 				msg.Append(vessel.vesselName);
+			}
+			else if (
+				this.part != null &&
+				this.part.protoPartSnapshot != null &&
+				this.part.protoPartSnapshot != null &&
+				this.part.protoPartSnapshot.pVesselRef != null
+			)
+			{
+				msg.Append(" on ");
+				msg.Append(this.part.protoPartSnapshot.pVesselRef.vesselName);
 			}
 
 			return msg.ToString();

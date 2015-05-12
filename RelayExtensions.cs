@@ -89,7 +89,7 @@ namespace AntennaRange
 		/// <param name="vessel">This <see cref="Vessel"/></param>
 		public static IEnumerable<IAntennaRelay> GetAntennaRelays (this Vessel vessel)
 		{
-			return RelayDatabase.Instance[vessel].Values.ToList();
+			return RelayDatabase.Instance[vessel].Values.ToList().AsReadOnly();
 		}
 
 		/// <summary>
