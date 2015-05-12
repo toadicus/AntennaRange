@@ -522,7 +522,7 @@ namespace AntennaRange
 			this.moduleRef = module;
 
 			this.searchTimer = new System.Diagnostics.Stopwatch();
-			this.millisecondsBetweenSearches = 66;
+			this.millisecondsBetweenSearches = 125;
 		}
 	}
 }

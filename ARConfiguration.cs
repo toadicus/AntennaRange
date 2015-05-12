@@ -37,6 +37,12 @@ namespace AntennaRange
 			private set;
 		}
 
+		public static bool PrettyLines
+		{
+			get;
+			private set;
+		}
+
 		private bool showConfigWindow;
 		private Rect configWindowPos;
 
@@ -80,6 +86,8 @@ namespace AntennaRange
 				this.LoadConfigValue("requireConnectionForControl", false);
 
 			ARConfiguration.FixedPowerCost = this.LoadConfigValue("fixedPowerCost", false);
+
+			ARConfiguration.PrettyLines = this.LoadConfigValue("drawPrettyLines", true);
 
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
 
@@ -180,6 +188,17 @@ namespace AntennaRange
 			{
 				ARConfiguration.FixedPowerCost = fixedPowerCost;
 				this.SaveConfigValue("fixedPowerCost", fixedPowerCost);
+			}
+
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
+
+			bool prettyLines = GUITools.Toggle(ARConfiguration.PrettyLines, "Draw Pretty Lines");
+			if (prettyLines != ARConfiguration.PrettyLines)
+			{
+				ARConfiguration.PrettyLines = prettyLines;
+				this.SaveConfigValue("drawPrettyLines", prettyLines);
 			}
 
 			GUILayout.EndHorizontal();

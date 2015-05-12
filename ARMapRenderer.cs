@@ -73,13 +73,16 @@ namespace AntennaRange
 		#region MonoBehaviour Lifecycle
 		private void Awake()
 		{
-			this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
-			this.vesselFrameCache = new Dictionary<Guid, bool>();
+			if (ARConfiguration.PrettyLines)
+			{
+				this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
+				this.vesselFrameCache = new Dictionary<Guid, bool>();
+			}
 		}
 
 		private void OnPreCull()
 		{
-			if (!HighLogic.LoadedSceneIsFlight || !MapView.MapIsEnabled)
+			if (!HighLogic.LoadedSceneIsFlight || !MapView.MapIsEnabled || !ARConfiguration.PrettyLines)
 			{
 				this.Cleanup();
 
@@ -167,10 +170,16 @@ namespace AntennaRange
 					}
 				}
 			}
+			catch (Exception)
+			{
+				this.Cleanup();
+			}
+			#if DEBUG
 			finally
 			{
 				log.Print();
 			}
+			#endif
 		}
 
 		private void OnDestroy()
