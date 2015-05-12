@@ -191,7 +191,7 @@ namespace AntennaRange
 
 			if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
 			{
-				Tools.PostLogMessage(string.Format(
+				Tools.PostDebugMessage(string.Format(
 					"{0}: finding nearest relay for {1}",
 					this.GetType().Name,
 					this.ToString()
@@ -255,7 +255,7 @@ namespace AntennaRange
 
 					if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
 					{
-						Tools.PostLogMessage("{6}: Vessel {0} discarded because we do not have line of sight." +
+						Tools.PostDebugMessage("{6}: Vessel {0} discarded because we do not have line of sight." +
 							"\npotentialSqrDistance: {1}, bestOccludedSqrDistance: {2}, maxTransmitSqrDistance: {3}" +
 							"\npotentialSqrDistance < bestOccludedSqrDistance: {4}" +
 							"\npotentialSqrDistance < (this.maxTransmitDistance * this.maxTransmitDistance): {5}",
@@ -274,7 +274,7 @@ namespace AntennaRange
 					{
 						if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
 						{
-							Tools.PostLogMessage("{0}: Checking {1} relays on {2}.",
+							Tools.PostDebugMessage("{0}: Checking {1} relays on {2}.",
 								this.ToString(),
 								potentialVessel.GetAntennaRelays().Count(),
 								potentialVessel
@@ -285,7 +285,7 @@ namespace AntennaRange
 						{
 							if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
 							{
-								Tools.PostLogMessage(this.ToString() +  " Checking candidate for bestOccludedRelay: {0}" +
+								Tools.PostDebugMessage(this.ToString() +  " Checking candidate for bestOccludedRelay: {0}" +
 									"\n\tCanTransmit: {1}", occludedRelay, occludedRelay.CanTransmit());
 							}
 
@@ -297,7 +297,7 @@ namespace AntennaRange
 
 								if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
 								{
-									Tools.PostLogMessage(this.ToString() + " Found new bestOccludedRelay: {0}" +
+									Tools.PostDebugMessage(this.ToString() + " Found new bestOccludedRelay: {0}" +
 										"\nfirstOccludingBody: {1}" +
 										"\nbestOccludedSqrDistance: {2}",
 										occludedRelay,
@@ -320,7 +320,7 @@ namespace AntennaRange
 				{
 					if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
 					{
-						Tools.PostLogMessage("{0}: Vessel {1} discarded because it is out of range, or farther than another relay.",
+						Tools.PostDebugMessage("{0}: Vessel {1} discarded because it is out of range, or farther than another relay.",
 							this.ToString(),
 							potentialVessel.vesselName
 						);
@@ -338,7 +338,7 @@ namespace AntennaRange
 
 						if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
 						{
-							Tools.PostLogMessage(string.Format("{0}: found new best relay {1} ({2})",
+							Tools.PostDebugMessage(string.Format("{0}: found new best relay {1} ({2})",
 								this.ToString(),
 								this.nearestRelay.ToString(),
 								this.nearestRelay.vessel.id
@@ -354,7 +354,7 @@ namespace AntennaRange
 			double kerbinSqrDistance = this.vessel.DistanceTo(Kerbin) - Kerbin.Radius;
 			kerbinSqrDistance *= kerbinSqrDistance;
 
-			System.Text.StringBuilder log = new System.Text.StringBuilder();
+			Tools.DebugLogger log = Tools.DebugLogger.New(this);
 
 			log.AppendFormat("{0} ({1}): Search done, figuring status.", this.ToString(), this.GetType().Name);
 
@@ -497,7 +497,7 @@ namespace AntennaRange
 
 			log.AppendFormat("\n{0}: Status determination complete.", this.ToString());
 
-			Tools.PostLogMessage(log.ToString());
+			log.Print();
 
 			// Now that we're done with our recursive CanTransmit checks, flag this relay as not checked so it can be
 			// used next time.
