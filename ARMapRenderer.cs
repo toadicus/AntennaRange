@@ -38,7 +38,6 @@ namespace AntennaRange
 	{
 		#region Fields
 		private Dictionary<Guid, LineRenderer> vesselLineRenderers;
-		private Dictionary<Guid, bool> vesselFrameCache;
 		#endregion
 
 		#region Properties
@@ -76,7 +75,6 @@ namespace AntennaRange
 			if (ARConfiguration.PrettyLines)
 			{
 				this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
-				this.vesselFrameCache = new Dictionary<Guid, bool>();
 			}
 		}
 
@@ -102,8 +100,6 @@ namespace AntennaRange
 					MapView.MapCamera.camera.fieldOfView,
 					MapView.MapCamera.Distance
 				);
-
-				this.vesselFrameCache.Clear();
 
 				log.AppendLine("vesselFrameCache cleared.");
 
@@ -269,11 +265,6 @@ namespace AntennaRange
 					GameObject.Destroy(lineRenderer.gameObject);
 				}
 				this.vesselLineRenderers.Clear();
-			}
-
-			if (this.vesselFrameCache != null && this.vesselFrameCache.Count > 0)
-			{
-				this.vesselFrameCache.Clear();
 			}
 		}
 	}
