@@ -58,7 +58,7 @@ namespace AntennaRange
 					LineRenderer lr = obj.AddComponent<LineRenderer>();
 
 					lr.SetColors(Color.green, Color.green);
-					lr.material = new Material(Shader.Find("Particles/Additive"));
+					lr.material = MapView.OrbitLinesMaterial;
 					lr.SetVertexCount(2);
 
 					this.vesselLineRenderers[idx] = lr;
@@ -235,11 +235,11 @@ namespace AntennaRange
 
 			if (MapView.Draw3DLines)
 			{
-				lineWidth = 0.004f * MapView.MapCamera.Distance;
+				lineWidth = 0.005859375f * MapView.MapCamera.Distance;
 			}
 			else
 			{
-				lineWidth = 1f;
+				lineWidth = 2f;
 
 				start = MapView.MapCamera.camera.WorldToScreenPoint(start);
 				end = MapView.MapCamera.camera.WorldToScreenPoint(end);
