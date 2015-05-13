@@ -135,6 +135,26 @@ namespace AntennaRange
 				return ConnectionStatus.None;
 			}
 		}
+
+		public static IAntennaRelay GetBestRelay(this Vessel vessel)
+		{
+			IAntennaRelay bestRelay = null;
+			double bestScore = double.PositiveInfinity;
+			double relayScore = double.NaN;
+
+			foreach (IAntennaRelay relay in vessel.GetAntennaRelays())
+			{
+				relayScore = relay.transmitDistance / relay.maxTransmitDistance;
+
+				if (relayScore < bestScore)
+				{
+					bestScore = relayScore;
+					bestRelay = relay;
+				}
+			}
+
+			return bestRelay;
+		}
 	}
 
 	public enum ConnectionStatus

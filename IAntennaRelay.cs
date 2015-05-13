@@ -31,41 +31,39 @@ using System;
 
 namespace AntennaRange
 {
-	/*
-	 * Interface defining the basic functionality of AntennaRelay modules for AntennaRange.
-	 * */
+	/// <summary>
+	/// Interface defining the basic functionality of AntennaRelay modules for AntennaRange.
+	/// </summary>
 	public interface IAntennaRelay
 	{
 		/// <summary>
 		/// Gets the parent Vessel.
 		/// </summary>
-		/// <value>The parent Vessel.</value>
 		Vessel vessel { get; }
 
-		IAntennaRelay nearestRelay { get; }
-
-		IAntennaRelay bestOccludedRelay { get; }
-
+		/// <summary>
+		/// Gets the target <see cref="AntennaRange.IAntennaRelay"/>relay.
+		/// </summary>
 		IAntennaRelay targetRelay { get; }
 
 		/// <summary>
 		/// Gets the distance to the nearest relay or Kerbin, whichever is closer.
 		/// </summary>
-		/// <value>The distance to the nearest relay or Kerbin, whichever is closer.</value>
 		double transmitDistance { get; }
 
+		/// <summary>
+		/// Gets the nominal transmit distance at which the Antenna behaves just as prescribed by Squad's config.
+		/// </summary>
 		double nominalTransmitDistance { get; }
 
 		/// <summary>
 		/// The maximum distance at which this relay can operate.
 		/// </summary>
-		/// <value>The max transmit distance.</value>
-		float maxTransmitDistance { get; }
+		double maxTransmitDistance { get; }
 
 		/// <summary>
 		/// The first CelestialBody blocking line of sight to a 
 		/// </summary>
-		/// <value>The first occluding body.</value>
 		CelestialBody firstOccludingBody { get; }
 
 		/// <summary>
@@ -75,14 +73,20 @@ namespace AntennaRange
 		bool KerbinDirect { get; }
 
 		/// <summary>
-		/// Determines whether this instance can transmit.
+		/// Gets the Part title.
 		/// </summary>
-		/// <returns><c>true</c> if this instance can transmit; otherwise, <c>false</c>.</returns>
+		string Title { get; }
+
+		/// <summary>
+		/// Determines whether this instance can transmit.
+		/// <c>true</c> if this instance can transmit; otherwise, <c>false</c>.
+		/// </summary>
 		bool CanTransmit();
 
+		/// <summary>
+		/// Returns a <see cref="System.String"/> that represents the current <see cref="AntennaRange.IAntennaRelay"/>.
+		/// </summary>
 		string ToString();
-
-		string Title { get; }
 	}
 }
 

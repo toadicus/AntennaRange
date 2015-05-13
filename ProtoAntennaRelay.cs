@@ -62,7 +62,7 @@ namespace AntennaRange
 		/// The maximum distance at which this transmitter can operate.
 		/// </summary>
 		/// <value>The max transmit distance.</value>
-		public override float maxTransmitDistance
+		public override double maxTransmitDistance
 		{
 			get
 			{

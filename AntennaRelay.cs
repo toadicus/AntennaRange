@@ -54,6 +54,9 @@ namespace AntennaRange
 
 		protected IAntennaRelay moduleRef;
 
+		private IAntennaRelay nearestRelay;
+		private IAntennaRelay bestOccludedRelay;
+
 		protected System.Diagnostics.Stopwatch searchTimer;
 		protected long millisecondsBetweenSearches;
 
@@ -67,22 +70,6 @@ namespace AntennaRange
 			{
 				return this.moduleRef.vessel;
 			}
-		}
-
-		/// <summary>
-		/// Gets or sets the nearest relay.
-		/// </summary>
-		/// <value>The nearest relay</value>
-		public IAntennaRelay nearestRelay
-		{
-			get;
-			protected set;
-		}
-
-		public IAntennaRelay bestOccludedRelay
-		{
-			get;
-			protected set;
 		}
 
 		public IAntennaRelay targetRelay
@@ -131,7 +118,7 @@ namespace AntennaRange
 		/// The maximum distance at which this relay can operate.
 		/// </summary>
 		/// <value>The max transmit distance.</value>
-		public virtual float maxTransmitDistance
+		public virtual double maxTransmitDistance
 		{
 			get;
 			set;

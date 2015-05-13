@@ -137,32 +137,6 @@ namespace AntennaRange
 			}
 		}
 
-		public IAntennaRelay nearestRelay
-		{
-			get
-			{
-				if (this.relay == null)
-				{
-					return null;
-				}
-
-				return this.relay.nearestRelay;
-			}
-		}
-
-		public IAntennaRelay bestOccludedRelay
-		{
-			get
-			{
-				if (this.relay == null)
-				{
-					return null;
-				}
-
-				return this.relay.bestOccludedRelay;
-			}
-		}
-
 		public IAntennaRelay targetRelay
 		{
 			get
@@ -176,7 +150,7 @@ namespace AntennaRange
 			}
 		}
 
-		// Returns the distance to the nearest relay or Kerbin, whichever is closer.
+		// Returns the distance to the target relay or Kerbin, whichever is closer.
 		public double transmitDistance
 		{
 			get
@@ -199,12 +173,12 @@ namespace AntennaRange
 		}
 
 		// Returns the maximum distance this module can transmit
-		public float maxTransmitDistance
+		public double maxTransmitDistance
 		{
 			get
 			{
 				// TODO: Cache this in a way that doesn't break everything.
-				return Mathf.Sqrt(this.maxPowerFactor) * this.nominalRange;
+				return Math.Sqrt(this.maxPowerFactor) * this.nominalRange;
 			}
 		}
 
@@ -483,25 +457,7 @@ namespace AntennaRange
 
 			if (this.CanTransmit())
 			{
-				StringBuilder message = new StringBuilder();
-
-				message.Append("[");
-				message.Append(base.part.partInfo.title);
-				message.Append("]: ");
-
-				message.Append("Beginning transmission ");
-
-				if (this.KerbinDirect)
-				{
-					message.Append("directly to Kerbin.");
-				}
-				else
-				{
-					message.Append("via ");
-					message.Append(this.relay.targetRelay);
-				}
-
-				ScreenMessages.PostScreenMessage(message.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
+				ScreenMessages.PostScreenMessage(this.buildTransmitMessage(), 4f, ScreenMessageStyle.UPPER_LEFT);
 
 				base.TransmitData(dataQueue);
 			}
@@ -601,25 +557,7 @@ namespace AntennaRange
 
 			if (this.CanTransmit())
 			{
-				StringBuilder message = new StringBuilder();
-
-				message.Append("[");
-				message.Append(base.part.partInfo.title);
-				message.Append("]: ");
-
-				message.Append("Beginning transmission ");
-
-				if (this.KerbinDirect)
-				{
-					message.Append("directly to Kerbin.");
-				}
-				else
-				{
-					message.Append("via ");
-					message.Append(this.relay.targetRelay);
-				}
-
-				ScreenMessages.PostScreenMessage(message.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
+				ScreenMessages.PostScreenMessage(this.buildTransmitMessage(), 4f, ScreenMessageStyle.UPPER_LEFT);
 
 				base.StartTransmission();
 			}
@@ -707,8 +645,31 @@ namespace AntennaRange
 			return msg.ToString();
 		}
 
-		// When debugging, it's nice to have a button that just tells you everything.
+		private string buildTransmitMessage()
+		{
+			StringBuilder message = new StringBuilder();
 
+			message.Append("[");
+			message.Append(base.part.partInfo.title);
+			message.Append("]: ");
+
+			message.Append("Beginning transmission ");
+
+			if (this.KerbinDirect)
+			{
+				message.Append("directly to Kerbin.");
+			}
+			else
+			{
+				message.Append("via ");
+				message.Append(this.relay.targetRelay);
+			}
+
+			return message.ToString();
+		}
+
+		#if DEBUG
+		// When debugging, it's nice to have a button that just tells you everything.
 		[KSPEvent (guiName = "Show Debug Info", active = true, guiActive = true)]
 		public void DebugInfo()
 		{
@@ -728,10 +689,9 @@ namespace AntennaRange
 				"DataRate: {9}\n" +
 				"DataResourceCost: {10}\n" +
 				"TransmitterScore: {11}\n" +
-				"NearestRelay: {12}\n" +
-				"BestOccludedRelay: {13}\n" +
-				"KerbinDirect: {14}\n" +
-				"Vessel ID: {15}",
+				"targetRelay: {12}\n" +
+				"KerbinDirect: {13}\n" +
+				"Vessel ID: {14}",
 				this.name,
 				this._basepacketSize,
 				base.packetSize,
@@ -744,8 +704,7 @@ namespace AntennaRange
 				this.DataRate,
 				this.DataResourceCost,
 				ScienceUtil.GetTransmitterScore(this),
-				this.relay.nearestRelay == null ? "null" : this.relay.nearestRelay.ToString(),
-				this.relay.bestOccludedRelay == null ? "null" : this.relay.bestOccludedRelay.ToString(),
+				this.relay.targetRelay == null ? "null" : this.relay.targetRelay.ToString(),
 				this.KerbinDirect,
 				this.vessel.id
 				);
@@ -767,11 +726,12 @@ namespace AntennaRange
 
 			Tools.PostDebugMessage(sb.ToString());
 		}
-
-		/*[KSPEvent (guiName = "Dump RelayDB", active = true, guiActive = true)]
+		 
+		[KSPEvent (guiName = "Dump RelayDB", active = true, guiActive = true)]
 		public void DumpRelayDB()
 		{
 			RelayDatabase.Instance.Dump();
-		}*/
+		}
+		#endif
 	}
 }

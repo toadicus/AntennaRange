@@ -128,41 +128,12 @@ namespace AntennaRange
 								continue;
 						}
 
-						log.Append("\tChecking connection status...\n");
+						IAntennaRelay vesselRelay = vessel.GetBestRelay();
 
-						/*if (vessel.HasConnectedRelay())
+						if (vesselRelay != null)
 						{
-							log.AppendLine("\tHas a connection, checking for the best relay to use for the line.");*/
-
-							IAntennaRelay vesselRelay = null;
-							float bestScore = float.PositiveInfinity;
-							float relayScore = float.NaN;
-
-							foreach (IAntennaRelay relay in RelayDatabase.Instance[vessel].Values)
-							{
-								relayScore = (float)relay.transmitDistance / relay.maxTransmitDistance;
-
-								if (relayScore < bestScore)
-								{
-									bestScore = relayScore;
-									vesselRelay = relay as IAntennaRelay;
-								}
-							}
-
-							if (vesselRelay != null)
-							{
-								log.AppendFormat("\t...picked relay {0} with a score of {1}", 
-									vesselRelay, relayScore
-								);
-
-								this.SetRelayVertices(vesselRelay);
-							}
-						/*}
-						else if (this.vesselLineRenderers.ContainsKey(vessel.id))
-						{
-							log.AppendLine("\tDisabling line because vessel has no connection.");
-							this[vessel.id].enabled = false;
-						}*/
+							this.SetRelayVertices(vesselRelay);
+						}
 					}
 				}
 			}
