@@ -71,17 +71,6 @@ namespace AntennaRange
 		}
 
 		/// <summary>
-		/// Gets a value indicating whether this <see cref="AntennaRange.ProtoDataTransmitter"/> has been checked during
-		/// the current relay attempt.
-		/// </summary>
-		/// <value><c>true</c> if relay checked; otherwise, <c>false</c>.</value>
-		public override bool relayChecked
-		{
-			get;
-			protected set;
-		}
-
-		/// <summary>
 		/// Gets the underlying part's title.
 		/// </summary>
 		/// <value>The title.</value>

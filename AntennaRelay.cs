@@ -31,10 +31,6 @@ using System.Collections.Generic;
 using System.Linq;
 using ToadicusTools;
 
-// @DONE TODO: Retool nearestRelay to always contain the nearest relay, even if out of range.
-// @DONE TODO: Retool CanTransmit to not rely on nearestRelay == null.
-// TODO: Track occluded vessels somehow.
-
 namespace AntennaRange
 {
 	public class AntennaRelay
@@ -139,17 +135,6 @@ namespace AntennaRange
 		{
 			get;
 			set;
-		}
-
-		/// <summary>
-		/// Gets a value indicating whether this <see cref="AntennaRange.ProtoDataTransmitter"/> has been checked during
-		/// the current relay attempt.
-		/// </summary>
-		/// <value><c>true</c> if relay checked; otherwise, <c>false</c>.</value>
-		public virtual bool relayChecked
-		{
-			get;
-			protected set;
 		}
 
 		public virtual bool KerbinDirect

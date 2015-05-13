@@ -69,13 +69,6 @@ namespace AntennaRange
 		CelestialBody firstOccludingBody { get; }
 
 		/// <summary>
-		/// Gets a value indicating whether this <see cref="AntennaRange.ProtoDataTransmitter"/> has been checked during
-		/// the current relay attempt.
-		/// </summary>
-		/// <value><c>true</c> if relay checked; otherwise, <c>false</c>.</value>
-		bool relayChecked { get; }
-
-		/// <summary>
 		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
 		/// directly with Kerbin.
 		/// </summary>

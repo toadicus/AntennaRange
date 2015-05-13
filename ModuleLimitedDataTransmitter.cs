@@ -280,21 +280,6 @@ namespace AntennaRange
 			}
 		}
 
-		// Reports whether this antenna has been checked as a viable relay already in the current FindNearestRelay.
-		public bool relayChecked
-		{
-			get
-			{
-				if (this.relay != null)
-				{
-					return this.relay.relayChecked;
-				}
-
-				// If our relay is null, always return null so we're never checked.
-				return true;
-			}
-		}
-
 		public bool KerbinDirect
 		{
 			get
@@ -506,8 +491,6 @@ namespace AntennaRange
 
 				message.Append("Beginning transmission ");
 
-				// @DONE TODO: Fix this to fall back to Kerbin if nearestRelay cannot be contacted.
-				// @DONE TODO: Remove nearestRelay == null
 				if (this.KerbinDirect)
 				{
 					message.Append("directly to Kerbin.");
@@ -515,7 +498,7 @@ namespace AntennaRange
 				else
 				{
 					message.Append("via ");
-					message.Append(this.relay.nearestRelay);
+					message.Append(this.relay.targetRelay);
 				}
 
 				ScreenMessages.PostScreenMessage(message.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
@@ -626,8 +609,6 @@ namespace AntennaRange
 
 				message.Append("Beginning transmission ");
 
-				// @DONE TODO: Fix this to fall back to Kerbin if nearestRelay cannot be contacted.
-				// @DONE TODO: Remove nearestRelay == null
 				if (this.KerbinDirect)
 				{
 					message.Append("directly to Kerbin.");
@@ -635,7 +616,7 @@ namespace AntennaRange
 				else
 				{
 					message.Append("via ");
-					message.Append(this.relay.nearestRelay);
+					message.Append(this.relay.targetRelay);
 				}
 
 				ScreenMessages.PostScreenMessage(message.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
