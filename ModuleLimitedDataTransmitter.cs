@@ -36,71 +36,90 @@ using UnityEngine;
 
 namespace AntennaRange
 {
-	/*
-	 * ModuleLimitedDataTransmitter is designed as a drop-in replacement for ModuleDataTransmitter, and handles range-
-	 * finding, power scaling, and data scaling for antennas during science transmission.  Its functionality varies with
-	 * three tunables: nominalRange, maxPowerFactor, and maxDataFactor, set in .cfg files.
-	 * 
-	 * In general, the scaling functions assume the following relation:
-	 * 
-	 *     D² α P/R,
-	 * 
-	 * where D is the total transmission distance, P is the transmission power, and R is the data rate.
-	 * 
-	 * */
-
-	/*
-	 * Fields
-	 * */
+	/// <summary>
+	/// <para>ModuleLimitedDataTransmitter is designed as a drop-in replacement for ModuleDataTransmitter, and handles
+	/// rangefinding, power scaling, and data scaling for antennas during science transmission.  Its functionality
+	/// varies with three tunables: nominalRange, maxPowerFactor, and maxDataFactor, set in .cfg files.</para>
+	/// 
+	/// <para>In general, the scaling functions assume the following relation:</para>
+	/// 
+	///	<para>	D² α P/R,</para>
+	/// 
+	/// <para>where D is the total transmission distance, P is the transmission power, and R is the data rate.</para>
+	/// </summary>
 	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, IScienceDataTransmitter, IAntennaRelay
 	{
 		// Stores the packetResourceCost as defined in the .cfg file.
-		protected float _basepacketResourceCost;
+		private float _basepacketResourceCost;
 
 		// Stores the packetSize as defined in the .cfg file.
-		protected float _basepacketSize;
+		private float _basepacketSize;
 
 		// Every antenna is a relay.
-		protected AntennaRelay relay;
-
-		// Keep track of vessels with transmitters for relay purposes.
-		protected List<Vessel> _relayVessels;
+		private AntennaRelay relay;
 
 		// Sometimes we will need to communicate errors; this is how we do it.
-		protected ScreenMessage ErrorMsg;
+		private ScreenMessage ErrorMsg;
 
-		// The distance from Kerbin at which the antenna will perform exactly as prescribed by packetResourceCost
-		// and packetSize.
+		/// <summary>
+		/// The distance from Kerbin at which the antenna will perform exactly as prescribed by packetResourceCost
+		/// and packetSize.
+		/// </summary>
 		[KSPField(isPersistant = false)]
 		public double nominalRange;
 
+		/// <summary>
+		/// Relay status string for use in action menus.
+		/// </summary>
 		[KSPField(isPersistant = false, guiActive = true, guiName = "Status")]
 		public string UIrelayStatus;
 
+		/// <summary>
+		/// Relay target string for use in action menus.
+		/// </summary>
 		[KSPField(isPersistant = false, guiActive = true, guiName = "Relay")]
 		public string UIrelayTarget;
 
+		/// <summary>
+		/// Transmit distance string for use in action menus.
+		/// </summary>
 		[KSPField(isPersistant = false, guiActive = true, guiName = "Transmission Distance")]
 		public string UItransmitDistance;
 
+		/// <summary>
+		/// Maximum distance string for use in action menus.
+		/// </summary>
 		[KSPField(isPersistant = false, guiActive = true, guiName = "Maximum Distance")]
 		public string UImaxTransmitDistance;
 
+		/// <summary>
+		/// Packet size string for use in action menus.
+		/// </summary>
 		[KSPField(isPersistant = false, guiActive = true, guiName = "Packet Size")]
 		public string UIpacketSize;
 
+		/// <summary>
+		/// Packet cost string for use in action menus.
+		/// </summary>
 		[KSPField(isPersistant = false, guiActive = true, guiName = "Packet Cost")]
 		public string UIpacketCost;
 
-		// The multiplier on packetResourceCost that defines the maximum power output of the antenna.  When the power
-		// cost exceeds packetResourceCost * maxPowerFactor, transmission will fail.
+		/// <summary>
+		/// The multiplier on packetResourceCost that defines the maximum power output of the antenna.  When the power
+		/// cost exceeds packetResourceCost * maxPowerFactor, transmission will fail.
+		/// </summary>
 		[KSPField(isPersistant = false)]
 		public float maxPowerFactor;
 
-		// The multipler on packetSize that defines the maximum data bandwidth of the antenna.
+		/// <summary>
+		/// The multipler on packetSize that defines the maximum data bandwidth of the antenna.
+		/// </summary>
 		[KSPField(isPersistant = false)]
 		public float maxDataFactor;
 
+		/// <summary>
+		/// The packet throttle.
+		/// </summary>
 		[KSPField(
 			isPersistant = true,
 			guiName = "Packet Throttle",
@@ -111,12 +130,14 @@ namespace AntennaRange
 		[UI_FloatRange(maxValue = 100f, minValue = 2.5f, stepIncrement = 2.5f)]
 		public float packetThrottle;
 
-		protected bool actionUIUpdate;
+		private bool actionUIUpdate;
 
 		/*
 		 * Properties
 		 * */
-		// Returns the parent vessel housing this antenna.
+		/// <summary>
+		/// Gets the parent Vessel.
+		/// </summary>
 		public new Vessel vessel
 		{
 			get
@@ -137,6 +158,9 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the target <see cref="AntennaRange.IAntennaRelay"/>relay.
+		/// </summary>
 		public IAntennaRelay targetRelay
 		{
 			get
@@ -150,7 +174,9 @@ namespace AntennaRange
 			}
 		}
 
-		// Returns the distance to the target relay or Kerbin, whichever is closer.
+		/// <summary>
+		/// Gets the distance to the nearest relay or Kerbin, whichever is closer.
+		/// </summary>
 		public double transmitDistance
 		{
 			get
@@ -164,6 +190,9 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the nominal transmit distance at which the Antenna behaves just as prescribed by Squad's config.
+		/// </summary>
 		public double nominalTransmitDistance
 		{
 			get
@@ -172,7 +201,9 @@ namespace AntennaRange
 			}
 		}
 
-		// Returns the maximum distance this module can transmit
+		/// <summary>
+		/// The maximum distance at which this relay can operate.
+		/// </summary>
 		public double maxTransmitDistance
 		{
 			get
@@ -182,6 +213,9 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// The first CelestialBody blocking line of sight to a 
+		/// </summary>
 		public CelestialBody firstOccludingBody
 		{
 			get
@@ -216,8 +250,10 @@ namespace AntennaRange
 		 * 
 		 * So... hopefully that doesn't screw with anything else.
 		 * */
-		// Override ModuleDataTransmitter.DataRate to just return packetSize, because we want antennas to be scored in
-		// terms of joules/byte
+		/// <summary>
+		/// Override ModuleDataTransmitter.DataRate to just return packetSize, because we want antennas to be scored in
+		/// terms of joules/byte
+		/// </summary>
 		public new float DataRate
 		{
 			get
@@ -235,8 +271,10 @@ namespace AntennaRange
 			}
 		}
 
-		// Override ModuleDataTransmitter.DataResourceCost to just return packetResourceCost, because we want antennas
-		// to be scored in terms of joules/byte
+		/// <summary>
+		/// Override ModuleDataTransmitter.DataResourceCost to just return packetResourceCost, because we want antennas
+		/// to be scored in terms of joules/byte
+		/// </summary>
 		public new double DataResourceCost
 		{
 			get
@@ -254,6 +292,10 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
+		/// directly with Kerbin.
+		/// </summary>
 		public bool KerbinDirect
 		{
 			get
@@ -267,6 +309,9 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the Part title.
+		/// </summary>
 		public string Title
 		{
 			get
@@ -290,6 +335,9 @@ namespace AntennaRange
 			this.packetThrottle = 100f;
 		}
 
+		/// <summary>
+		/// PartModule OnAwake override; runs at Unity Awake.
+		/// </summary>
 		public override void OnAwake()
 		{
 			base.OnAwake();
@@ -313,7 +361,10 @@ namespace AntennaRange
 			));
 		}
 
-		// At least once, when the module starts with a state on the launch pad or later, go find Kerbin.
+		/// <summary>
+		/// PartModule OnStart override; runs at Unity Start.
+		/// </summary>
+		/// <param name="state">State.</param>
 		public override void OnStart (StartState state)
 		{
 			base.OnStart (state);
@@ -331,9 +382,12 @@ namespace AntennaRange
 			}
 		}
 
-		// When the module loads, fetch the Squad KSPFields from the base.  This is necessary in part because
-		// overloading packetSize and packetResourceCostinto a property in ModuleLimitedDataTransmitter didn't
-		// work.
+		/// <summary>
+		/// When the module loads, fetch the Squad KSPFields from the base.  This is necessary in part because
+		/// overloading packetSize and packetResourceCostinto a property in ModuleLimitedDataTransmitter didn't
+		/// work.
+		/// </summary>
+		/// <param name="node"><see cref="ConfigNode"/> with data for this module.</param>
 		public override void OnLoad(ConfigNode node)
 		{
 			this.Fields.Load(node);
@@ -342,81 +396,9 @@ namespace AntennaRange
 			base.OnLoad (node);
 		}
 
-		// Post an error in the communication messages describing the reason transmission has failed.  Currently there
-		// is only one reason for this.
-		protected void PostCannotTransmitError()
-		{
-			string ErrorText = string.Intern("Unable to transmit: no visible receivers in range!");
-
-			this.ErrorMsg.message = string.Format(
-				"<color='#{0}{1}{2}{3}'><b>{4}</b></color>",
-				((int)(XKCDColors.OrangeRed.r * 255f)).ToString("x2"),
-				((int)(XKCDColors.OrangeRed.g * 255f)).ToString("x2"),
-				((int)(XKCDColors.OrangeRed.b * 255f)).ToString("x2"),
-				((int)(XKCDColors.OrangeRed.a * 255f)).ToString("x2"),
-				ErrorText
-			);
-
-			Tools.PostDebugMessage(this.GetType().Name + ": " + this.ErrorMsg.message);
-
-			ScreenMessages.PostScreenMessage(this.ErrorMsg, false);
-		}
-
-		// Before transmission, set packetResourceCost.  Per above, packet cost increases with the square of
-		// distance.  packetResourceCost maxes out at _basepacketResourceCost * maxPowerFactor, at which point
-		// transmission fails (see CanTransmit).
-		protected void PreTransmit_SetPacketResourceCost()
-		{
-			if (ARConfiguration.FixedPowerCost || this.transmitDistance <= this.nominalRange)
-			{
-				base.packetResourceCost = this._basepacketResourceCost;
-			}
-			else
-			{
-				float rangeFactor = (float)(this.transmitDistance / this.nominalRange);
-				rangeFactor *= rangeFactor;
-
-				base.packetResourceCost = this._basepacketResourceCost
-					* rangeFactor;
-
-				Tools.PostDebugMessage(
-					this,
-					"Pretransmit: packet cost set to {0} before throttle (rangeFactor = {1}).",
-					base.packetResourceCost,
-					rangeFactor);
-			}
-
-			base.packetResourceCost *= this.packetThrottle / 100f;
-		}
-
-		// Before transmission, set packetSize.  Per above, packet size increases with the inverse square of
-		// distance.  packetSize maxes out at _basepacketSize * maxDataFactor.
-		protected void PreTransmit_SetPacketSize()
-		{
-			if (!ARConfiguration.FixedPowerCost && this.transmitDistance >= this.nominalRange)
-			{
-				base.packetSize = this._basepacketSize;
-			}
-			else
-			{
-				float rangeFactor = (float)(this.nominalRange / this.transmitDistance);
-				rangeFactor *= rangeFactor;
-
-				base.packetSize = Mathf.Min(
-					this._basepacketSize * rangeFactor,
-					this._basepacketSize * this.maxDataFactor);
-
-				Tools.PostDebugMessage(
-					this,
-					"Pretransmit: packet size set to {0} before throttle (rangeFactor = {1}).",
-					base.packetSize,
-					rangeFactor);
-			}
-
-			base.packetSize *= this.packetThrottle / 100f;
-		}
-
-		// Override ModuleDataTransmitter.GetInfo to add nominal and maximum range to the VAB description.
+		/// <summary>
+		/// Override ModuleDataTransmitter.GetInfo to add nominal and maximum range to the VAB description.
+		/// </summary>
 		public override string GetInfo()
 		{
 			string text = base.GetInfo();
@@ -425,7 +407,10 @@ namespace AntennaRange
 			return text;
 		}
 
-		// Override ModuleDataTransmitter.CanTransmit to return false when transmission is not possible.
+		/// <summary>
+		/// Determines whether this instance can transmit.
+		/// <c>true</c> if this instance can transmit; otherwise, <c>false</c>.
+		/// </summary>
 		public new bool CanTransmit()
 		{
 			if (this.part == null || this.relay == null)
@@ -452,8 +437,12 @@ namespace AntennaRange
 			return this.relay.CanTransmit();
 		}
 
-		// Override ModuleDataTransmitter.TransmitData to check against CanTransmit and fail out when CanTransmit
-		// returns false.
+		/// <summary>
+		/// Override ModuleDataTransmitter.TransmitData to check against CanTransmit and fail out when CanTransmit
+		/// returns false.
+		/// </summary>
+		/// <param name="dataQueue">List of <see cref="ScienceData"/> to transmit.</param>
+		/// <param name="callback">Callback function</param>
 		public new void TransmitData(List<ScienceData> dataQueue, Callback callback)
 		{
 			this.PreTransmit_SetPacketSize();
@@ -546,13 +535,20 @@ namespace AntennaRange
 			);
 		}
 
+		/// <summary>
+		/// Override ModuleDataTransmitter.TransmitData to check against CanTransmit and fail out when CanTransmit
+		/// returns false.
+		/// </summary>
+		/// <param name="dataQueue">List of <see cref="ScienceData"/> to transmit.</param>
 		public new void TransmitData(List<ScienceData> dataQueue)
 		{
 			this.TransmitData(dataQueue, null);
 		}
 
-		// Override ModuleDataTransmitter.StartTransmission to check against CanTransmit and fail out when CanTransmit
-		// returns false.
+		/// <summary>
+		/// Override ModuleDataTransmitter.StartTransmission to check against CanTransmit and fail out when CanTransmit
+		/// returns false.
+		/// </summary>
 		public new void StartTransmission()
 		{
 			PreTransmit_SetPacketSize ();
@@ -576,6 +572,9 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// MonoBehaviour Update
+		/// </summary>
 		public void Update()
 		{
 			if (this.actionUIUpdate)
@@ -613,22 +612,10 @@ namespace AntennaRange
 			}
 		}
 
-		public void onPartActionUICreate(Part eventPart)
-		{
-			if (eventPart == base.part)
-			{
-				this.actionUIUpdate = true;
-			}
-		}
-
-		public void onPartActionUIDismiss(Part eventPart)
-		{
-			if (eventPart == base.part)
-			{
-				this.actionUIUpdate = false;
-			}
-		}
-
+		/// <summary>
+		/// Returns a <see cref="System.String"/> that represents the current <see cref="AntennaRange.ModuleLimitedDataTransmitter"/>.
+		/// </summary>
+		/// <returns>A <see cref="System.String"/> that represents the current <see cref="AntennaRange.ModuleLimitedDataTransmitter"/>.</returns>
 		public override string ToString()
 		{
 			StringBuilder msg = new StringBuilder();
@@ -652,6 +639,98 @@ namespace AntennaRange
 			}
 
 			return msg.ToString();
+		}
+
+		// When we catch an onPartActionUICreate event for our part, go ahead and update every frame to look pretty.
+		private void onPartActionUICreate(Part eventPart)
+		{
+			if (eventPart == base.part)
+			{
+				this.actionUIUpdate = true;
+			}
+		}
+
+		// When we catch an onPartActionUIDismiss event for our part, stop updating every frame to look pretty.
+		private void onPartActionUIDismiss(Part eventPart)
+		{
+			if (eventPart == base.part)
+			{
+				this.actionUIUpdate = false;
+			}
+		}
+
+		// Post an error in the communication messages describing the reason transmission has failed.  Currently there
+		// is only one reason for this.
+		private void PostCannotTransmitError()
+		{
+			string ErrorText = string.Intern("Unable to transmit: no visible receivers in range!");
+
+			this.ErrorMsg.message = string.Format(
+				"<color='#{0}{1}{2}{3}'><b>{4}</b></color>",
+				((int)(XKCDColors.OrangeRed.r * 255f)).ToString("x2"),
+				((int)(XKCDColors.OrangeRed.g * 255f)).ToString("x2"),
+				((int)(XKCDColors.OrangeRed.b * 255f)).ToString("x2"),
+				((int)(XKCDColors.OrangeRed.a * 255f)).ToString("x2"),
+				ErrorText
+			);
+
+			Tools.PostDebugMessage(this.GetType().Name + ": " + this.ErrorMsg.message);
+
+			ScreenMessages.PostScreenMessage(this.ErrorMsg, false);
+		}
+
+		// Before transmission, set packetResourceCost.  Per above, packet cost increases with the square of
+		// distance.  packetResourceCost maxes out at _basepacketResourceCost * maxPowerFactor, at which point
+		// transmission fails (see CanTransmit).
+		private void PreTransmit_SetPacketResourceCost()
+		{
+			if (ARConfiguration.FixedPowerCost || this.transmitDistance <= this.nominalRange)
+			{
+				base.packetResourceCost = this._basepacketResourceCost;
+			}
+			else
+			{
+				float rangeFactor = (float)(this.transmitDistance / this.nominalRange);
+				rangeFactor *= rangeFactor;
+
+				base.packetResourceCost = this._basepacketResourceCost
+					* rangeFactor;
+
+				Tools.PostDebugMessage(
+					this,
+					"Pretransmit: packet cost set to {0} before throttle (rangeFactor = {1}).",
+					base.packetResourceCost,
+					rangeFactor);
+			}
+
+			base.packetResourceCost *= this.packetThrottle / 100f;
+		}
+
+		// Before transmission, set packetSize.  Per above, packet size increases with the inverse square of
+		// distance.  packetSize maxes out at _basepacketSize * maxDataFactor.
+		private void PreTransmit_SetPacketSize()
+		{
+			if (!ARConfiguration.FixedPowerCost && this.transmitDistance >= this.nominalRange)
+			{
+				base.packetSize = this._basepacketSize;
+			}
+			else
+			{
+				float rangeFactor = (float)(this.nominalRange / this.transmitDistance);
+				rangeFactor *= rangeFactor;
+
+				base.packetSize = Mathf.Min(
+					this._basepacketSize * rangeFactor,
+					this._basepacketSize * this.maxDataFactor);
+
+				Tools.PostDebugMessage(
+					this,
+					"Pretransmit: packet size set to {0} before throttle (rangeFactor = {1}).",
+					base.packetSize,
+					rangeFactor);
+			}
+
+			base.packetSize *= this.packetThrottle / 100f;
 		}
 
 		private string buildTransmitMessage()

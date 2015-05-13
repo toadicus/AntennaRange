@@ -33,10 +33,17 @@ using ToadicusTools;
 
 namespace AntennaRange
 {
+	/// <summary>
+	/// Relay code at the heart of AntennaRange
+	/// </summary>
 	public class AntennaRelay
 	{
 		// We don't have a Bard, so we'll hide Kerbin here.
 		private static CelestialBody _Kerbin;
+
+		/// <summary>
+		/// Fetches, caches, and returns a <see cref="CelestialBody"/> reference to Kerbin
+		/// </summary>
 		public static CelestialBody Kerbin
 		{
 			get
@@ -50,15 +57,19 @@ namespace AntennaRange
 			}
 		}
 
-		protected bool canTransmit;
-
-		protected IAntennaRelay moduleRef;
+		private bool canTransmit;
 
 		private IAntennaRelay nearestRelay;
 		private IAntennaRelay bestOccludedRelay;
 
-		protected System.Diagnostics.Stopwatch searchTimer;
-		protected long millisecondsBetweenSearches;
+		private System.Diagnostics.Stopwatch searchTimer;
+		private long millisecondsBetweenSearches;
+
+		/// <summary>
+		/// The <see cref="AntennaRange.ModuleLimitedDataTransmitter"/> reference underlying this AntennaRelay, as an
+		/// <see cref="AntennaRange.IAntennaRelay"/>
+		/// </summary>
+		protected IAntennaRelay moduleRef;
 
 		/// <summary>
 		/// Gets the parent Vessel.
@@ -72,6 +83,9 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the target <see cref="AntennaRange.IAntennaRelay"/>relay.
+		/// </summary>
 		public IAntennaRelay targetRelay
 		{
 			get;
@@ -108,6 +122,9 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the nominal transmit distance at which the Antenna behaves just as prescribed by Squad's config.
+		/// </summary>
 		public virtual double nominalTransmitDistance
 		{
 			get;
@@ -124,6 +141,10 @@ namespace AntennaRange
 			set;
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
+		/// directly with Kerbin.
+		/// </summary>
 		public virtual bool KerbinDirect
 		{
 			get;
@@ -476,6 +497,10 @@ namespace AntennaRange
 			RelayDatabase.Instance.CheckedVesselsTable.Remove(vessel.id);
 		}
 
+		/// <summary>
+		/// Returns a <see cref="System.String"/> that represents the current <see cref="AntennaRange.AntennaRelay"/>.
+		/// </summary>
+		/// <returns>A <see cref="System.String"/> that represents the current <see cref="AntennaRange.AntennaRelay"/>.</returns>
 		public override string ToString()
 		{
 			if (this is ProtoAntennaRelay)
@@ -486,9 +511,10 @@ namespace AntennaRange
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="AntennaRange.ProtoDataTransmitter"/> class.
+		/// Initializes a new instance of the <see cref="AntennaRange.AntennaRelay"/> class.
 		/// </summary>
-		/// <param name="ms"><see cref="ProtoPartModuleSnapshot"/></param>
+		/// <param name="module">The module reference underlying this AntennaRelay,
+		/// as an <see cref="AntennaRange.IAntennaRelay"/></param>
 		public AntennaRelay(IAntennaRelay module)
 		{
 			this.moduleRef = module;
