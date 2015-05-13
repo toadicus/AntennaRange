@@ -40,16 +40,29 @@ namespace AntennaRange
 	public class ProtoAntennaRelay : AntennaRelay, IAntennaRelay
 	{
 		// Stores the prototype part so we can make sure we haven't exploded or so.
-		protected ProtoPartSnapshot protoPart;
+		private ProtoPartSnapshot protoPart;
 
+		/// <summary>
+		/// Gets the parent Vessel.
+		/// </summary>
 		public override Vessel vessel
 		{
 			get
 			{
-				return this.protoPart.pVesselRef.vesselRef;
+				if (this.protoPart != null && this.protoPart.pVesselRef != null)
+				{
+					return this.protoPart.pVesselRef.vesselRef;
+				}
+				else
+				{
+					return null;
+				}
 			}
 		}
 
+		/// <summary>
+		/// Gets the nominal transmit distance at which the Antenna behaves just as prescribed by Squad's config.
+		/// </summary>
 		public override double nominalTransmitDistance
 		{
 			get
@@ -59,9 +72,8 @@ namespace AntennaRange
 		}
 
 		/// <summary>
-		/// The maximum distance at which this transmitter can operate.
+		/// The maximum distance at which this relay can operate.
 		/// </summary>
-		/// <value>The max transmit distance.</value>
 		public override double maxTransmitDistance
 		{
 			get
@@ -87,6 +99,10 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Determines whether this instance can transmit.
+		/// <c>true</c> if this instance can transmit; otherwise, <c>false</c>.
+		/// </summary>
 		public override bool CanTransmit()
 		{
 			PartStates partState = (PartStates)this.protoPart.state;
@@ -104,6 +120,10 @@ namespace AntennaRange
 			return base.CanTransmit();
 		}
 
+		/// <summary>
+		/// Returns a <see cref="System.String"/> that represents the current <see cref="AntennaRange.ProtoAntennaRelay"/>.
+		/// </summary>
+		/// <returns>A <see cref="System.String"/> that represents the current <see cref="AntennaRange.ProtoAntennaRelay"/>.</returns>
 		public override string ToString()
 		{
 			return string.Format(
