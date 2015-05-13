@@ -38,6 +38,9 @@ namespace AntennaRange
 	/// </summary>
 	public class AntennaRelay
 	{
+		private static readonly System.Diagnostics.Stopwatch searchTimer = new System.Diagnostics.Stopwatch();
+		private const long millisecondsBetweenSearches = 125L;
+
 		// We don't have a Bard, so we'll hide Kerbin here.
 		private static CelestialBody _Kerbin;
 
@@ -57,13 +60,12 @@ namespace AntennaRange
 			}
 		}
 
+		private long lastSearch;
+
 		private bool canTransmit;
 
 		private IAntennaRelay nearestRelay;
 		private IAntennaRelay bestOccludedRelay;
-
-		private System.Diagnostics.Stopwatch searchTimer;
-		private long millisecondsBetweenSearches;
 
 		/// <summary>
 		/// The <see cref="AntennaRange.ModuleLimitedDataTransmitter"/> reference underlying this AntennaRelay, as an
@@ -167,14 +169,23 @@ namespace AntennaRange
 		/// <returns>The nearest relay or null, if no relays in range.</returns>
 		private void FindNearestRelay()
 		{
-			if (!this.searchTimer.IsRunning || this.searchTimer.ElapsedMilliseconds > this.millisecondsBetweenSearches)
+			if (!searchTimer.IsRunning)
 			{
-				this.searchTimer.Reset();
+				searchTimer.Start();
 			}
-			else
+
+			long searchTime = searchTimer.ElapsedMilliseconds;
+			long timeSinceLast = searchTime - this.lastSearch;
+
+			if (timeSinceLast < Math.Max(millisecondsBetweenSearches, UnityEngine.Time.smoothDeltaTime))
 			{
 				return;
 			}
+
+			Tools.PostDebugMessage("{0}: Updating at {1}ms, {2}ms since last search.",
+				this.ToString(), searchTime, timeSinceLast);
+
+			this.lastSearch = searchTime;
 
 			// Skip vessels that have already been checked for a nearest relay this pass.
 			if (RelayDatabase.Instance.CheckedVesselsTable.ContainsKey(this.vessel.id))
@@ -518,9 +529,6 @@ namespace AntennaRange
 		public AntennaRelay(IAntennaRelay module)
 		{
 			this.moduleRef = module;
-
-			this.searchTimer = new System.Diagnostics.Stopwatch();
-			this.millisecondsBetweenSearches = 125L;
 		}
 	}
 }
