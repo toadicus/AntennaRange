@@ -237,7 +237,7 @@ namespace AntennaRange
 
 		// Override ModuleDataTransmitter.DataResourceCost to just return packetResourceCost, because we want antennas
 		// to be scored in terms of joules/byte
-		public new float DataResourceCost
+		public new double DataResourceCost
 		{
 			get
 			{
@@ -450,7 +450,7 @@ namespace AntennaRange
 
 		// Override ModuleDataTransmitter.TransmitData to check against CanTransmit and fail out when CanTransmit
 		// returns false.
-		public new void TransmitData(List<ScienceData> dataQueue)
+		public new void TransmitData(List<ScienceData> dataQueue, Callback callback)
 		{
 			this.PreTransmit_SetPacketSize();
 			this.PreTransmit_SetPacketResourceCost();
@@ -459,7 +459,7 @@ namespace AntennaRange
 			{
 				ScreenMessages.PostScreenMessage(this.buildTransmitMessage(), 4f, ScreenMessageStyle.UPPER_LEFT);
 
-				base.TransmitData(dataQueue);
+				base.TransmitData(dataQueue, callback);
 			}
 			else
 			{
@@ -524,7 +524,7 @@ namespace AntennaRange
 
 					foreach (ScienceData data in dataQueue)
 					{
-						msg.AppendFormat("\n{0}\n", data.title);
+						msg.AppendFormat("\t{0}\n", data.title);
 					}
 
 					ScreenMessages.PostScreenMessage(msg.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
@@ -532,7 +532,7 @@ namespace AntennaRange
 					Tools.PostDebugMessage(msg.ToString());
 				}
 
-				this.PostCannotTransmitError ();
+				this.PostCannotTransmitError();
 			}
 
 			Tools.PostDebugMessage (
@@ -540,6 +540,11 @@ namespace AntennaRange
 				+ " packetSize: " + this.packetSize
 				+ " packetResourceCost: " + this.packetResourceCost
 			);
+		}
+
+		public new void TransmitData(List<ScienceData> dataQueue)
+		{
+			this.TransmitData(dataQueue, null);
 		}
 
 		// Override ModuleDataTransmitter.StartTransmission to check against CanTransmit and fail out when CanTransmit
