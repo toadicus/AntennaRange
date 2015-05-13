@@ -433,18 +433,22 @@ namespace AntennaRange
 				return false;
 			}
 
-			PartStates partState = this.part.State;
-			if (partState == PartStates.DEAD || partState == PartStates.DEACTIVATED)
+			switch (this.part.State)
 			{
-				Tools.PostDebugMessage(string.Format(
-					"{0}: {1} on {2} cannot transmit: {3}",
-					this.GetType().Name,
-					this.part.partInfo.title,
-					this.vessel.vesselName,
-					Enum.GetName(typeof(PartStates), partState)
-				));
-				return false;
+				case PartStates.DEAD:
+				case PartStates.DEACTIVATED:
+					Tools.PostDebugMessage(string.Format(
+						"{0}: {1} on {2} cannot transmit: {3}",
+						this.GetType().Name,
+						this.part.partInfo.title,
+						this.vessel.vesselName,
+						Enum.GetName(typeof(PartStates), this.part.State)
+					));
+					return false;
+				default:
+					break;
 			}
+
 			return this.relay.CanTransmit();
 		}
 
