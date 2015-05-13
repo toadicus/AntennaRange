@@ -39,6 +39,7 @@ namespace AntennaRange
 		#region Fields
 		private Dictionary<Guid, LineRenderer> vesselLineRenderers;
 		private Dictionary<Guid, bool> vesselFrameCache;
+		private bool dumpBool;
 		#endregion
 
 		#region Properties
@@ -51,21 +52,27 @@ namespace AntennaRange
 					this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
 				}
 
-				if (!this.vesselLineRenderers.ContainsKey(idx))
+				LineRenderer lr;
+
+				if (this.vesselLineRenderers.TryGetValue(idx, out lr))
+				{
+					return lr;
+				}
+				else
 				{
 					GameObject obj = new GameObject();
 					obj.layer = 31;
 
-					LineRenderer lr = obj.AddComponent<LineRenderer>();
+					lr = obj.AddComponent<LineRenderer>();
 
-					lr.SetColors(Color.green, Color.green);
+					// lr.SetColors(Color.green, Color.green);
 					lr.material = MapView.OrbitLinesMaterial;
-					lr.SetVertexCount(2);
+					// lr.SetVertexCount(2);
 
 					this.vesselLineRenderers[idx] = lr;
-				}
 
-				return this.vesselLineRenderers[idx];
+					return lr;
+				}
 			}
 		}
 		#endregion
@@ -119,6 +126,12 @@ namespace AntennaRange
 							continue;
 						}
 
+						if (this.vesselFrameCache.TryGetValue(vessel.id, out dumpBool))
+						{
+							log.AppendFormat("Skipping vessel {0} because it's already been processed this frame.");
+							continue;
+						}
+
 						log.AppendFormat("Checking vessel {0}.\n", vessel.vesselName);
 
 						switch (vessel.vesselType)
@@ -163,50 +176,14 @@ namespace AntennaRange
 
 		private void SetRelayVertices(IAntennaRelay relay)
 		{
-			if (relay == null)
-			{
-				return;
-			}
+			Color lastColor = default(Color);
+			Color thisColor;
 
 			LineRenderer renderer = this[relay.vessel.id];
-
-			Vector3d start;
-			Vector3d end;
-
-			renderer.enabled = true;
-
-			if (!relay.CanTransmit())
-			{
-				renderer.SetColors(Color.red, Color.red);
-			}
-			else
-			{
-				if (relay.transmitDistance < relay.nominalTransmitDistance)
-				{
-					renderer.SetColors(Color.green, Color.green);
-				}
-				else
-				{
-					renderer.SetColors(Color.yellow, Color.yellow);
-				}
-			}
-
-			start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());
-
-			if (relay.KerbinDirect)
-			{
-				end = ScaledSpace.LocalToScaledSpace(AntennaRelay.Kerbin.position);
-			}
-			else
-			{
-				if (relay.targetRelay == null)
-				{
-					return;
-				}
-				end = ScaledSpace.LocalToScaledSpace(relay.targetRelay.vessel.GetWorldPos3D());
-			}
+			Vector3d start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());
 
 			float lineWidth;
+			float d = Screen.height / 2f + 0.01f;
 
 			if (MapView.Draw3DLines)
 			{
@@ -217,17 +194,72 @@ namespace AntennaRange
 				lineWidth = 2f;
 
 				start = MapView.MapCamera.camera.WorldToScreenPoint(start);
-				end = MapView.MapCamera.camera.WorldToScreenPoint(end);
 
-				float d = Screen.height / 2f + 0.01f;
 				start.z = start.z >= 0f ? d : -d;
-				end.z = end.z >= 0f ? d : -d;
 			}
 
 			renderer.SetWidth(lineWidth, lineWidth);
 
 			renderer.SetPosition(0, start);
-			renderer.SetPosition(1, end);
+
+			int idx = 0;
+
+			while (relay != null)
+			{
+				Vector3d nextPoint;
+
+				renderer.enabled = true;
+
+				if (!relay.CanTransmit())
+				{
+					thisColor = Color.red;
+				}
+				else
+				{
+					if (relay.transmitDistance < relay.nominalTransmitDistance)
+					{
+						thisColor = Color.green;
+					}
+					else
+					{
+						thisColor = Color.yellow;
+					}
+				}
+
+				if (lastColor != default(Color) && thisColor != lastColor)
+				{
+					break;
+				}
+
+				lastColor = thisColor;
+				renderer.SetColors(thisColor, thisColor);
+
+				this.vesselFrameCache[relay.vessel.id] = true;
+
+				if (relay.KerbinDirect)
+				{
+					nextPoint = ScaledSpace.LocalToScaledSpace(AntennaRelay.Kerbin.position);
+					relay = null;
+				}
+				else
+				{
+					if (relay.targetRelay == null)
+					{
+						return;
+					}
+
+					nextPoint = ScaledSpace.LocalToScaledSpace(relay.targetRelay.vessel.GetWorldPos3D());
+					relay = relay.targetRelay;
+				}
+
+				if (!MapView.Draw3DLines)
+				{
+					nextPoint = MapView.MapCamera.camera.WorldToScreenPoint(nextPoint);
+					nextPoint.z = nextPoint.z >= 0f ? d : -d;
+				}
+
+				renderer.SetPosition(++idx, nextPoint);
+			}
 		}
 
 		public void Cleanup()
