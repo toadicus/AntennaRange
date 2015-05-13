@@ -72,7 +72,7 @@ namespace AntennaRange
 		// The distance from Kerbin at which the antenna will perform exactly as prescribed by packetResourceCost
 		// and packetSize.
 		[KSPField(isPersistant = false)]
-		public float nominalRange;
+		public double nominalRange;
 
 		[KSPField(isPersistant = false, guiActive = true, guiName = "Status")]
 		public string UIrelayStatus;
@@ -373,11 +373,11 @@ namespace AntennaRange
 			}
 			else
 			{
-				double rangeFactor = (this.transmitDistance / this.nominalRange);
+				float rangeFactor = (float)(this.transmitDistance / this.nominalRange);
 				rangeFactor *= rangeFactor;
 
 				base.packetResourceCost = this._basepacketResourceCost
-					* (float)rangeFactor;
+					* rangeFactor;
 
 				Tools.PostDebugMessage(
 					this,
@@ -399,11 +399,11 @@ namespace AntennaRange
 			}
 			else
 			{
-				double rangeFactor = (this.nominalRange / this.transmitDistance);
+				float rangeFactor = (float)(this.nominalRange / this.transmitDistance);
 				rangeFactor *= rangeFactor;
 
-				base.packetSize = Math.Min(
-					this._basepacketSize * (float)rangeFactor,
+				base.packetSize = Mathf.Min(
+					this._basepacketSize * rangeFactor,
 					this._basepacketSize * this.maxDataFactor);
 
 				Tools.PostDebugMessage(
