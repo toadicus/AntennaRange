@@ -392,18 +392,27 @@ namespace AntennaRange
 					// Since bestOccludedSqrDistance is infinity if there are no occluded relays, this is safe
 					if (bestOccludedSqrDistance < kerbinSqrDistance)
 					{
+						log.AppendFormat("\n\tBest occluded relay is closer than Kerbin ({0} < {1})",
+							bestOccludedRelay, kerbinSqrDistance);
+						
 						this.KerbinDirect = false;
 
 						// If the nearest relay is closer than the best occluded relay, pick it.
 						// Since nearestRelaySqrDistane is infinity if there are no nearby relays, this is safe.
 						if (nearestRelaySqrDistance < bestOccludedSqrDistance)
 						{
+							log.AppendFormat("\n\t\t...but the nearest relay is closer ({0} < {1}), so picking it.",
+								nearestRelaySqrDistance, bestOccludedSqrDistance);
+							
 							this.targetRelay = nearestRelay;
 							this.firstOccludingBody = null;
 						}
 						// Otherwise, target the best occluded relay.
 						else
 						{
+							log.AppendFormat("\n\t\t...and closer than the nearest relay ({0} >= {1}), so picking it.",
+								nearestRelaySqrDistance, bestOccludedSqrDistance);
+							
 							this.targetRelay = bestOccludedRelay;
 							this.firstOccludingBody = bodyOccludingBestOccludedRelay;
 						}
@@ -412,18 +421,27 @@ namespace AntennaRange
 					// Since we have LOS, blank the first occluding body.
 					else
 					{
+						log.AppendFormat("\n\tKerbin is closer than the best occluded relay ({0} >= {1})",
+							bestOccludedRelay, kerbinSqrDistance);
+						
 						this.firstOccludingBody = null;
 
 						// If the nearest relay is closer than Kerbin, pick it.
 						// Since nearestRelaySqrDistane is infinity if there are no nearby relays, this is safe.
 						if (nearestRelaySqrDistance < kerbinSqrDistance)
 						{
+							log.AppendFormat("\n\t\t...but the nearest relay is closer ({0} < {1}), so picking it.",
+								nearestRelaySqrDistance, kerbinSqrDistance);
+							
 							this.KerbinDirect = false;
 							this.targetRelay = nearestRelay;
 						}
 						// Otherwise, pick Kerbin.
 						else
 						{
+							log.AppendFormat("\n\t\t...and closer than the nearest relay ({0} >= {1}), so picking it.",
+								nearestRelaySqrDistance, kerbinSqrDistance);
+							
 							this.KerbinDirect = true;
 							this.targetRelay = null;
 						}
