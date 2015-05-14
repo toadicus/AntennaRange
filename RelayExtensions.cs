@@ -2,7 +2,7 @@
 //
 // Extensions.cs
 //
-// Copyright © 2014, toadicus
+// Copyright © 2014-2015, toadicus
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without modification,
