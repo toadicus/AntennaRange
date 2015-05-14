@@ -33,10 +33,10 @@ using ToadicusTools;
 
 namespace AntennaRange
 {
-	/*
-	 * Wrapper class for ProtoPartModuleSnapshot extending AntennaRelay and implementing IAntennaRelay.
-	 * This is used for finding relays in unloaded Vessels.
-	 * */
+	/// <summary>
+	/// Wrapper class for ProtoPartModuleSnapshot extending AntennaRelay and implementing IAntennaRelay.
+	/// This is used for finding relays in unloaded Vessels.
+	/// </summary>
 	public class ProtoAntennaRelay : AntennaRelay, IAntennaRelay
 	{
 		// Stores the prototype part so we can make sure we haven't exploded or so.
@@ -139,21 +139,14 @@ namespace AntennaRange
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="AntennaRange.ProtoAntennaRelay"/> class.
+		/// Initializes a new instance of the <see cref="AntennaRange.AntennaRelay"/> class.
 		/// </summary>
-		/// <param name="ms">The ProtoPartModuleSnapshot to wrap</param>
-		/// <param name="vessel">The parent Vessel</param>
+		/// <param name="prefabRelay">The module reference underlying this AntennaRelay,
+		/// as an <see cref="AntennaRange.IAntennaRelay"/></param>
+		/// <param name="pps">The prototype partreference on which the module resides.</param>
 		public ProtoAntennaRelay(IAntennaRelay prefabRelay, ProtoPartSnapshot pps) : base(prefabRelay)
 		{
 			this.protoPart = pps;
-		}
-
-		~ProtoAntennaRelay()
-		{
-			Tools.PostDebugMessage(string.Format(
-				"{0}: destroyed",
-				this.ToString()
-			));
 		}
 	}
 }

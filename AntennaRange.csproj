@@ -40,6 +40,7 @@
         <Command type="AfterBuild" command="xcopy /y ${TargetFile} ${ProjectDir}\GameData\AntennaRange\" />
       </CustomCommands>
     </CustomCommands>
+    <DocumentationFile>bin\Release\AntennaRange.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug_linux|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

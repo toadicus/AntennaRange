@@ -10,38 +10,59 @@ using UnityEngine;
 
 namespace AntennaRange
 {
+	/// <summary>
+	/// A <see cref="UnityEngine.MonoBehaviour"/> responsible for managing configuration items for AntennaRange.
+	/// </summary>
 	[KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
 	public class ARConfiguration : MonoBehaviour
 	{
+		/// <summary>
+		/// Indicates whether connections require line of sight.
+		/// </summary>
 		public static bool RequireLineOfSight
 		{
 			get;
 			private set;
 		}
 
+		/// <summary>
+		/// A "fudge factor" ratio that pretends planets and moons are slightly smaller than reality to make
+		/// building communication constellations easier.
+		/// </summary>
 		public static double RadiusRatio
 		{
 			get;
 			private set;
 		}
 
+		/// <summary>
+		/// Indicates whether unmanned vessels require a connection for control.
+		/// </summary>
 		public static bool RequireConnectionForControl
 		{
 			get;
 			private set;
 		}
 
+		/// <summary>
+		/// If true, relays will fix their power cost when above nominal range, decreasing data rate instead.
+		/// </summary>
 		public static bool FixedPowerCost
 		{
 			get;
 			private set;
 		}
 
+		/// <summary>
+		/// Indicates whether this AntennaRange will draw pretty lines in map view.
+		/// </summary>
 		public static bool PrettyLines
 		{
 			get;
 			private set;
 		}
+
+#pragma warning disable 1591
 
 		private bool showConfigWindow;
 		private Rect configWindowPos;
