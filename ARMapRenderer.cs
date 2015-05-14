@@ -39,7 +39,12 @@ namespace AntennaRange
 		#region Fields
 		private Dictionary<Guid, LineRenderer> vesselLineRenderers;
 		private Dictionary<Guid, bool> vesselFrameCache;
+
+		#pragma warning disable 414
 		private bool dumpBool;
+		private Color lastColor;
+		private Color thisColor;
+		#pragma warning restore 414
 		#endregion
 
 		#region Properties
@@ -174,10 +179,10 @@ namespace AntennaRange
 		}
 		#endregion
 
+		#region Utility
 		private void SetRelayVertices(IAntennaRelay relay)
 		{
-			Color lastColor = default(Color);
-			Color thisColor;
+			lastColor = default(Color);
 
 			LineRenderer renderer = this[relay.vessel.id];
 			Vector3d start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());
@@ -262,7 +267,7 @@ namespace AntennaRange
 			}
 		}
 
-		public void Cleanup()
+		private void Cleanup()
 		{
 			if (this.vesselLineRenderers != null && this.vesselLineRenderers.Count > 0)
 			{
@@ -279,6 +284,7 @@ namespace AntennaRange
 				this.vesselFrameCache.Clear();
 			}
 		}
+		#endregion
 	}
 }
 
