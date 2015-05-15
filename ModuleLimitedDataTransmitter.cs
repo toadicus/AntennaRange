@@ -460,8 +460,12 @@ namespace AntennaRange
 
 				var logger = Tools.DebugLogger.New(this);
 
-				foreach (ModuleScienceContainer	scienceContainer in this.vessel.getModulesOfType<ModuleScienceContainer>())
+				IList<ModuleScienceContainer> vesselContainers = this.vessel.getModulesOfType<ModuleScienceContainer>();
+				ModuleScienceContainer scienceContainer;
+				for (int cIdx = 0; cIdx < vesselContainers.Count; cIdx++)
 				{
+					scienceContainer = vesselContainers[cIdx];
+
 					logger.AppendFormat("Checking ModuleScienceContainer in {0}\n",
 						scienceContainer.part.partInfo.title);
 
@@ -476,8 +480,10 @@ namespace AntennaRange
 
 					List<ScienceData> dataStored = new List<ScienceData>();
 
-					foreach (ScienceData data in dataQueue)
+					ScienceData data;
+					for (int dIdx = 0; dIdx < dataQueue.Count; dIdx++)
 					{
+						data = dataQueue[dIdx];
 						if (!scienceContainer.allowRepeatedSubjects && scienceContainer.HasData(data))
 						{
 							logger.Append("\tAlready contains subject and repeated subjects not allowed, skipping.\n");
@@ -515,8 +521,10 @@ namespace AntennaRange
 					msg.AppendFormat("]: {0} data items could not be saved: no space available in data containers.\n");
 					msg.Append("Data to be discarded:\n");
 
-					foreach (ScienceData data in dataQueue)
+					ScienceData data;
+					for (int dIdx = 0; dIdx < dataQueue.Count; dIdx++)
 					{
+						data = dataQueue[dIdx];
 						msg.AppendFormat("\t{0}\n", data.title);
 					}
 
@@ -807,8 +815,10 @@ namespace AntennaRange
 
 			sb.Append("Dumping FlightGlobals.Vessels:");
 
-			foreach (Vessel vessel in FlightGlobals.Vessels)
+			Vessel vessel;
+			for (int i = 0; i < FlightGlobals.Vessels.Count; i++)
 			{
+				vessel = FlightGlobals.Vessels[i];
 				sb.AppendFormat("\n'{0} ({1})'", vessel.vesselName, vessel.id);
 			}
 

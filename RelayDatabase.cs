@@ -66,7 +66,7 @@ namespace AntennaRange
 		 * Fields
 		 * */
 		// Vessel.id-keyed hash table of Part.GetHashCode()-keyed tables of relay objects.
-		protected Dictionary<Guid, Dictionary<int, IAntennaRelay>> relayDatabase;
+		protected Dictionary<Guid, List<IAntennaRelay>> relayDatabase;
 
 		// Vessel.id-keyed hash table of part counts, used for caching
 		protected Dictionary<Guid, int> vesselPartCountTable;
@@ -81,7 +81,7 @@ namespace AntennaRange
 		 * Properties
 		 * */
 		// Gets the Part-hashed table of relays in a given vessel
-		public Dictionary<int, IAntennaRelay> this [Vessel vessel]
+		public IList<IAntennaRelay> this [Vessel vessel]
 		{
 			get
 			{
@@ -106,7 +106,7 @@ namespace AntennaRange
 				}
 
 				// Return the Part-hashed table of relays for this vessel
-				return relayDatabase[vessel.id];
+				return relayDatabase[vessel.id].AsReadOnly();
 			}
 		}
 
@@ -135,7 +135,7 @@ namespace AntennaRange
 			else
 			{
 				// Build an empty table...
-				this.relayDatabase[vessel.id] = new Dictionary<int, IAntennaRelay>();
+				this.relayDatabase[vessel.id] = new List<IAntennaRelay>();
 
 				// Update the empty index
 				this.UpdateVessel(vessel);
@@ -159,7 +159,7 @@ namespace AntennaRange
 				));
 			}
 
-			Dictionary<int, IAntennaRelay> vesselTable = this.relayDatabase[vessel.id];
+			List<IAntennaRelay> vesselTable = this.relayDatabase[vessel.id];
 
 			// Actually build and assign the table
 			this.getVesselRelays(vessel, ref vesselTable);
@@ -243,7 +243,7 @@ namespace AntennaRange
 		}
 
 		// Produce a Part-hashed table of relays for the given vessel
-		protected void getVesselRelays(Vessel vessel, ref Dictionary<int, IAntennaRelay> relays)
+		protected void getVesselRelays(Vessel vessel, ref List<IAntennaRelay> relays)
 		{
 			// We're going to completely regen this table, so dump the current contents.
 			relays.Clear();
@@ -263,16 +263,22 @@ namespace AntennaRange
 				));
 
 				// Loop through the Parts in the Vessel...
-				foreach (Part part in vessel.Parts)
+				Part part;
+				for (int partIdx = 0; partIdx < vessel.Parts.Count; partIdx++)
 				{
+					part = vessel.Parts[partIdx];
+
 					// ...loop through the PartModules in the Part...
-					foreach (PartModule module in part.Modules)
+					PartModule module;
+					for (int modIdx = 0; modIdx < part.Modules.Count; modIdx++)
 					{
+						module = part.Modules[modIdx];
+
 						// ...if the module is a relay...
 						if (module is IAntennaRelay)
 						{
 							// ...add the module to the table
-							relays.Add(part.GetHashCode(), module as IAntennaRelay);
+							relays.Add(module as IAntennaRelay);
 							// ...neglect relay objects after the first in each part.
 							break;
 						}
@@ -289,8 +295,11 @@ namespace AntennaRange
 				));
 
 				// Loop through the ProtoPartModuleSnapshots in the Vessel...
-				foreach (ProtoPartSnapshot pps in vessel.protoVessel.protoPartSnapshots)
+				ProtoPartSnapshot pps;
+				for (int ppsIdx = 0; ppsIdx < vessel.protoVessel.protoPartSnapshots.Count; ppsIdx++)
 				{
+					pps = vessel.protoVessel.protoPartSnapshots[ppsIdx];
+
 					Tools.PostDebugMessage(string.Format(
 						"{0}: Searching in protopartsnapshot {1}",
 						this.GetType().Name,
@@ -308,8 +317,11 @@ namespace AntennaRange
 					));
 
 					// ...loop through the PartModules in the prefab...
-					foreach (PartModule module in partPrefab.Modules)
+					PartModule module;
+					for (int modIdx = 0; modIdx < partPrefab.Modules.Count; modIdx++)
 					{
+						module = partPrefab.Modules[modIdx];
+
 						Tools.PostDebugMessage(string.Format(
 							"{0}: Searching in partmodule {1}",
 							this.GetType().Name,
@@ -326,7 +338,7 @@ namespace AntennaRange
 							));
 
 							// ...build a new ProtoAntennaRelay and add it to the table
-							relays.Add(pps.GetHashCode(), new ProtoAntennaRelay(module as IAntennaRelay, pps));
+							relays.Add(new ProtoAntennaRelay(module as IAntennaRelay, pps));
 							// ...neglect relay objects after the first in each part.
 							break;
 						}
@@ -347,7 +359,7 @@ namespace AntennaRange
 		protected RelayDatabase()
 		{
 			// Initialize the databases
-			this.relayDatabase = new Dictionary<Guid, Dictionary<int, IAntennaRelay>>();
+			this.relayDatabase = new Dictionary<Guid, List<IAntennaRelay>>();
 			this.vesselPartCountTable = new Dictionary<Guid, int>();
 			this.CheckedVesselsTable = new Dictionary<Guid, bool>();
 
@@ -391,12 +403,17 @@ namespace AntennaRange
 
 			sb.Append("Dumping RelayDatabase:");
 
-			foreach (Guid id in this.relayDatabase.Keys)
+			var dbEnum = this.relayDatabase.GetEnumerator();
+			IList<IAntennaRelay> vesselRelays;
+			while (dbEnum.MoveNext())
 			{
-				sb.AppendFormat("\nVessel {0}:", id);
+				sb.AppendFormat("\nVessel {0}:", dbEnum.Current.Key);
 
-				foreach (IAntennaRelay relay in this.relayDatabase[id].Values)
+				vesselRelays = dbEnum.Current.Value;
+				IAntennaRelay relay;
+				for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
 				{
+					relay = vesselRelays[rIdx];
 					sb.AppendFormat("\n\t{0}", relay.ToString());
 				}
 			}

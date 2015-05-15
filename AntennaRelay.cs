@@ -222,8 +222,11 @@ namespace AntennaRange
 			 * and that can transmit.  Once we find a suitable candidate, assign it to nearestRelay for comparison
 			 * against future finds.
 			 * */
-			foreach (Vessel potentialVessel in FlightGlobals.Vessels)
+			Vessel potentialVessel;
+			IList<IAntennaRelay> vesselRelays;
+			for (int vIdx = 0; vIdx < FlightGlobals.Vessels.Count; vIdx++)
 			{
+				potentialVessel = FlightGlobals.Vessels[vIdx];
 				// Skip vessels of the wrong type.
 				switch (potentialVessel.vesselType)
 				{
@@ -245,6 +248,7 @@ namespace AntennaRange
 
 				// Find the distance from here to the vessel...
 				double potentialSqrDistance = this.sqrDistanceTo(potentialVessel);
+				vesselRelays = potentialVessel.GetAntennaRelays();
 
 				CelestialBody fob = null;
 
@@ -271,9 +275,11 @@ namespace AntennaRange
 							potentialVessel
 						);
 
-						foreach (IAntennaRelay occludedRelay in potentialVessel.GetAntennaRelays())
+						IAntennaRelay occludedRelay;
+						for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
 						{
-							
+							occludedRelay = vesselRelays[rIdx];
+
 							log.AppendFormat(
 								"\n\t\t{0}: Checking candidate for bestOccludedRelay: {1}" +
 								"\n\t\tCanTransmit: {2}",
@@ -314,8 +320,11 @@ namespace AntennaRange
 					continue;
 				}
 
-				foreach (IAntennaRelay potentialRelay in potentialVessel.GetAntennaRelays())
+				IAntennaRelay potentialRelay;
+				for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
 				{
+					potentialRelay = vesselRelays[rIdx];
+
 					if (potentialRelay.CanTransmit() && potentialRelay.targetRelay != this)
 					{
 						// @TODO: Moved this here from outside the loop; why was it there?

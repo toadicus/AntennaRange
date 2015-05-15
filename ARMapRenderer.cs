@@ -125,8 +125,10 @@ namespace AntennaRange
 				{
 					log.AppendLine("FlightGlobals ready and Vessels list not null.");
 
-					foreach (Vessel vessel in FlightGlobals.Vessels)
+					for (int i = 0; i < FlightGlobals.Vessels.Count; i++)
 					{
+						Vessel vessel = FlightGlobals.Vessels[i];
+
 						if (vessel == null)
 						{
 							log.AppendFormat("Skipping vessel {0} altogether because it is null.\n");
@@ -273,8 +275,12 @@ namespace AntennaRange
 		{
 			if (this.vesselLineRenderers != null && this.vesselLineRenderers.Count > 0)
 			{
-				foreach (LineRenderer lineRenderer in this.vesselLineRenderers.Values)
+				IEnumerator<LineRenderer> enumerator = this.vesselLineRenderers.Values.GetEnumerator();
+				LineRenderer lineRenderer;
+
+				while (enumerator.MoveNext())
 				{
+					lineRenderer = enumerator.Current;
 					lineRenderer.enabled = false;
 					GameObject.Destroy(lineRenderer.gameObject);
 				}

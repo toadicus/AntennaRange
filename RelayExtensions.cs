@@ -102,9 +102,9 @@ namespace AntennaRange
 		/// Returns all of the PartModules or ProtoPartModuleSnapshots implementing IAntennaRelay in this Vessel.
 		/// </summary>
 		/// <param name="vessel">This <see cref="Vessel"/></param>
-		public static IEnumerable<IAntennaRelay> GetAntennaRelays (this Vessel vessel)
+		public static IList<IAntennaRelay> GetAntennaRelays (this Vessel vessel)
 		{
-			return RelayDatabase.Instance[vessel].Values.ToList().AsReadOnly();
+			return RelayDatabase.Instance[vessel];
 		}
 
 		/// <summary>
@@ -114,8 +114,11 @@ namespace AntennaRange
 		/// <param name="vessel"></param>
 		public static bool HasConnectedRelay(this Vessel vessel)
 		{
-			foreach (IAntennaRelay relay in RelayDatabase.Instance[vessel].Values)
+			IList<IAntennaRelay> vesselRelays = RelayDatabase.Instance[vessel];
+			IAntennaRelay relay;
+			for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
 			{
+				relay = vesselRelays[rIdx];
 				if (relay.CanTransmit())
 				{
 					return true;
@@ -133,8 +136,11 @@ namespace AntennaRange
 		{
 			bool canTransmit = false;
 
-			foreach (IAntennaRelay relay in RelayDatabase.Instance[vessel].Values)
+			IList<IAntennaRelay> vesselRelays = RelayDatabase.Instance[vessel];
+			IAntennaRelay relay;
+			for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
 			{
+				relay = vesselRelays[rIdx];
 				if (relay.CanTransmit())
 				{
 					canTransmit = true;
@@ -165,8 +171,11 @@ namespace AntennaRange
 			double bestScore = double.PositiveInfinity;
 			double relayScore = double.NaN;
 
-			foreach (IAntennaRelay relay in vessel.GetAntennaRelays())
+			IList<IAntennaRelay> vesselRelays = RelayDatabase.Instance[vessel];
+			IAntennaRelay relay;
+			for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
 			{
+				relay = vesselRelays[rIdx];
 				relayScore = relay.transmitDistance / relay.maxTransmitDistance;
 
 				if (relayScore < bestScore)
