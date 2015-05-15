@@ -207,6 +207,9 @@ namespace AntennaRange
 			this.targetRelay = null;
 			this.nearestRelay = null;
 
+			// Default to KerbinDirect = true in case something in here doesn't work right.
+			this.KerbinDirect = true;
+
 			CelestialBody bodyOccludingBestOccludedRelay = null;
 
 			double nearestRelaySqrDistance = double.PositiveInfinity;
