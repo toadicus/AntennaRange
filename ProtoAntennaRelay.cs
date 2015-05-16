@@ -28,7 +28,6 @@
 
 using KSP;
 using System;
-using System.Linq;
 using ToadicusTools;
 
 namespace AntennaRange

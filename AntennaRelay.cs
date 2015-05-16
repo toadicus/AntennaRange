@@ -28,7 +28,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using ToadicusTools;
 
 namespace AntennaRange
@@ -271,7 +270,7 @@ namespace AntennaRange
 						
 						log.AppendFormat("\n\t\t{0}: Checking {1} relays on occluded vessel {2}.",
 							this.ToString(),
-							potentialVessel.GetAntennaRelays().Count(),
+							potentialVessel.GetAntennaRelays().Count,
 							potentialVessel
 						);
 
