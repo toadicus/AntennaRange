@@ -166,7 +166,25 @@ namespace AntennaRange
 		/// <param name="vessel">This <see cref="Vessel"/></param>
 		public static IAntennaRelay GetBestRelay(this Vessel vessel)
 		{
-			IAntennaRelay bestRelay = null;
+			BestVesselRelayCache relayCache;
+
+			if (RelayDatabase.Instance.TryGetBestVesselRelay(vessel, out relayCache))
+			{
+				if (
+					AntennaRelay.searchTimer.ElapsedMilliseconds - relayCache.timeStamp <
+					AntennaRelay.millisecondsBetweenSearches
+				)
+				{
+					return relayCache.relay;
+				}
+			}
+			else
+			{
+				relayCache = new BestVesselRelayCache();
+				relayCache.vessel = vessel;
+				RelayDatabase.Instance.SetBestVesselRelay(vessel, relayCache);
+			}
+
 			double bestScore = double.PositiveInfinity;
 			double relayScore = double.NaN;
 
@@ -180,11 +198,13 @@ namespace AntennaRange
 				if (relayScore < bestScore)
 				{
 					bestScore = relayScore;
-					bestRelay = relay;
+					relayCache.relay = relay;
 				}
 			}
 
-			return bestRelay;
+			relayCache.timeStamp = AntennaRelay.searchTimer.ElapsedMilliseconds;
+
+			return relayCache.relay;
 		}
 	}
 

@@ -71,6 +71,8 @@ namespace AntennaRange
 		// Vessel.id-keyed hash table of part counts, used for caching
 		protected Dictionary<Guid, int> vesselPartCountTable;
 
+		protected Dictionary<Guid, BestVesselRelayCache> bestRelayTable;
+
 		// Vessel.id-keyed hash table of booleans to track what vessels have been checked so far this time.
 		public Dictionary<Guid, bool> CheckedVesselsTable;
 
@@ -178,6 +180,29 @@ namespace AntennaRange
 			{
 				this.vesselPartCountTable.Remove(vessel.id);
 			}
+		}
+
+		public void SetBestVesselRelay(Vessel vessel, BestVesselRelayCache relay)
+		{
+			this.bestRelayTable[vessel.id] = relay;
+		}
+
+		public bool TryGetBestVesselRelay(Vessel vessel, out BestVesselRelayCache relay)
+		{
+			return this.bestRelayTable.TryGetValue(vessel.id, out relay);
+		}
+
+		public BestVesselRelayCache GetBestVesselRelay(Vessel vessel)
+		{
+			BestVesselRelayCache relayCache;
+			if (this.TryGetBestVesselRelay(vessel, out relayCache))
+			{
+				return relayCache;
+			}
+
+			throw new ArgumentOutOfRangeException(
+				string.Format("RelayDatabase: Vessel {0} not in best vessel relay table.", vessel)
+			);
 		}
 
 		// Returns true if both the relayDatabase and the vesselPartCountDB contain the vessel id.
@@ -362,6 +387,7 @@ namespace AntennaRange
 			this.relayDatabase = new Dictionary<Guid, List<IAntennaRelay>>();
 			this.vesselPartCountTable = new Dictionary<Guid, int>();
 			this.CheckedVesselsTable = new Dictionary<Guid, bool>();
+			this.bestRelayTable = new Dictionary<Guid, BestVesselRelayCache>();
 
 			this.cacheHits = 0;
 			this.cacheMisses = 0;
@@ -421,6 +447,21 @@ namespace AntennaRange
 			Tools.PostDebugMessage(sb.ToString());
 		}
 		#endif
+	}
+
+	public class BestVesselRelayCache
+	{
+		public Vessel vessel;
+		public IAntennaRelay relay;
+		public long timeStamp;
+
+		public BestVesselRelayCache() {}
+		public BestVesselRelayCache(Vessel _vessel, IAntennaRelay _relay, long _timeStamp)
+		{
+			this.vessel = _vessel;
+			this.relay = _relay;
+			this.timeStamp = _timeStamp;
+		}
 	}
 }
 

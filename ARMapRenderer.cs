@@ -26,6 +26,8 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#define DEBUG
+
 #pragma warning disable 1591
 
 using KSP;
@@ -40,11 +42,9 @@ namespace AntennaRange
 	{
 		#region Fields
 		private Dictionary<Guid, LineRenderer> vesselLineRenderers;
-		private Dictionary<Guid, bool> vesselFrameCache;
 
 		#pragma warning disable 414
 		private bool dumpBool;
-		private Color lastColor;
 		private Color thisColor;
 		#pragma warning restore 414
 		#endregion
@@ -90,9 +90,13 @@ namespace AntennaRange
 			if (ARConfiguration.PrettyLines)
 			{
 				this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
-				this.vesselFrameCache = new Dictionary<Guid, bool>();
 			}
 		}
+
+		#if DEBUG
+		private System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
+		#endif
+		private Tools.DebugLogger log = Tools.DebugLogger.New(typeof(ARMapRenderer));
 
 		private void OnPreCull()
 		{
@@ -103,10 +107,15 @@ namespace AntennaRange
 				return;
 			}
 
-			Tools.DebugLogger log = Tools.DebugLogger.New(this);
+			#if DEBUG
+			timer.Restart();
+			long start;
+			#endif
 
 			try
 			{
+				log.Clear();
+
 				log.AppendFormat("OnPreCull.\n");
 
 				log.AppendFormat("\tMapView: Draw3DLines: {0}\n" +
@@ -117,10 +126,6 @@ namespace AntennaRange
 					MapView.MapCamera.Distance
 				);
 
-				this.vesselFrameCache.Clear();
-
-				log.AppendLine("vesselFrameCache cleared.");
-
 				if (FlightGlobals.ready && FlightGlobals.Vessels != null)
 				{
 					log.AppendLine("FlightGlobals ready and Vessels list not null.");
@@ -129,19 +134,15 @@ namespace AntennaRange
 					{
 						Vessel vessel = FlightGlobals.Vessels[i];
 
+						#if DEBUG
+						log.AppendFormat("\nStarting check for vessel {0} at {1}ms", vessel, timer.ElapsedMilliseconds);
+						#endif
+
 						if (vessel == null)
 						{
-							log.AppendFormat("Skipping vessel {0} altogether because it is null.\n");
+							log.AppendFormat("\n\tSkipping vessel {0} altogether because it is null.", vessel);
 							continue;
 						}
-
-						if (this.vesselFrameCache.TryGetValue(vessel.id, out dumpBool))
-						{
-							log.AppendFormat("Skipping vessel {0} because it's already been processed this frame.");
-							continue;
-						}
-
-						log.AppendFormat("Checking vessel {0}.\n", vessel.vesselName);
 
 						switch (vessel.vesselType)
 						{
@@ -149,27 +150,50 @@ namespace AntennaRange
 							case VesselType.EVA:
 							case VesselType.Unknown:
 							case VesselType.SpaceObject:
-								log.AppendFormat("\tDiscarded because vessel is of invalid type {0}\n",
+								log.AppendFormat("\n\tDiscarded because vessel is of invalid type {0}",
 									vessel.vesselType);
 								continue;
 						}
 
+						log.AppendFormat("\n\tChecking vessel {0}.", vessel.vesselName);
+
+						#if DEBUG
+						start = timer.ElapsedMilliseconds;
+						#endif
+
 						IAntennaRelay vesselRelay = vessel.GetBestRelay();
+
+						#if DEBUG
+						log.AppendFormat("\n\tGot best relay {0} for vessel {1} in {2} ms",
+							vesselRelay, vessel, timer.ElapsedMilliseconds - start);
+						#endif
 
 						if (vesselRelay != null)
 						{
+							#if DEBUG
+							start = timer.ElapsedMilliseconds;
+							#endif
+
 							this.SetRelayVertices(vesselRelay);
+
+							#if DEBUG
+							log.AppendFormat("\n\tSet relay vertices for {0} in {1}ms",
+								vessel, timer.ElapsedMilliseconds - start);
+							#endif
 						}
 					}
 				}
 			}
-			catch (Exception)
+			catch (Exception ex)
 			{
+				this.LogError("Caught {0}: {1}\n{2}\n", ex.GetType().Name, ex.ToString(), ex.StackTrace.ToString());
 				this.Cleanup();
 			}
 			#if DEBUG
 			finally
 			{
+				log.AppendFormat("\n\tOnPreCull finished in {0}ms\n", timer.ElapsedMilliseconds);
+
 				log.Print();
 			}
 			#endif
@@ -184,9 +208,12 @@ namespace AntennaRange
 		#endregion
 
 		#region Utility
+		#if DEBUG
+		private long relayStart;
+		#endif
 		private void SetRelayVertices(IAntennaRelay relay)
 		{
-			lastColor = default(Color);
+			log.AppendFormat("\n\t\tDrawing line for relay chain starting at {0}.", relay);
 
 			LineRenderer renderer = this[relay.vessel.id];
 			Vector3d start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());
@@ -213,62 +240,59 @@ namespace AntennaRange
 
 			int idx = 0;
 
-			while (relay != null)
+			relayStart = timer.ElapsedMilliseconds;
+
+			Vector3d nextPoint;
+
+			renderer.enabled = true;
+
+			if (!relay.CanTransmit())
 			{
-				Vector3d nextPoint;
-
-				renderer.enabled = true;
-
-				if (!relay.CanTransmit())
-				{
-					thisColor = Color.red;
-				}
-				else
-				{
-					if (relay.transmitDistance < relay.nominalTransmitDistance)
-					{
-						thisColor = Color.green;
-					}
-					else
-					{
-						thisColor = Color.yellow;
-					}
-				}
-
-				if (lastColor != default(Color) && thisColor != lastColor)
-				{
-					break;
-				}
-
-				lastColor = thisColor;
-				renderer.SetColors(thisColor, thisColor);
-
-				this.vesselFrameCache[relay.vessel.id] = true;
-
-				if (relay.KerbinDirect)
-				{
-					nextPoint = ScaledSpace.LocalToScaledSpace(AntennaRelay.Kerbin.position);
-					relay = null;
-				}
-				else
-				{
-					if (relay.targetRelay == null)
-					{
-						return;
-					}
-
-					nextPoint = ScaledSpace.LocalToScaledSpace(relay.targetRelay.vessel.GetWorldPos3D());
-					relay = relay.targetRelay;
-				}
-
-				if (!MapView.Draw3DLines)
-				{
-					nextPoint = MapView.MapCamera.camera.WorldToScreenPoint(nextPoint);
-					nextPoint.z = nextPoint.z >= 0f ? d : -d;
-				}
-
-				renderer.SetPosition(++idx, nextPoint);
+				thisColor = Color.red;
 			}
+			else
+			{
+				if (relay.transmitDistance < relay.nominalTransmitDistance)
+				{
+					thisColor = Color.green;
+				}
+				else
+				{
+					thisColor = Color.yellow;
+				}
+			}
+
+			if (relay.KerbinDirect)
+			{
+				nextPoint = ScaledSpace.LocalToScaledSpace(AntennaRelay.Kerbin.position);
+				relay = null;
+			}
+			else
+			{
+				if (relay.targetRelay == null)
+				{
+					renderer.enabled = false;
+					return;
+				}
+
+				nextPoint = ScaledSpace.LocalToScaledSpace(relay.targetRelay.vessel.GetWorldPos3D());
+				relay = relay.targetRelay;
+			}
+
+			renderer.SetColors(thisColor, thisColor);
+
+			if (!MapView.Draw3DLines)
+			{
+				nextPoint = MapView.MapCamera.camera.WorldToScreenPoint(nextPoint);
+				nextPoint.z = nextPoint.z >= 0f ? d : -d;
+			}
+
+			idx++;
+
+			renderer.SetVertexCount(idx + 1);
+			renderer.SetPosition(idx, nextPoint);
+
+			log.AppendFormat("\n\t\t\t...finished segment in {0} ms", timer.ElapsedMilliseconds - relayStart);
 		}
 
 		private void Cleanup()
@@ -285,11 +309,6 @@ namespace AntennaRange
 					GameObject.Destroy(lineRenderer.gameObject);
 				}
 				this.vesselLineRenderers.Clear();
-			}
-
-			if (this.vesselFrameCache != null && this.vesselFrameCache.Count > 0)
-			{
-				this.vesselFrameCache.Clear();
 			}
 		}
 		#endregion

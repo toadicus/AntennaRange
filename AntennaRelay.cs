@@ -37,8 +37,8 @@ namespace AntennaRange
 	/// </summary>
 	public class AntennaRelay
 	{
-		private static readonly System.Diagnostics.Stopwatch searchTimer = new System.Diagnostics.Stopwatch();
-		private const long millisecondsBetweenSearches = 125L;
+		public static readonly System.Diagnostics.Stopwatch searchTimer = new System.Diagnostics.Stopwatch();
+		public const long millisecondsBetweenSearches = 125L;
 
 		// We don't have a Bard, so we'll hide Kerbin here.
 		private static CelestialBody _Kerbin;
@@ -62,6 +62,7 @@ namespace AntennaRange
 		private long lastSearch;
 
 		private bool canTransmit;
+		private bool isChecked;
 
 		private IAntennaRelay nearestRelay;
 		private IAntennaRelay bestOccludedRelay;
@@ -110,7 +111,7 @@ namespace AntennaRange
 		{
 			get
 			{
-				this.FindNearestRelay();
+				//this.FindNearestRelay();
 
 				if (this.KerbinDirect || this.targetRelay == null)
 				{
@@ -158,7 +159,7 @@ namespace AntennaRange
 		/// <returns><c>true</c> if this instance can transmit; otherwise, <c>false</c>.</returns>
 		public virtual bool CanTransmit()
 		{
-			this.FindNearestRelay();
+			//this.FindNearestRelay();
 			return this.canTransmit;
 		}
 
@@ -168,25 +169,14 @@ namespace AntennaRange
 		/// <returns>The nearest relay or null, if no relays in range.</returns>
 		private void FindNearestRelay()
 		{
+			if (!FlightGlobals.ready)
+			{
+				return;
+			}
+
 			if (!searchTimer.IsRunning)
 			{
 				searchTimer.Start();
-			}
-
-			long searchTime = searchTimer.ElapsedMilliseconds;
-			long timeSinceLast = searchTime - this.lastSearch;
-
-			if (timeSinceLast < Math.Max(millisecondsBetweenSearches, UnityEngine.Time.smoothDeltaTime))
-			{
-				return;
-			}
-
-			this.lastSearch = searchTime;
-
-			// Skip vessels that have already been checked for a nearest relay this pass.
-			if (RelayDatabase.Instance.CheckedVesselsTable.ContainsKey(this.vessel.id))
-			{
-				return;
 			}
 
 			Tools.DebugLogger log;
@@ -194,11 +184,38 @@ namespace AntennaRange
 			log = Tools.DebugLogger.New(this);
 			#endif
 
+			long searchTime = searchTimer.ElapsedMilliseconds;
+			long timeSinceLast = searchTime - this.lastSearch;
+
+			if (timeSinceLast < millisecondsBetweenSearches)
+			{
+				log.AppendFormat(
+					"{0}: Target search skipped because it's not time to search again yet ({1} - {2}) < {3})",
+					this, searchTime, this.lastSearch, millisecondsBetweenSearches
+				);
+				log.Print();
+				return;
+			}
+
+			// Skip vessels that have already been checked for a nearest relay this pass.
+			if (this.isChecked)
+			{
+				log.AppendFormat("{0}: Target search skipped because our vessel has been checked already this search.",
+					this);
+				log.Print();
+				return;
+			}
+
 			log.AppendFormat("{0}: Target search started at {1} ms ({2} ms since last search).",
 				this.ToString(), searchTime, timeSinceLast);
-			
+
+			#if DEBUG
+			try {
+			#endif
 			// Set this vessel as checked, so that we don't check it again.
-			RelayDatabase.Instance.CheckedVesselsTable[vessel.id] = true;
+			this.isChecked = true;
+
+			this.lastSearch = searchTime;
 
 			// Blank everything we're trying to find before the search.
 			this.firstOccludingBody = null;
@@ -225,8 +242,24 @@ namespace AntennaRange
 			IList<IAntennaRelay> vesselRelays;
 			for (int vIdx = 0; vIdx < FlightGlobals.Vessels.Count; vIdx++)
 			{
+				log.AppendFormat("\nFetching vessel at index {0}", vIdx);
 				potentialVessel = FlightGlobals.Vessels[vIdx];
+				
+				if (potentialVessel == null)
+				{
+					log.AppendFormat("\n\tSkipping vessel at index {0} because it is null.", vIdx);
+					log.Print();
+					return;
+				}
+				#if DEBUG
+				else
+				{
+					log.AppendFormat("\n\tGot vessel {0}", potentialVessel);
+				}
+				#endif
+
 				// Skip vessels of the wrong type.
+				log.Append("\n\tchecking vessel type");
 				switch (potentialVessel.vesselType)
 				{
 					case VesselType.Debris:
@@ -234,43 +267,62 @@ namespace AntennaRange
 					case VesselType.EVA:
 					case VesselType.SpaceObject:
 					case VesselType.Unknown:
+							log.Append("\n\tSkipping because vessel is the wrong type.");
 						continue;
 					default:
 						break;
 				}
-
+				
+				log.Append("\n\tchecking if vessel is this vessel");
 				// Skip vessels with the wrong ID
 				if (potentialVessel.id == vessel.id)
 				{
+					log.Append("\n\tSkipping because vessel is this vessel.");
 					continue;
 				}
 
 				// Find the distance from here to the vessel...
+				log.Append("\n\tgetting distance to potential vessel");
 				double potentialSqrDistance = this.sqrDistanceTo(potentialVessel);
+				log.Append("\n\tgetting vessel relays");
 				vesselRelays = potentialVessel.GetAntennaRelays();
+					log.AppendFormat("\n\t\tvesselRelays: {0}",
+						vesselRelays == null ? "null" : vesselRelays.Count.ToString());
 
 				CelestialBody fob = null;
-
+				
+				log.Append("\n\tdoing LOS check");
 				// Skip vessels to which we do not have line of sight.
 				if (
 					ARConfiguration.RequireLineOfSight &&
 					!this.vessel.hasLineOfSightTo(potentialVessel, out fob, ARConfiguration.RadiusRatio)
 				)
 				{
+					log.Append("\n\tfailed LOS check");
 					this.firstOccludingBody = fob;
-
+					
 					log.AppendFormat("\n\t{0}: Vessel {1} not in line of sight.",
 						this.ToString(), potentialVessel.vesselName);
+					
+					log.AppendFormat("\n\t\tpotentialSqrDistance: {0}", potentialSqrDistance);
+					log.AppendFormat("\n\t\tbestOccludedSqrDistance: {0}", bestOccludedSqrDistance);
+					log.AppendFormat("\n\t\tmaxTransmitSqrDistance: {0}", maxTransmitSqrDistance);
 
 					if (
 						(potentialSqrDistance < bestOccludedSqrDistance) &&
 						(potentialSqrDistance < maxTransmitSqrDistance)
 					)
 					{
-						
+						log.Append("\n\t\t...vessel is close enough to check for occluded relays");
+						log.AppendFormat("\n\t\tthis: {0}", this);
+						log.AppendFormat("\n\t\tpotentialVessel: {0}",
+							potentialVessel == null ? "null" : potentialVessel.ToString());
+						log.AppendFormat("\n\t\tvesselRelays: {0}",
+							vesselRelays == null ? "null" : vesselRelays.ToString());
+
 						log.AppendFormat("\n\t\t{0}: Checking {1} relays on occluded vessel {2}.",
 							this.ToString(),
-							potentialVessel.GetAntennaRelays().Count,
+							vesselRelays.Count,
 							potentialVessel
 						);
 
@@ -302,9 +354,12 @@ namespace AntennaRange
 							}
 						}
 					}
-
+					
+					log.Append("\n\t\t...vessel is not close enough to check for occluded relays, carrying on");
 					continue;
 				}
+
+				log.Append("\n\tpassed LOS check");
 
 				/*
 				 * ...so that we can skip the vessel if it is further away than a vessel we've already checked.
@@ -319,25 +374,35 @@ namespace AntennaRange
 					continue;
 				}
 
+				log.Append("\n\tpassed distance check");
+
 				IAntennaRelay potentialRelay;
 				for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
 				{
+					log.AppendFormat("\n\t\tfetching vessel relay at index {0}", rIdx);
 					potentialRelay = vesselRelays[rIdx];
+					log.AppendFormat("\n\t\tgot relay {0}", potentialRelay == null ? "null" : potentialRelay.ToString());
 
-					if (potentialRelay.CanTransmit() && potentialRelay.targetRelay != this)
+					if (potentialRelay == null)
+					{
+						log.Append("\n\t\t...skipping null relay");
+						continue;
+					}
+
+					if (
+						potentialRelay.CanTransmit() &&
+						(potentialRelay.targetRelay == null || potentialRelay.targetRelay.vessel != this.vessel))
 					{
 						// @TODO: Moved this here from outside the loop; why was it there?
 						nearestRelaySqrDistance = potentialSqrDistance;
 						this.nearestRelay = potentialRelay;
 
-						if (FlightGlobals.ActiveVessel != null && FlightGlobals.ActiveVessel.id == this.vessel.id)
-						{
-							log.AppendFormat("\n\t{0}: found new nearest relay {1} ({2}m)",
-								this.ToString(),
-								this.nearestRelay.ToString(),
-								Math.Sqrt(nearestRelaySqrDistance)
-							);
-						}
+						log.AppendFormat("\n\t{0}: found new nearest relay {1} ({2}m)",
+							this.ToString(),
+							this.nearestRelay.ToString(),
+							Math.Sqrt(nearestRelaySqrDistance)
+						);
+						
 						break;
 					}
 				}
@@ -563,12 +628,20 @@ namespace AntennaRange
 				this.ToString(), searchTimer.ElapsedMilliseconds, searchTimer.ElapsedMilliseconds - searchTime);;
 
 			log.AppendFormat("\n{0}: Status determination complete.", this.ToString());
-
+			
+			#if DEBUG
+			} catch (Exception ex) {
+				log.AppendFormat("\nCaught {0}: {1}\n{2}", ex.GetType().FullName, ex.ToString(), ex.StackTrace);
+				UnityEngine.Application.Quit();
+			} finally {
+			#endif
 			log.Print(false);
-
+			#if DEBUG
+			}
+			#endif
 			// Now that we're done with our recursive CanTransmit checks, flag this relay as not checked so it can be
 			// used next time.
-			RelayDatabase.Instance.CheckedVesselsTable.Remove(vessel.id);
+			this.isChecked = false;
 		}
 
 		/// <summary>
@@ -592,6 +665,7 @@ namespace AntennaRange
 		public AntennaRelay(IAntennaRelay module)
 		{
 			this.moduleRef = module;
+			this.isChecked = false;
 		}
 	}
 }
