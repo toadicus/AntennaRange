@@ -241,6 +241,35 @@ namespace AntennaRange
 				FlightGlobals.ActiveVessel != null
 			)
 			{
+				Vessel vessel;
+				IAntennaRelay relay;
+				IList<IAntennaRelay> activeVesselRelays;
+
+				for (int vIdx = 0; vIdx < FlightGlobals.Vessels.Count; vIdx++)
+				{
+					vessel = FlightGlobals.Vessels[vIdx];
+
+					if (vessel == FlightGlobals.ActiveVessel)
+					{
+						continue;
+					}
+
+					relay = vessel.GetBestRelay();
+
+					if (relay != null)
+					{
+						relay.FindNearestRelay();
+					}
+				}
+
+				activeVesselRelays = RelayDatabase.Instance[FlightGlobals.ActiveVessel];
+				for (int rIdx = 0; rIdx < activeVesselRelays.Count; rIdx++)
+				{
+					relay = activeVesselRelays[rIdx];
+
+					relay.FindNearestRelay();
+				}
+
 				log.Append("Checking vessel relay status.\n");
 
 				this.currentConnectionStatus = FlightGlobals.ActiveVessel.GetConnectionStatus();

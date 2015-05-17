@@ -26,8 +26,6 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define DEBUG
-
 #pragma warning disable 1591
 
 using KSP;
@@ -43,8 +41,15 @@ namespace AntennaRange
 		#region Fields
 		private Dictionary<Guid, LineRenderer> vesselLineRenderers;
 
+		// Debug Stuff
+		#pragma warning disable 649
+		private System.Diagnostics.Stopwatch timer;
+		private Tools.DebugLogger log;
+		private long relayStart;
+		private long start;
+		#pragma warning restore 649
+
 		#pragma warning disable 414
-		private bool dumpBool;
 		private Color thisColor;
 		#pragma warning restore 414
 		#endregion
@@ -91,12 +96,12 @@ namespace AntennaRange
 			{
 				this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
 			}
-		}
 
-		#if DEBUG
-		private System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
-		#endif
-		private Tools.DebugLogger log = Tools.DebugLogger.New(typeof(ARMapRenderer));
+			#if DEBUG
+			this.timer = new System.Diagnostics.Stopwatch();
+			this.log = Tools.DebugLogger.New(this);
+			#endif
+		}
 
 		private void OnPreCull()
 		{
@@ -109,7 +114,6 @@ namespace AntennaRange
 
 			#if DEBUG
 			timer.Restart();
-			long start;
 			#endif
 
 			try
@@ -134,9 +138,7 @@ namespace AntennaRange
 					{
 						Vessel vessel = FlightGlobals.Vessels[i];
 
-						#if DEBUG
 						log.AppendFormat("\nStarting check for vessel {0} at {1}ms", vessel, timer.ElapsedMilliseconds);
-						#endif
 
 						if (vessel == null)
 						{
@@ -157,29 +159,26 @@ namespace AntennaRange
 
 						log.AppendFormat("\n\tChecking vessel {0}.", vessel.vesselName);
 
-						#if DEBUG
 						start = timer.ElapsedMilliseconds;
-						#endif
 
 						IAntennaRelay vesselRelay = vessel.GetBestRelay();
 
-						#if DEBUG
-						log.AppendFormat("\n\tGot best relay {0} for vessel {1} in {2} ms",
-							vesselRelay, vessel, timer.ElapsedMilliseconds - start);
-						#endif
+						if (vesselRelay == null)
+						{
+							continue;
+						}
+
+						log.AppendFormat("\n\tGot best relay {0} ({3}) for vessel {1} in {2} ms",
+							vesselRelay, vessel, timer.ElapsedMilliseconds - start, vesselRelay.GetType().Name);
 
 						if (vesselRelay != null)
 						{
-							#if DEBUG
 							start = timer.ElapsedMilliseconds;
-							#endif
 
 							this.SetRelayVertices(vesselRelay);
 
-							#if DEBUG
 							log.AppendFormat("\n\tSet relay vertices for {0} in {1}ms",
 								vessel, timer.ElapsedMilliseconds - start);
-							#endif
 						}
 					}
 				}
@@ -208,12 +207,15 @@ namespace AntennaRange
 		#endregion
 
 		#region Utility
-		#if DEBUG
-		private long relayStart;
-		#endif
 		private void SetRelayVertices(IAntennaRelay relay)
 		{
 			log.AppendFormat("\n\t\tDrawing line for relay chain starting at {0}.", relay);
+
+			if (relay.vessel == null)
+			{
+				log.Append("\n\t\tvessel is null, bailing out");
+				return;
+			}
 
 			LineRenderer renderer = this[relay.vessel.id];
 			Vector3d start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());

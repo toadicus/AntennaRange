@@ -54,6 +54,12 @@ namespace AntennaRange
 				}
 				else
 				{
+					Tools.PostLogMessage("{0}: Could not fetch vessel!  {1}{2}{3}",
+						this.ToString(),
+						this.protoPart == null ? "\n\tprotoPart=Null" : string.Empty,
+						this.protoPart != null && this.protoPart.pVesselRef == null ? "\n\tthis.protoPart.pVesselRef=Null" : string.Empty,
+						this.protoPart != null && this.protoPart.pVesselRef != null && this.protoPart.pVesselRef.vesselRef == null ? "\n\tthis.protoPart.pVesselRef.vesselRef=Null" : string.Empty
+					);
 					return null;
 				}
 			}
@@ -146,6 +152,8 @@ namespace AntennaRange
 		public ProtoAntennaRelay(IAntennaRelay prefabRelay, ProtoPartSnapshot pps) : base(prefabRelay)
 		{
 			this.protoPart = pps;
+
+			Tools.PostLogMessage("{0}: constructed {1}", this.GetType().Name, this.ToString());
 		}
 	}
 }

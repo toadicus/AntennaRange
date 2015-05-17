@@ -143,6 +143,7 @@ namespace AntennaRange
 			}
 			else
 			{
+				var dump = this[vessel];
 				return null;
 			}
 		}
@@ -358,7 +359,7 @@ namespace AntennaRange
 								module
 							));
 
-							relay = (module as IAntennaRelay);
+							relay = new ProtoAntennaRelay(module as IAntennaRelay, pps);
 
 							if (relay.maxTransmitDistance > bestRelayRange)
 							{
@@ -367,7 +368,7 @@ namespace AntennaRange
 							}
 
 							// ...build a new ProtoAntennaRelay and add it to the table
-							relays.Add(new ProtoAntennaRelay(relay, pps));
+							relays.Add(relay);
 							// ...neglect relay objects after the first in each part.
 							break;
 						}

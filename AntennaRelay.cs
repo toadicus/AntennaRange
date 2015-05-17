@@ -111,8 +111,6 @@ namespace AntennaRange
 		{
 			get
 			{
-				//this.FindNearestRelay();
-
 				if (this.KerbinDirect || this.targetRelay == null)
 				{
 					return this.DistanceTo(Kerbin);
@@ -159,7 +157,6 @@ namespace AntennaRange
 		/// <returns><c>true</c> if this instance can transmit; otherwise, <c>false</c>.</returns>
 		public virtual bool CanTransmit()
 		{
-			//this.FindNearestRelay();
 			return this.canTransmit;
 		}
 
@@ -167,7 +164,7 @@ namespace AntennaRange
 		/// Finds the nearest relay.
 		/// </summary>
 		/// <returns>The nearest relay or null, if no relays in range.</returns>
-		private void FindNearestRelay()
+		public void FindNearestRelay()
 		{
 			if (!FlightGlobals.ready)
 			{
@@ -666,6 +663,8 @@ namespace AntennaRange
 		{
 			this.moduleRef = module;
 			this.isChecked = false;
+
+			Tools.PostLogMessage("{0}: constructed {1}", this.GetType().Name, this.ToString());
 		}
 	}
 }

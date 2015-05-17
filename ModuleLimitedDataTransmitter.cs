@@ -436,6 +436,14 @@ namespace AntennaRange
 			return this.relay.CanTransmit();
 		}
 
+		public void FindNearestRelay()
+		{
+			if (this.relay != null)
+			{
+				this.relay.FindNearestRelay();
+			}
+		}
+
 		/// <summary>
 		/// Override ModuleDataTransmitter.TransmitData to check against CanTransmit and fail out when CanTransmit
 		/// returns false.
@@ -444,6 +452,8 @@ namespace AntennaRange
 		/// <param name="callback">Callback function</param>
 		public new void TransmitData(List<ScienceData> dataQueue, Callback callback)
 		{
+			this.FindNearestRelay();
+
 			this.PreTransmit_SetPacketSize();
 			this.PreTransmit_SetPacketResourceCost();
 
@@ -558,6 +568,8 @@ namespace AntennaRange
 		/// </summary>
 		public new void StartTransmission()
 		{
+			this.FindNearestRelay();
+
 			PreTransmit_SetPacketSize ();
 			PreTransmit_SetPacketResourceCost ();
 

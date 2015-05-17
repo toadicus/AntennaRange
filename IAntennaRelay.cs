@@ -83,6 +83,8 @@ namespace AntennaRange
 		/// </summary>
 		bool CanTransmit();
 
+		void FindNearestRelay();
+
 		/// <summary>
 		/// Returns a <see cref="System.String"/> that represents the current <see cref="AntennaRange.IAntennaRelay"/>.
 		/// </summary>
