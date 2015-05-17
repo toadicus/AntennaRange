@@ -43,7 +43,7 @@ namespace AntennaRange
 		 * Static members
 		 * */
 		// Singleton storage
-		protected static RelayDatabase _instance;
+		private static RelayDatabase _instance;
 		// Gets the singleton
 		public static RelayDatabase Instance
 		{
@@ -66,18 +66,17 @@ namespace AntennaRange
 		 * Fields
 		 * */
 		// Vessel.id-keyed hash table of Part.GetHashCode()-keyed tables of relay objects.
-		protected Dictionary<Guid, List<IAntennaRelay>> relayDatabase;
+		private Dictionary<Guid, List<IAntennaRelay>> relayDatabase;
+		private Dictionary<Guid, IAntennaRelay> bestRelayTable;
 
 		// Vessel.id-keyed hash table of part counts, used for caching
-		protected Dictionary<Guid, int> vesselPartCountTable;
-
-		protected Dictionary<Guid, BestVesselRelayCache> bestRelayTable;
+		private Dictionary<Guid, int> vesselPartCountTable;
 
 		// Vessel.id-keyed hash table of booleans to track what vessels have been checked so far this time.
 		public Dictionary<Guid, bool> CheckedVesselsTable;
 
-		protected int cacheHits;
-		protected int cacheMisses;
+		private int cacheHits;
+		private int cacheMisses;
 
 		/*
 		 * Properties
@@ -115,9 +114,42 @@ namespace AntennaRange
 		/* 
 		 * Methods
 		 * */
+		// Remove a vessel from the cache, if it exists.
+		public void DirtyVessel(Vessel vessel)
+		{
+			this.relayDatabase.Remove(vessel.id);
+			this.vesselPartCountTable.Remove(vessel.id);
+			this.relayDatabase.Remove(vessel.id);
+		}
+
+		// Returns true if both the relayDatabase and the vesselPartCountDB contain the vessel id.
+		public bool ContainsKey(Guid key)
+		{
+			return this.relayDatabase.ContainsKey(key);
+		}
+
+		// Returns true if both the relayDatabase and the vesselPartCountDB contain the vessel.
+		public bool ContainsKey(Vessel vessel)
+		{
+			return this.ContainsKey(vessel.id);
+		}
+
+		public IAntennaRelay GetBestVesselRelay(Vessel vessel)
+		{
+			IAntennaRelay relay;
+			if (this.bestRelayTable.TryGetValue(vessel.id, out relay))
+			{
+				return relay;
+			}
+			else
+			{
+				return null;
+			}
+		}
+
 		// Adds a vessel to the database
 		// The return for this function isn't used yet, but seems useful for potential future API-uses
-		public bool AddVessel(Vessel vessel)
+		private bool AddVessel(Vessel vessel)
 		{
 			// If this vessel is already here...
 			if (this.ContainsKey(vessel))
@@ -148,7 +180,7 @@ namespace AntennaRange
 		}
 
 		// Update the vessel's entry in the table
-		public void UpdateVessel(Vessel vessel)
+		private void UpdateVessel(Vessel vessel)
 		{
 			// Squak if the database doesn't have the vessel
 			if (!this.ContainsKey(vessel))
@@ -167,54 +199,6 @@ namespace AntennaRange
 			this.getVesselRelays(vessel, ref vesselTable);
 			// Set the part count
 			this.vesselPartCountTable[vessel.id] = vessel.Parts.Count;
-		}
-
-		// Remove a vessel from the cache, if it exists.
-		public void DirtyVessel(Vessel vessel)
-		{
-			if (this.relayDatabase.ContainsKey(vessel.id))
-			{
-				this.relayDatabase.Remove(vessel.id);
-			}
-			if (this.vesselPartCountTable.ContainsKey(vessel.id))
-			{
-				this.vesselPartCountTable.Remove(vessel.id);
-			}
-		}
-
-		public void SetBestVesselRelay(Vessel vessel, BestVesselRelayCache relay)
-		{
-			this.bestRelayTable[vessel.id] = relay;
-		}
-
-		public bool TryGetBestVesselRelay(Vessel vessel, out BestVesselRelayCache relay)
-		{
-			return this.bestRelayTable.TryGetValue(vessel.id, out relay);
-		}
-
-		public BestVesselRelayCache GetBestVesselRelay(Vessel vessel)
-		{
-			BestVesselRelayCache relayCache;
-			if (this.TryGetBestVesselRelay(vessel, out relayCache))
-			{
-				return relayCache;
-			}
-
-			throw new ArgumentOutOfRangeException(
-				string.Format("RelayDatabase: Vessel {0} not in best vessel relay table.", vessel)
-			);
-		}
-
-		// Returns true if both the relayDatabase and the vesselPartCountDB contain the vessel id.
-		public bool ContainsKey(Guid key)
-		{
-			return this.relayDatabase.ContainsKey(key);
-		}
-
-		// Returns true if both the relayDatabase and the vesselPartCountDB contain the vessel.
-		public bool ContainsKey(Vessel vessel)
-		{
-			return this.ContainsKey(vessel.id);
 		}
 
 		// Runs when a vessel is modified (or when we switch to one, to catch docking events)
@@ -241,7 +225,7 @@ namespace AntennaRange
 		}
 
 		// Runs when the player requests a scene change, such as when changing vessels or leaving flight.
-		public void onSceneChange(GameScenes scene)
+		private void onSceneChange(GameScenes scene)
 		{
 			// If the active vessel is a real thing...
 			if (FlightGlobals.ActiveVessel != null)
@@ -252,7 +236,7 @@ namespace AntennaRange
 		}
 
 		// Runs when parts are undocked
-		public void onPartEvent(Part part)
+		private void onPartEvent(Part part)
 		{
 			if (part != null && part.vessel != null)
 			{
@@ -261,14 +245,14 @@ namespace AntennaRange
 		}
 
 		// Runs when parts are coupled, as in docking
-		public void onFromPartToPartEvent(GameEvents.FromToAction<Part, Part> data)
+		private void onFromPartToPartEvent(GameEvents.FromToAction<Part, Part> data)
 		{
 			this.onPartEvent(data.from);
 			this.onPartEvent(data.to);
 		}
 
 		// Produce a Part-hashed table of relays for the given vessel
-		protected void getVesselRelays(Vessel vessel, ref List<IAntennaRelay> relays)
+		private void getVesselRelays(Vessel vessel, ref List<IAntennaRelay> relays)
 		{
 			// We're going to completely regen this table, so dump the current contents.
 			relays.Clear();
@@ -278,6 +262,10 @@ namespace AntennaRange
 				"IAntennaRelay",
 				vessel.vesselName
 			));
+
+			double bestRelayRange = double.NegativeInfinity;
+			IAntennaRelay bestRelay = null;
+			IAntennaRelay relay;
 
 			// If the vessel is loaded, we can fetch modules implementing IAntennaRelay directly.
 			if (vessel.loaded) {
@@ -302,8 +290,16 @@ namespace AntennaRange
 						// ...if the module is a relay...
 						if (module is IAntennaRelay)
 						{
+							relay = (module as IAntennaRelay);
+
+							if (relay.maxTransmitDistance > bestRelayRange)
+							{
+								bestRelayRange = relay.maxTransmitDistance;
+								bestRelay = relay;
+							}
+
 							// ...add the module to the table
-							relays.Add(module as IAntennaRelay);
+							relays.Add(relay);
 							// ...neglect relay objects after the first in each part.
 							break;
 						}
@@ -362,14 +358,24 @@ namespace AntennaRange
 								module
 							));
 
+							relay = (module as IAntennaRelay);
+
+							if (relay.maxTransmitDistance > bestRelayRange)
+							{
+								bestRelayRange = relay.maxTransmitDistance;
+								bestRelay = relay;
+							}
+
 							// ...build a new ProtoAntennaRelay and add it to the table
-							relays.Add(new ProtoAntennaRelay(module as IAntennaRelay, pps));
+							relays.Add(new ProtoAntennaRelay(relay, pps));
 							// ...neglect relay objects after the first in each part.
 							break;
 						}
 					}
 				}
 			}
+
+			this.bestRelayTable[vessel.id] = bestRelay;
 
 			Tools.PostDebugMessage(string.Format(
 				"{0}: vessel '{1}' ({2}) has {3} transmitters.",
@@ -381,13 +387,13 @@ namespace AntennaRange
 		}
 
 		// Construct the singleton
-		protected RelayDatabase()
+		private RelayDatabase()
 		{
 			// Initialize the databases
 			this.relayDatabase = new Dictionary<Guid, List<IAntennaRelay>>();
+			this.bestRelayTable = new Dictionary<Guid, IAntennaRelay>();
 			this.vesselPartCountTable = new Dictionary<Guid, int>();
 			this.CheckedVesselsTable = new Dictionary<Guid, bool>();
-			this.bestRelayTable = new Dictionary<Guid, BestVesselRelayCache>();
 
 			this.cacheHits = 0;
 			this.cacheMisses = 0;
@@ -447,21 +453,6 @@ namespace AntennaRange
 			Tools.PostDebugMessage(sb.ToString());
 		}
 		#endif
-	}
-
-	public class BestVesselRelayCache
-	{
-		public Vessel vessel;
-		public IAntennaRelay relay;
-		public long timeStamp;
-
-		public BestVesselRelayCache() {}
-		public BestVesselRelayCache(Vessel _vessel, IAntennaRelay _relay, long _timeStamp)
-		{
-			this.vessel = _vessel;
-			this.relay = _relay;
-			this.timeStamp = _timeStamp;
-		}
 	}
 }
 
