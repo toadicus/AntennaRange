@@ -80,7 +80,6 @@
     <Compile Include="ARConfiguration.cs" />
     <Compile Include="ARFlightController.cs" />
     <Compile Include="ARMapRenderer.cs" />
-    <Compile Include="VesselCache.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

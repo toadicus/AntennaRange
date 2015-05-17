@@ -629,7 +629,9 @@ namespace AntennaRange
 			#if DEBUG
 			} catch (Exception ex) {
 				log.AppendFormat("\nCaught {0}: {1}\n{2}", ex.GetType().FullName, ex.ToString(), ex.StackTrace);
+			#if QUIT_ON_EXCEPTION
 				UnityEngine.Application.Quit();
+			#endif
 			} finally {
 			#endif
 			log.Print(false);
