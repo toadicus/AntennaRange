@@ -159,7 +159,9 @@ namespace AntennaRange
 
 						log.AppendFormat("\n\tChecking vessel {0}.", vessel.vesselName);
 
+						#if DEBUG
 						start = timer.ElapsedMilliseconds;
+						#endif
 
 						IAntennaRelay vesselRelay = vessel.GetBestRelay();
 
@@ -173,7 +175,9 @@ namespace AntennaRange
 
 						if (vesselRelay != null)
 						{
+							#if DEBUG
 							start = timer.ElapsedMilliseconds;
+							#endif
 
 							this.SetRelayVertices(vesselRelay);
 
@@ -242,7 +246,9 @@ namespace AntennaRange
 
 			int idx = 0;
 
+			#if DEBUG
 			relayStart = timer.ElapsedMilliseconds;
+			#endif
 
 			Vector3d nextPoint;
 
