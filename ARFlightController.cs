@@ -165,7 +165,7 @@ namespace AntennaRange
 			if (this.appLauncherButton == null && !ToolbarManager.ToolbarAvailable && ApplicationLauncher.Ready)
 			{
 				this.appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
-					ApplicationLauncher.AppScenes.FLIGHT,
+					ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW,
 					this.appLauncherTextures[ConnectionStatus.None]
 				);
 			}
@@ -235,11 +235,7 @@ namespace AntennaRange
 
 			this.log.Clear();
 
-			if (
-				(this.toolbarButton != null || this.appLauncherButton != null) &&
-				HighLogic.LoadedSceneIsFlight &&
-				FlightGlobals.ActiveVessel != null
-			)
+			if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ActiveVessel != null)
 			{
 				Vessel vessel;
 				IAntennaRelay relay;
@@ -270,29 +266,32 @@ namespace AntennaRange
 					relay.FindNearestRelay();
 				}
 
-				log.Append("Checking vessel relay status.\n");
-
-				this.currentConnectionStatus = FlightGlobals.ActiveVessel.GetConnectionStatus();
-
-				log.AppendFormat("currentConnectionStatus: {0}, setting texture to {1}",
-					this.currentConnectionStatus, this.currentConnectionTexture);
-
-				if (this.toolbarButton != null)
+				if (this.toolbarButton != null || this.appLauncherButton != null)
 				{
-					this.toolbarButton.TexturePath = this.currentConnectionTexture;
+					log.Append("Checking vessel relay status.\n");
 
-					if (this.currentConnectionStatus == ConnectionStatus.None)
+					this.currentConnectionStatus = FlightGlobals.ActiveVessel.GetConnectionStatus();
+
+					log.AppendFormat("currentConnectionStatus: {0}, setting texture to {1}",
+						this.currentConnectionStatus, this.currentConnectionTexture);
+
+					if (this.toolbarButton != null)
 					{
-						this.toolbarButton.Important = true;
+						this.toolbarButton.TexturePath = this.currentConnectionTexture;
+
+						if (this.currentConnectionStatus == ConnectionStatus.None)
+						{
+							if (!this.toolbarButton.Important) this.toolbarButton.Important = true;
+						}
+						else
+						{
+							if (this.toolbarButton.Important) this.toolbarButton.Important = false;
+						}
 					}
-					else
+					if (this.appLauncherButton != null)
 					{
-						this.toolbarButton.Important = false;
+						this.appLauncherButton.SetTexture(this.currentAppLauncherTexture);
 					}
-				}
-				if (this.appLauncherButton != null)
-				{
-					this.appLauncherButton.SetTexture(this.currentAppLauncherTexture);
 				}
 			}
 
