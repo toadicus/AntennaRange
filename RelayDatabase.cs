@@ -432,7 +432,7 @@ namespace AntennaRange
 		#if DEBUG
 		public void Dump()
 		{
-			StringBuilder sb = new StringBuilder();
+			StringBuilder sb = Tools.GetStringBuilder();
 
 			sb.Append("Dumping RelayDatabase:");
 
@@ -452,6 +452,8 @@ namespace AntennaRange
 			}
 
 			Tools.PostDebugMessage(sb.ToString());
+
+			Tools.PutStringBuilder(sb);
 		}
 		#endif
 	}

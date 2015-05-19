@@ -544,23 +544,25 @@ namespace AntennaRange
 
 				if (dataQueue.Count > 0)
 				{
-					StringBuilder msg = new StringBuilder();
+					StringBuilder sb = Tools.GetStringBuilder();
 
-					msg.Append('[');
-					msg.Append(this.part.partInfo.title);
-					msg.AppendFormat("]: {0} data items could not be saved: no space available in data containers.\n");
-					msg.Append("Data to be discarded:\n");
+					sb.Append('[');
+					sb.Append(this.part.partInfo.title);
+					sb.AppendFormat("]: {0} data items could not be saved: no space available in data containers.\n");
+					sb.Append("Data to be discarded:\n");
 
 					ScienceData data;
 					for (int dIdx = 0; dIdx < dataQueue.Count; dIdx++)
 					{
 						data = dataQueue[dIdx];
-						msg.AppendFormat("\t{0}\n", data.title);
+						sb.AppendFormat("\t{0}\n", data.title);
 					}
 
-					ScreenMessages.PostScreenMessage(msg.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
+					ScreenMessages.PostScreenMessage(sb.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
 
-					Tools.PostDebugMessage(msg.ToString());
+					Tools.PostDebugMessage(sb.ToString());
+
+					Tools.PutStringBuilder(sb);
 				}
 
 				this.PostCannotTransmitError();
@@ -663,14 +665,15 @@ namespace AntennaRange
 		/// <returns>A <see cref="System.String"/> that represents the current <see cref="AntennaRange.ModuleLimitedDataTransmitter"/>.</returns>
 		public override string ToString()
 		{
-			StringBuilder msg = new StringBuilder();
+			StringBuilder sb = Tools.GetStringBuilder();
+			string msg;
 
-			msg.Append(this.part.partInfo.title);
+			sb.Append(this.part.partInfo.title);
 
 			if (vessel != null)
 			{
-				msg.Append(" on ");
-				msg.Append(vessel.vesselName);
+				sb.Append(" on ");
+				sb.Append(vessel.vesselName);
 			}
 			else if (
 				this.part != null &&
@@ -679,11 +682,15 @@ namespace AntennaRange
 				this.part.protoPartSnapshot.pVesselRef != null
 			)
 			{
-				msg.Append(" on ");
-				msg.Append(this.part.protoPartSnapshot.pVesselRef.vesselName);
+				sb.Append(" on ");
+				sb.Append(this.part.protoPartSnapshot.pVesselRef.vesselName);
 			}
 
-			return msg.ToString();
+			msg = sb.ToString();
+
+			Tools.PutStringBuilder(sb);
+
+			return msg;
 		}
 
 		// When we catch an onPartActionUICreate event for our part, go ahead and update every frame to look pretty.
@@ -768,25 +775,30 @@ namespace AntennaRange
 
 		private string buildTransmitMessage()
 		{
-			StringBuilder message = new StringBuilder();
+			StringBuilder sb = Tools.GetStringBuilder();
+			string msg;
 
-			message.Append("[");
-			message.Append(base.part.partInfo.title);
-			message.Append("]: ");
+			sb.Append("[");
+			sb.Append(base.part.partInfo.title);
+			sb.Append("]: ");
 
-			message.Append("Beginning transmission ");
+			sb.Append("Beginning transmission ");
 
 			if (this.KerbinDirect)
 			{
-				message.Append("directly to Kerbin.");
+				sb.Append("directly to Kerbin.");
 			}
 			else
 			{
-				message.Append("via ");
-				message.Append(this.relay.targetRelay);
+				sb.Append("via ");
+				sb.Append(this.relay.targetRelay);
 			}
 
-			return message.ToString();
+			msg = sb.ToString();
+
+			Tools.PutStringBuilder(sb);
+
+			return msg;
 		}
 
 		#if DEBUG
@@ -797,47 +809,14 @@ namespace AntennaRange
 			PreTransmit_SetPacketSize ();
 			PreTransmit_SetPacketResourceCost ();
 
-			string msg = string.Format(
-				"'{0}'\n" + 
-				"_basepacketSize: {1}\n" +
-				"packetSize: {2}\n" +
-				"_basepacketResourceCost: {3}\n" +
-				"packetResourceCost: {4}\n" +
-				"maxTransmitDistance: {5}\n" +
-				"transmitDistance: {6}\n" +
-				"nominalRange: {7}\n" +
-				"CanTransmit: {8}\n" +
-				"DataRate: {9}\n" +
-				"DataResourceCost: {10}\n" +
-				"TransmitterScore: {11}\n" +
-				"targetRelay: {12}\n" +
-				"KerbinDirect: {13}\n" +
-				"Vessel ID: {14}",
-				this.name,
-				this._basepacketSize,
-				base.packetSize,
-				this._basepacketResourceCost,
-				base.packetResourceCost,
-				this.maxTransmitDistance,
-				this.transmitDistance,
-				this.nominalRange,
-				this.CanTransmit(),
-				this.DataRate,
-				this.DataResourceCost,
-				ScienceUtil.GetTransmitterScore(this),
-				this.relay.targetRelay == null ? "null" : this.relay.targetRelay.ToString(),
-				this.KerbinDirect,
-				this.vessel.id
-				);
-
-			Tools.PostLogMessage(msg);
+			DebugPartModule.DumpClassObject(this);
 		}
 
 		[KSPEvent (guiName = "Dump Vessels", active = true, guiActive = true)]
 		public void PrintAllVessels()
 		{
-			StringBuilder sb = new StringBuilder();
-
+			StringBuilder sb = Tools.GetStringBuilder();
+			
 			sb.Append("Dumping FlightGlobals.Vessels:");
 
 			Vessel vessel;
@@ -846,8 +825,10 @@ namespace AntennaRange
 				vessel = FlightGlobals.Vessels[i];
 				sb.AppendFormat("\n'{0} ({1})'", vessel.vesselName, vessel.id);
 			}
-
+		    
 			Tools.PostDebugMessage(sb.ToString());
+
+			Tools.PutStringBuilder(sb);
 		}
 		 
 		[KSPEvent (guiName = "Dump RelayDB", active = true, guiActive = true)]
