@@ -131,7 +131,7 @@ namespace AntennaRange
 		/// <returns>A <see cref="System.String"/> that represents the current <see cref="AntennaRange.ProtoAntennaRelay"/>.</returns>
 		public override string ToString()
 		{
-			System.Text.StringBuilder sb = new System.Text.StringBuilder();
+			System.Text.StringBuilder sb = Tools.GetStringBuilder();
 
 			sb.Append(this.Title);
 
@@ -139,6 +139,8 @@ namespace AntennaRange
 			{
 				sb.AppendFormat(" on {0}", this.protoPart.pVesselRef.vesselName);
 			}
+
+			Tools.PutStringBuilder(sb);
 
 			return sb.ToString();
 		}
