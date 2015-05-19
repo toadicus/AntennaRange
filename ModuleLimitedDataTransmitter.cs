@@ -452,6 +452,11 @@ namespace AntennaRange
 		/// <param name="callback">Callback function</param>
 		public new void TransmitData(List<ScienceData> dataQueue, Callback callback)
 		{
+			this.LogDebug(
+				"TransmitData(List<ScienceData> dataQueue, Callback callback) called.  dataQueue.Count={0}",
+				dataQueue.Count
+			);
+
 			this.FindNearestRelay();
 
 			this.PreTransmit_SetPacketSize();
@@ -461,7 +466,20 @@ namespace AntennaRange
 			{
 				ScreenMessages.PostScreenMessage(this.buildTransmitMessage(), 4f, ScreenMessageStyle.UPPER_LEFT);
 
-				base.TransmitData(dataQueue, callback);
+				this.LogDebug(
+					"CanTransmit in TransmitData, calling base.TransmitData with dataQueue=[{0}] and callback={1}",
+					dataQueue.SPrint(),
+					callback == null ? "null" : callback.ToString()
+				);
+
+				if (callback == null)
+				{
+					base.TransmitData(dataQueue);
+				}
+				else
+				{
+					base.TransmitData(dataQueue, callback);
+				}
 			}
 			else
 			{
@@ -559,6 +577,11 @@ namespace AntennaRange
 		/// <param name="dataQueue">List of <see cref="ScienceData"/> to transmit.</param>
 		public new void TransmitData(List<ScienceData> dataQueue)
 		{
+			this.LogDebug(
+				"TransmitData(List<ScienceData> dataQueue) called, dataQueue.Count={0}",
+				dataQueue.Count
+			);
+
 			this.TransmitData(dataQueue, null);
 		}
 
@@ -714,12 +737,6 @@ namespace AntennaRange
 
 				base.packetResourceCost = this._basepacketResourceCost
 					* rangeFactor;
-
-				Tools.PostDebugMessage(
-					this,
-					"Pretransmit: packet cost set to {0} before throttle (rangeFactor = {1}).",
-					base.packetResourceCost,
-					rangeFactor);
 			}
 
 			base.packetResourceCost *= this.packetThrottle / 100f;
@@ -741,12 +758,6 @@ namespace AntennaRange
 				base.packetSize = Mathf.Min(
 					this._basepacketSize * rangeFactor,
 					this._basepacketSize * this.maxDataFactor);
-
-				Tools.PostDebugMessage(
-					this,
-					"Pretransmit: packet size set to {0} before throttle (rangeFactor = {1}).",
-					base.packetSize,
-					rangeFactor);
 			}
 
 			base.packetSize *= this.packetThrottle / 100f;
