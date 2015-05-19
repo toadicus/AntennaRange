@@ -83,6 +83,9 @@ namespace AntennaRange
 		/// </summary>
 		bool CanTransmit();
 
+		/// <summary>
+		/// Finds the nearest relay.
+		/// </summary>
 		void FindNearestRelay();
 
 		/// <summary>

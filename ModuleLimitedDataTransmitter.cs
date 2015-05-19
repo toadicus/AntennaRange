@@ -436,6 +436,9 @@ namespace AntennaRange
 			return this.relay.CanTransmit();
 		}
 
+		/// <summary>
+		/// Finds the nearest relay.
+		/// </summary>
 		public void FindNearestRelay()
 		{
 			if (this.relay != null)
