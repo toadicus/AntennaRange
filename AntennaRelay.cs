@@ -37,8 +37,8 @@ namespace AntennaRange
 	/// </summary>
 	public class AntennaRelay
 	{
-		public static readonly System.Diagnostics.Stopwatch searchTimer = new System.Diagnostics.Stopwatch();
-		public const long millisecondsBetweenSearches = 125L;
+		private static readonly System.Diagnostics.Stopwatch searchTimer = new System.Diagnostics.Stopwatch();
+		private const long millisecondsBetweenSearches = 125L;
 
 		// We don't have a Bard, so we'll hide Kerbin here.
 		private static CelestialBody _Kerbin;
