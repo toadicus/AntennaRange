@@ -40,27 +40,27 @@ namespace AntennaRange
 	public class ARFlightController : MonoBehaviour
 	{
 		#region Fields
-		protected Dictionary<ConnectionStatus, string> connectionTextures;
-		protected Dictionary<ConnectionStatus, Texture> appLauncherTextures;
+		private Dictionary<ConnectionStatus, string> connectionTextures;
+		private Dictionary<ConnectionStatus, Texture> appLauncherTextures;
 
-		protected ARMapRenderer mapRenderer;
+		private ARMapRenderer mapRenderer;
 
-		protected IButton toolbarButton;
+		private IButton toolbarButton;
 
-		protected ApplicationLauncherButton appLauncherButton;
-		protected Tools.DebugLogger log;
+		private ApplicationLauncherButton appLauncherButton;
+		private Tools.DebugLogger log;
 
-		protected System.Diagnostics.Stopwatch updateTimer;
+		private System.Diagnostics.Stopwatch updateTimer;
 		#endregion
 
 		#region Properties
 		public ConnectionStatus currentConnectionStatus
 		{
 			get;
-			protected set;
+			private set;
 		}
 
-		protected string currentConnectionTexture
+		private string currentConnectionTexture
 		{
 			get
 			{
@@ -68,7 +68,7 @@ namespace AntennaRange
 			}
 		}
 
-		protected Texture currentAppLauncherTexture
+		private Texture currentAppLauncherTexture
 		{
 			get
 			{
@@ -92,7 +92,7 @@ namespace AntennaRange
 		public string lockID
 		{
 			get;
-			protected set;
+			private set;
 		}
 
 		public ControlTypes lockSet
@@ -118,7 +118,7 @@ namespace AntennaRange
 		#endregion
 
 		#region MonoBehaviour LifeCycle
-		protected void Awake()
+		private void Awake()
 		{
 			this.lockID = "ARConnectionRequired";
 
@@ -155,12 +155,12 @@ namespace AntennaRange
 			GameEvents.onVesselChange.Add(this.onVesselChange);
 		}
 
-		protected void Start()
+		private void Start()
 		{
 			this.mapRenderer = MapView.MapCamera.gameObject.AddComponent<ARMapRenderer>();
 		}
 
-		protected void FixedUpdate()
+		private void FixedUpdate()
 		{
 			if (this.appLauncherButton == null && !ToolbarManager.ToolbarAvailable && ApplicationLauncher.Ready)
 			{
@@ -222,11 +222,11 @@ namespace AntennaRange
 			log.Print();
 		}
 
-		protected void Update()
+		private void Update()
 		{
-			if (!this.updateTimer.IsRunning || this.updateTimer.ElapsedMilliseconds > 125L)
+			if (!this.updateTimer.IsRunning || this.updateTimer.ElapsedMilliseconds > 83L)
 			{
-				this.updateTimer.Reset();
+				this.updateTimer.Restart();
 			}
 			else
 			{
@@ -245,15 +245,19 @@ namespace AntennaRange
 				{
 					vessel = FlightGlobals.Vessels[vIdx];
 
-					if (vessel == FlightGlobals.ActiveVessel)
+					if (vessel == null || vessel == FlightGlobals.ActiveVessel)
 					{
 						continue;
 					}
+
+					log.AppendFormat("Fetching best relay for vessel {0}", vessel);
 
 					relay = vessel.GetBestRelay();
 
 					if (relay != null)
 					{
+						log.AppendFormat("Finding nearest relay for best relay {0}", relay);
+
 						relay.FindNearestRelay();
 					}
 				}
@@ -298,7 +302,7 @@ namespace AntennaRange
 			log.Print();
 		}
 
-		protected void OnDestroy()
+		private void OnDestroy()
 		{
 			InputLockManager.RemoveControlLock(this.lockID);
 
@@ -326,13 +330,13 @@ namespace AntennaRange
 		#endregion
 
 		#region Event Handlers
-		protected void onSceneChangeRequested(GameScenes scene)
+		private void onSceneChangeRequested(GameScenes scene)
 		{
 			print("ARFlightController: Requesting Destruction.");
 			MonoBehaviour.Destroy(this);
 		}
 
-		protected void onVesselChange(Vessel vessel)
+		private void onVesselChange(Vessel vessel)
 		{
 			InputLockManager.RemoveControlLock(this.lockID);
 		}
