@@ -26,6 +26,8 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#define DEBUG
+
 using System;
 using System.Collections.Generic;
 using ToadicusTools;
@@ -210,7 +212,10 @@ namespace AntennaRange
 			 * against future finds.
 			 * */
 			Vessel potentialVessel;
-			IList<IAntennaRelay> vesselRelays;
+			IAntennaRelay potentialBestRelay;
+			CelestialBody fob;
+
+			// IList<IAntennaRelay> vesselRelays;
 			for (int vIdx = 0; vIdx < FlightGlobals.Vessels.Count; vIdx++)
 			{
 				log.AppendFormat("\nFetching vessel at index {0}", vIdx);
@@ -255,12 +260,21 @@ namespace AntennaRange
 				// Find the distance from here to the vessel...
 				log.Append("\n\tgetting distance to potential vessel");
 				double potentialSqrDistance = this.sqrDistanceTo(potentialVessel);
-				log.Append("\n\tgetting vessel relays");
-				vesselRelays = potentialVessel.GetAntennaRelays();
-					log.AppendFormat("\n\t\tvesselRelays: {0}",
-						vesselRelays == null ? "null" : vesselRelays.Count.ToString());
+				log.Append("\n\tgetting best vessel relay");
 
-				CelestialBody fob = null;
+				potentialBestRelay = potentialVessel.GetBestRelay();
+				log.AppendFormat("\n\tgot best vessel relay {0}",
+					potentialBestRelay == null ? "null" : potentialBestRelay.ToString());
+
+				if (potentialBestRelay == null)
+				{
+					log.Append("\n\t\t...skipping null relay");
+					continue;
+				}
+
+				// vesselRelays = potentialVessel.GetAntennaRelays();
+				/*	log.AppendFormat("\n\t\tvesselRelays: {0}",
+						vesselRelays == null ? "null" : vesselRelays.Count.ToString());*/
 				
 				log.Append("\n\tdoing LOS check");
 				// Skip vessels to which we do not have line of sight.
@@ -270,8 +284,7 @@ namespace AntennaRange
 				)
 				{
 					log.Append("\n\tfailed LOS check");
-					this.firstOccludingBody = fob;
-					
+
 					log.AppendFormat("\n\t{0}: Vessel {1} not in line of sight.",
 						this.ToString(), potentialVessel.vesselName);
 					
@@ -281,52 +294,22 @@ namespace AntennaRange
 
 					if (
 						(potentialSqrDistance < bestOccludedSqrDistance) &&
-						(potentialSqrDistance < maxTransmitSqrDistance)
+						(potentialSqrDistance < maxTransmitSqrDistance) &&
+						potentialBestRelay.CanTransmit()
 					)
 					{
-						log.Append("\n\t\t...vessel is close enough to check for occluded relays");
-						log.AppendFormat("\n\t\tthis: {0}", this);
-						log.AppendFormat("\n\t\tpotentialVessel: {0}",
-							potentialVessel == null ? "null" : potentialVessel.ToString());
-						log.AppendFormat("\n\t\tvesselRelays: {0}",
-							vesselRelays == null ? "null" : vesselRelays.ToString());
+						log.Append("\n\t\t...vessel is close enough to and potentialBestRelay can transmit");
+						log.AppendFormat("\n\t\t...{0} found new best occluded relay {1}", this, potentialBestRelay);
 
-						log.AppendFormat("\n\t\t{0}: Checking {1} relays on occluded vessel {2}.",
-							this.ToString(),
-							vesselRelays.Count,
-							potentialVessel
-						);
-
-						IAntennaRelay occludedRelay;
-						for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
-						{
-							occludedRelay = vesselRelays[rIdx];
-
-							log.AppendFormat(
-								"\n\t\t{0}: Checking candidate for bestOccludedRelay: {1}" +
-								"\n\t\tCanTransmit: {2}",
-								this.ToString(), occludedRelay, occludedRelay.CanTransmit()
-							);
-							
-							if (occludedRelay.CanTransmit())
-							{
-								this.bestOccludedRelay = occludedRelay;
-								bodyOccludingBestOccludedRelay = fob;
-								bestOccludedSqrDistance = potentialSqrDistance;
-
-								log.AppendFormat("\n\t{0}: Found new bestOccludedRelay: {1}" +
-									" (blocked by {2}; distance: {3} m)",
-									this.ToString(),
-									occludedRelay.ToString(),
-									fob,
-									potentialSqrDistance
-								);
-								break;
-							}
-						}
+						this.bestOccludedRelay = potentialBestRelay;
+						bodyOccludingBestOccludedRelay = fob;
+						bestOccludedSqrDistance = potentialSqrDistance;
+					}
+					else
+					{
+						log.Append("\n\t\t...vessel is not close enough to check for occluded relays, carrying on");
 					}
 					
-					log.Append("\n\t\t...vessel is not close enough to check for occluded relays, carrying on");
 					continue;
 				}
 
@@ -347,35 +330,21 @@ namespace AntennaRange
 
 				log.Append("\n\tpassed distance check");
 
-				IAntennaRelay potentialRelay;
-				for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
+				if (
+					potentialBestRelay.CanTransmit() &&
+					(potentialBestRelay.targetRelay == null || potentialBestRelay.targetRelay.vessel != this.vessel))
 				{
-					log.AppendFormat("\n\t\tfetching vessel relay at index {0}", rIdx);
-					potentialRelay = vesselRelays[rIdx];
-					log.AppendFormat("\n\t\tgot relay {0}", potentialRelay == null ? "null" : potentialRelay.ToString());
+					// @TODO: Moved this here from outside the loop; why was it there?
+					nearestRelaySqrDistance = potentialSqrDistance;
+					this.nearestRelay = potentialBestRelay;
 
-					if (potentialRelay == null)
-					{
-						log.Append("\n\t\t...skipping null relay");
-						continue;
-					}
-
-					if (
-						potentialRelay.CanTransmit() &&
-						(potentialRelay.targetRelay == null || potentialRelay.targetRelay.vessel != this.vessel))
-					{
-						// @TODO: Moved this here from outside the loop; why was it there?
-						nearestRelaySqrDistance = potentialSqrDistance;
-						this.nearestRelay = potentialRelay;
-
-						log.AppendFormat("\n\t{0}: found new nearest relay {1} ({2}m)",
-							this.ToString(),
-							this.nearestRelay.ToString(),
-							Math.Sqrt(nearestRelaySqrDistance)
-						);
-						
-						break;
-					}
+					log.AppendFormat("\n\t{0}: found new nearest relay {1} ({2}m)",
+						this.ToString(),
+						this.nearestRelay.ToString(),
+						Math.Sqrt(nearestRelaySqrDistance)
+					);
+					
+					break;
 				}
 			}
 
