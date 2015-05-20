@@ -37,9 +37,6 @@ namespace AntennaRange
 	/// </summary>
 	public class AntennaRelay
 	{
-		private static readonly System.Diagnostics.Stopwatch searchTimer = new System.Diagnostics.Stopwatch();
-		private const long millisecondsBetweenSearches = 125L;
-
 		// We don't have a Bard, so we'll hide Kerbin here.
 		private static CelestialBody _Kerbin;
 
@@ -58,8 +55,6 @@ namespace AntennaRange
 				return _Kerbin;
 			}
 		}
-
-		private long lastSearch;
 
 		private bool canTransmit;
 		private bool isChecked;
@@ -171,28 +166,10 @@ namespace AntennaRange
 				return;
 			}
 
-			if (!searchTimer.IsRunning)
-			{
-				searchTimer.Start();
-			}
-
 			Tools.DebugLogger log;
 			#if DEBUG
 			log = Tools.DebugLogger.New(this);
 			#endif
-
-			long searchTime = searchTimer.ElapsedMilliseconds;
-			long timeSinceLast = searchTime - this.lastSearch;
-
-			if (timeSinceLast < millisecondsBetweenSearches)
-			{
-				log.AppendFormat(
-					"{0}: Target search skipped because it's not time to search again yet ({1} - {2}) < {3})",
-					this, searchTime, this.lastSearch, millisecondsBetweenSearches
-				);
-				log.Print();
-				return;
-			}
 
 			// Skip vessels that have already been checked for a nearest relay this pass.
 			if (this.isChecked)
@@ -203,16 +180,13 @@ namespace AntennaRange
 				return;
 			}
 
-			log.AppendFormat("{0}: Target search started at {1} ms ({2} ms since last search).",
-				this.ToString(), searchTime, timeSinceLast);
+			log.AppendFormat("{0}: Target search started).", this.ToString());
 
 			#if DEBUG
 			try {
 			#endif
 			// Set this vessel as checked, so that we don't check it again.
 			this.isChecked = true;
-
-			this.lastSearch = searchTime;
 
 			// Blank everything we're trying to find before the search.
 			this.firstOccludingBody = null;
@@ -621,10 +595,7 @@ namespace AntennaRange
 				}
 			}
 
-			log.AppendFormat("{0}: Target search completed at {1} ms ({2} ms elapsed).",
-				this.ToString(), searchTimer.ElapsedMilliseconds, searchTimer.ElapsedMilliseconds - searchTime);;
-
-			log.AppendFormat("\n{0}: Status determination complete.", this.ToString());
+			log.AppendFormat("\n{0}: Target search and status determination complete.", this.ToString());
 			
 			#if DEBUG
 			} catch (Exception ex) {
