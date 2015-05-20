@@ -26,8 +26,6 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define DEBUG
-
 using System;
 using System.Collections.Generic;
 using ToadicusTools;
@@ -263,7 +261,7 @@ namespace AntennaRange
 				log.Append("\n\tgetting best vessel relay");
 
 				potentialBestRelay = potentialVessel.GetBestRelay();
-				log.AppendFormat("\n\tgot best vessel relay {0}",
+				log.AppendFormat("\n\t\tgot best vessel relay {0}",
 					potentialBestRelay == null ? "null" : potentialBestRelay.ToString());
 
 				if (potentialBestRelay == null)
@@ -272,25 +270,21 @@ namespace AntennaRange
 					continue;
 				}
 
-				// vesselRelays = potentialVessel.GetAntennaRelays();
-				/*	log.AppendFormat("\n\t\tvesselRelays: {0}",
-						vesselRelays == null ? "null" : vesselRelays.Count.ToString());*/
-				
-				log.Append("\n\tdoing LOS check");
+				log.Append("\n\t\tdoing LOS check");
 				// Skip vessels to which we do not have line of sight.
 				if (
 					ARConfiguration.RequireLineOfSight &&
 					!this.vessel.hasLineOfSightTo(potentialVessel, out fob, ARConfiguration.RadiusRatio)
 				)
 				{
-					log.Append("\n\tfailed LOS check");
+					log.Append("\n\t\t...failed LOS check");
 
-					log.AppendFormat("\n\t{0}: Vessel {1} not in line of sight.",
+					log.AppendFormat("\n\t\t\t{0}: Vessel {1} not in line of sight.",
 						this.ToString(), potentialVessel.vesselName);
 					
-					log.AppendFormat("\n\t\tpotentialSqrDistance: {0}", potentialSqrDistance);
-					log.AppendFormat("\n\t\tbestOccludedSqrDistance: {0}", bestOccludedSqrDistance);
-					log.AppendFormat("\n\t\tmaxTransmitSqrDistance: {0}", maxTransmitSqrDistance);
+					log.AppendFormat("\n\t\t\tpotentialSqrDistance: {0}", potentialSqrDistance);
+					log.AppendFormat("\n\t\t\tbestOccludedSqrDistance: {0}", bestOccludedSqrDistance);
+					log.AppendFormat("\n\t\t\tmaxTransmitSqrDistance: {0}", maxTransmitSqrDistance);
 
 					if (
 						(potentialSqrDistance < bestOccludedSqrDistance) &&
@@ -313,7 +307,7 @@ namespace AntennaRange
 					continue;
 				}
 
-				log.Append("\n\tpassed LOS check");
+				log.Append("\n\t\t...passed LOS check");
 
 				/*
 				 * ...so that we can skip the vessel if it is further away than a vessel we've already checked.
@@ -328,7 +322,7 @@ namespace AntennaRange
 					continue;
 				}
 
-				log.Append("\n\tpassed distance check");
+				log.Append("\n\t\t...passed distance check");
 
 				if (
 					potentialBestRelay.CanTransmit() &&
@@ -343,8 +337,6 @@ namespace AntennaRange
 						this.nearestRelay.ToString(),
 						Math.Sqrt(nearestRelaySqrDistance)
 					);
-					
-					break;
 				}
 			}
 
