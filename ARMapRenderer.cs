@@ -167,6 +167,7 @@ namespace AntennaRange
 
 						if (vesselRelay == null)
 						{
+							log.AppendFormat("\n\tGot null relay for vessel {0}", vessel.vesselName);
 							continue;
 						}
 
@@ -206,7 +207,7 @@ namespace AntennaRange
 		{
 			this.Cleanup();
 
-			print("ARMapRenderer: Destroyed.");
+			this.Log("Destroyed");
 		}
 		#endregion
 
