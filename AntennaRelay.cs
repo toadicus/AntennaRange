@@ -221,6 +221,7 @@ namespace AntennaRange
 				
 				if (potentialVessel == null)
 				{
+					Tools.PostErrorMessage("{0}: Skipping vessel at index {1} because it is null.", this, vIdx);
 					log.AppendFormat("\n\tSkipping vessel at index {0} because it is null.", vIdx);
 					log.Print();
 					return;
