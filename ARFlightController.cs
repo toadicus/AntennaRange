@@ -224,7 +224,7 @@ namespace AntennaRange
 
 		private void Update()
 		{
-			if (!this.updateTimer.IsRunning || this.updateTimer.ElapsedMilliseconds > 83L)
+			if (!this.updateTimer.IsRunning || this.updateTimer.ElapsedMilliseconds > 16L)
 			{
 				this.updateTimer.Restart();
 			}
