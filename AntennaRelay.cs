@@ -26,6 +26,8 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#define DEBUG
+
 using System;
 using System.Collections.Generic;
 using ToadicusTools;
@@ -198,6 +200,7 @@ namespace AntennaRange
 			this.KerbinDirect = true;
 
 			CelestialBody bodyOccludingBestOccludedRelay = null;
+			IAntennaRelay needle;
 
 			double nearestRelaySqrDistance = double.PositiveInfinity;
 			double bestOccludedSqrDistance = double.PositiveInfinity;
@@ -325,19 +328,49 @@ namespace AntennaRange
 
 				log.Append("\n\t\t...passed distance check");
 
-				if (
-					potentialBestRelay.CanTransmit() &&
-					(potentialBestRelay.targetRelay == null || potentialBestRelay.targetRelay.vessel != this.vessel))
+				if (potentialBestRelay.CanTransmit())
 				{
-					// @TODO: Moved this here from outside the loop; why was it there?
-					nearestRelaySqrDistance = potentialSqrDistance;
-					this.nearestRelay = potentialBestRelay;
+					needle = potentialBestRelay;
+					bool isCircular = false;
 
-					log.AppendFormat("\n\t{0}: found new nearest relay {1} ({2}m)",
-						this.ToString(),
-						this.nearestRelay.ToString(),
-						Math.Sqrt(nearestRelaySqrDistance)
-					);
+					while (needle != null)
+					{
+						if (needle.KerbinDirect)
+						{
+							break;
+						}
+
+						if (needle.targetRelay == null)
+						{
+							break;
+						}
+
+						if (needle.targetRelay.vessel == this.vessel || needle == this.moduleRef)
+						{
+							isCircular = true;
+							break;
+						}
+
+						needle = needle.targetRelay;
+					}
+
+					if (!isCircular)
+					{
+						nearestRelaySqrDistance = potentialSqrDistance;
+						this.nearestRelay = potentialBestRelay;
+
+						log.AppendFormat("\n\t{0}: found new nearest relay {1} ({2}m)",
+							this.ToString(),
+							this.nearestRelay.ToString(),
+							Math.Sqrt(nearestRelaySqrDistance)
+						);
+					}
+					else
+					{
+						log.AppendFormat("\n\t\t...connection to {0} would result in a circular network, skipping",
+							potentialBestRelay
+						);
+					}
 				}
 			}
 
@@ -347,6 +380,15 @@ namespace AntennaRange
 			kerbinSqrDistance *= kerbinSqrDistance;
 
 			log.AppendFormat("\n{0} ({1}): Search done, figuring status.", this.ToString(), this.GetType().Name);
+			log.AppendFormat(
+				"\n{0}: nearestRelay={1} ({2}m²)), bestOccludedRelay={3} ({4}m²), kerbinSqrDistance={5}m²)",
+				this,
+				this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
+				nearestRelaySqrDistance,
+				this.bestOccludedRelay == null ? "null" : this.bestOccludedRelay.ToString(),
+				bestOccludedSqrDistance,
+				kerbinSqrDistance
+			);
 
 			// If we don't have LOS to Kerbin, focus on relays
 			if (!this.vessel.hasLineOfSightTo(Kerbin, out bodyOccludingKerbin, ARConfiguration.RadiusRatio))
@@ -390,7 +432,7 @@ namespace AntennaRange
 							log.AppendFormat("\n\t\t\t\t...but the nearest relay is closer ({0} < {1}), so picking it.",
 								nearestRelaySqrDistance, bestOccludedSqrDistance);
 							
-							this.targetRelay = nearestRelay;
+							this.targetRelay = this.nearestRelay;
 							this.firstOccludingBody = null;
 						}
 						// Otherwise, target the best occluded relay.
@@ -420,7 +462,7 @@ namespace AntennaRange
 								nearestRelaySqrDistance, kerbinSqrDistance);
 							
 							this.KerbinDirect = false;
-							this.targetRelay = nearestRelay;
+							this.targetRelay = this.nearestRelay;
 						}
 						// Otherwise, pick Kerbin.
 						else
@@ -511,7 +553,7 @@ namespace AntennaRange
 								log.AppendFormat("\n\t\t\t\t...but the nearest relay is closer ({0} < {1}), so picking it.",
 									nearestRelaySqrDistance, bestOccludedSqrDistance);
 								
-								this.targetRelay = nearestRelay;
+								this.targetRelay = this.nearestRelay;
 								this.firstOccludingBody = null;
 							}
 							// Otherwise, target the best occluded relay.
@@ -541,7 +583,7 @@ namespace AntennaRange
 									nearestRelaySqrDistance, kerbinSqrDistance);
 								
 								this.KerbinDirect = false;
-								this.targetRelay = nearestRelay;
+								this.targetRelay = this.nearestRelay;
 							}
 							// Otherwise, pick Kerbin.
 							else
