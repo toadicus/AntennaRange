@@ -54,11 +54,14 @@ namespace AntennaRange
 				}
 				else
 				{
-					Tools.PostLogMessage("{0}: Could not fetch vessel!  {1}{2}{3}",
+					Tools.PostErrorMessage("{0}: Could not fetch vessel!  {1}{2}{3}",
 						this.ToString(),
-						this.protoPart == null ? "\n\tprotoPart=Null" : string.Empty,
-						this.protoPart != null && this.protoPart.pVesselRef == null ? "\n\tthis.protoPart.pVesselRef=Null" : string.Empty,
-						this.protoPart != null && this.protoPart.pVesselRef != null && this.protoPart.pVesselRef.vesselRef == null ? "\n\tthis.protoPart.pVesselRef.vesselRef=Null" : string.Empty
+						this.protoPart == null ? "\n\tprotoPart=null" : string.Empty,
+						this.protoPart != null && this.protoPart.pVesselRef == null ?
+							"\n\tthis.protoPart.pVesselRef=null" : string.Empty,
+						this.protoPart != null && this.protoPart.pVesselRef != null &&
+							this.protoPart.pVesselRef.vesselRef == null ?
+							"\n\tthis.protoPart.pVesselRef.vesselRef=null" : string.Empty
 					);
 					return null;
 				}
