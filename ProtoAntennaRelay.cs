@@ -48,7 +48,11 @@ namespace AntennaRange
 		{
 			get
 			{
-				if (this.protoPart != null && this.protoPart.pVesselRef != null)
+				if (
+					this.protoPart != null &&
+					this.protoPart.pVesselRef != null &&
+					this.protoPart.pVesselRef.vesselRef != null
+				)
 				{
 					return this.protoPart.pVesselRef.vesselRef;
 				}
