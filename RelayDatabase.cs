@@ -126,6 +126,15 @@ namespace AntennaRange
 			this.bestRelayTable.Remove(vessel.id);
 		}
 
+		public void ClearCache()
+		{
+			Tools.PostLogMessage("RelayDatabase: onSceneChange clearing entire cache.");
+
+			this.relayDatabase.Clear();
+			this.bestRelayTable.Clear();
+			this.vesselPartCountTable.Clear();
+		}
+
 		// Returns true if both the relayDatabase and the vesselPartCountDB contain the vessel id.
 		public bool ContainsKey(Guid key)
 		{
@@ -253,13 +262,14 @@ namespace AntennaRange
 				}
 				else
 				{
-					Tools.PostLogMessage("RelayDatabase: onSceneChange clearing entire cache.");
-
-					this.relayDatabase.Clear();
-					this.bestRelayTable.Clear();
-					this.vesselPartCountTable.Clear();
+					this.ClearCache();
 				}
 			}
+		}
+
+		private void onGameLoaded(object data)
+		{
+			this.ClearCache();
 		}
 
 		// Runs when parts are undocked
@@ -431,6 +441,7 @@ namespace AntennaRange
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChange);
 			GameEvents.onPartCouple.Add(this.onFromPartToPartEvent);
 			GameEvents.onPartUndock.Add(this.onPartEvent);
+			GameEvents.onGameStateLoad.Add(this.onGameLoaded);
 		}
 
 		~RelayDatabase()
@@ -442,6 +453,7 @@ namespace AntennaRange
 			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChange);
 			GameEvents.onPartCouple.Remove(this.onFromPartToPartEvent);
 			GameEvents.onPartUndock.Remove(this.onPartEvent);
+			GameEvents.onGameStateLoad.Remove(this.onGameLoaded);
 
 			Tools.PostDebugMessage(this.GetType().Name + " destroyed.");
 
