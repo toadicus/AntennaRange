@@ -274,18 +274,21 @@ namespace AntennaRange
 			if (relay.KerbinDirect)
 			{
 				nextPoint = ScaledSpace.LocalToScaledSpace(AntennaRelay.Kerbin.position);
-				relay = null;
 			}
 			else
 			{
-				if (relay.targetRelay == null)
+				if (relay.targetRelay == null || relay.targetRelay.vessel == null)
 				{
+					this.LogError(
+						"SetRelayVertices: relay {0} has null target relay or vessel when not KerbinDirect, bailing out!",
+						relay
+					);
+
 					renderer.enabled = false;
 					return;
 				}
 
 				nextPoint = ScaledSpace.LocalToScaledSpace(relay.targetRelay.vessel.GetWorldPos3D());
-				relay = relay.targetRelay;
 			}
 
 			renderer.SetColors(thisColor, thisColor);
