@@ -72,9 +72,6 @@ namespace AntennaRange
 		// Vessel.id-keyed hash table of part counts, used for caching
 		private Dictionary<Guid, int> vesselPartCountTable;
 
-		// Vessel.id-keyed hash table of booleans to track what vessels have been checked so far this time.
-		public Dictionary<Guid, bool> CheckedVesselsTable;
-
 		private int cacheHits;
 		private int cacheMisses;
 
@@ -117,9 +114,16 @@ namespace AntennaRange
 		// Remove a vessel from the cache, if it exists.
 		public void DirtyVessel(Vessel vessel)
 		{
+			#if DEBUG
+			Tools.PostDebugMessage("RelayDatabase: Dirtying cache for vessel {0} in frame {1}",
+				vessel, new System.Diagnostics.StackTrace().ToString());
+			#else
+			Tools.PostLogMessage("RelayDatabase: Dirtying cache for vessel {0}", vessel.vesselName);
+			#endif
+
 			this.relayDatabase.Remove(vessel.id);
 			this.vesselPartCountTable.Remove(vessel.id);
-			this.relayDatabase.Remove(vessel.id);
+			this.bestRelayTable.Remove(vessel.id);
 		}
 
 		// Returns true if both the relayDatabase and the vesselPartCountDB contain the vessel id.
@@ -228,11 +232,33 @@ namespace AntennaRange
 		// Runs when the player requests a scene change, such as when changing vessels or leaving flight.
 		private void onSceneChange(GameScenes scene)
 		{
-			// If the active vessel is a real thing...
-			if (FlightGlobals.ActiveVessel != null)
+			Tools.PostDebugMessage(
+				"RelayDatabase: caught onSceneChangeRequested in scene {0} to scene {1}.  ActiveVessel is {2}",
+				HighLogic.LoadedScene,
+				scene,
+				FlightGlobals.ActiveVessel == null ? "null" : FlightGlobals.ActiveVessel.vesselName
+			);
+
+			if (scene == GameScenes.FLIGHT)
 			{
-				// ... dirty its cache
-				this.onVesselEvent(FlightGlobals.ActiveVessel);
+				if (scene == HighLogic.LoadedScene)
+				{
+					if (FlightGlobals.ActiveVessel != null)
+					{
+						Tools.PostDebugMessage("RelayDatabase: onSceneChange clearing {0} from cache.",
+							FlightGlobals.ActiveVessel.vesselName);
+
+						this.onVesselEvent(FlightGlobals.ActiveVessel);
+					}
+				}
+				else
+				{
+					Tools.PostLogMessage("RelayDatabase: onSceneChange clearing entire cache.");
+
+					this.relayDatabase.Clear();
+					this.bestRelayTable.Clear();
+					this.vesselPartCountTable.Clear();
+				}
 			}
 		}
 
@@ -394,7 +420,6 @@ namespace AntennaRange
 			this.relayDatabase = new Dictionary<Guid, List<IAntennaRelay>>();
 			this.bestRelayTable = new Dictionary<Guid, IAntennaRelay>();
 			this.vesselPartCountTable = new Dictionary<Guid, int>();
-			this.CheckedVesselsTable = new Dictionary<Guid, bool>();
 
 			this.cacheHits = 0;
 			this.cacheMisses = 0;
