@@ -145,13 +145,13 @@ namespace AntennaRange
 				{
 					return base.vessel;
 				}
-				else if (this.part != null)
+				else if (this.part != null && this.part.vessel != null)
 				{
 					return this.part.vessel;
 				}
-
 				else
 				{
+					this.LogError("Vessel and/or part reference are null, returning null vessel.");
 					return null;
 				}
 			}
