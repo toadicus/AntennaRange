@@ -205,11 +205,8 @@ namespace AntennaRange
 		/// </summary>
 		public double maxTransmitDistance
 		{
-			get
-			{
-				// TODO: Cache this in a way that doesn't break everything.
-				return Math.Sqrt(this.maxPowerFactor) * this.nominalRange;
-			}
+			get;
+			protected set;
 		}
 
 		/// <summary>
@@ -393,6 +390,8 @@ namespace AntennaRange
 			base.Fields.Load(node);
 
 			base.OnLoad (node);
+
+			this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalRange;
 		}
 
 		/// <summary>
