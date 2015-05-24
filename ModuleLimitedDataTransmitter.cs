@@ -367,6 +367,8 @@ namespace AntennaRange
 
 			if (state >= StartState.PreLaunch)
 			{
+				this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalRange;
+
 				this.relay = new AntennaRelay(this);
 				this.relay.maxTransmitDistance = this.maxTransmitDistance;
 				this.relay.nominalTransmitDistance = this.nominalRange;
@@ -642,7 +644,6 @@ namespace AntennaRange
 					{
 						this.UIrelayStatus = string.Format("Blocked by {0}", this.relay.firstOccludingBody.bodyName);
 					}
-					this.UImaxTransmitDistance = "N/A";
 					this.UIpacketSize = "N/A";
 					this.UIpacketCost = "N/A";
 				}
