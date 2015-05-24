@@ -31,47 +31,67 @@ using System;
 
 namespace AntennaRange
 {
-	/*
-	 * Interface defining the basic functionality of AntennaRelay modules for AntennaRange.
-	 * */
+	/// <summary>
+	/// Interface defining the basic functionality of AntennaRelay modules for AntennaRange.
+	/// </summary>
 	public interface IAntennaRelay
 	{
 		/// <summary>
 		/// Gets the parent Vessel.
 		/// </summary>
-		/// <value>The parent Vessel.</value>
 		Vessel vessel { get; }
+
+		/// <summary>
+		/// Gets the target <see cref="AntennaRange.IAntennaRelay"/>relay.
+		/// </summary>
+		IAntennaRelay targetRelay { get; }
 
 		/// <summary>
 		/// Gets the distance to the nearest relay or Kerbin, whichever is closer.
 		/// </summary>
-		/// <value>The distance to the nearest relay or Kerbin, whichever is closer.</value>
 		double transmitDistance { get; }
+
+		/// <summary>
+		/// Gets the nominal transmit distance at which the Antenna behaves just as prescribed by Squad's config.
+		/// </summary>
+		double nominalTransmitDistance { get; }
 
 		/// <summary>
 		/// The maximum distance at which this relay can operate.
 		/// </summary>
-		/// <value>The max transmit distance.</value>
-		float maxTransmitDistance { get; }
+		double maxTransmitDistance { get; }
 
 		/// <summary>
 		/// The first CelestialBody blocking line of sight to a 
 		/// </summary>
-		/// <value>The first occluding body.</value>
 		CelestialBody firstOccludingBody { get; }
 
 		/// <summary>
-		/// Gets a value indicating whether this <see cref="AntennaRange.ProtoDataTransmitter"/> has been checked during
-		/// the current relay attempt.
+		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
+		/// directly with Kerbin.
 		/// </summary>
-		/// <value><c>true</c> if relay checked; otherwise, <c>false</c>.</value>
-		bool relayChecked { get; }
+		bool KerbinDirect { get; }
+
+		/// <summary>
+		/// Gets the Part title.
+		/// </summary>
+		string Title { get; }
 
 		/// <summary>
 		/// Determines whether this instance can transmit.
+		/// <c>true</c> if this instance can transmit; otherwise, <c>false</c>.
 		/// </summary>
-		/// <returns><c>true</c> if this instance can transmit; otherwise, <c>false</c>.</returns>
 		bool CanTransmit();
+
+		/// <summary>
+		/// Finds the nearest relay.
+		/// </summary>
+		void FindNearestRelay();
+
+		/// <summary>
+		/// Returns a <see cref="System.String"/> that represents the current <see cref="AntennaRange.IAntennaRelay"/>.
+		/// </summary>
+		string ToString();
 	}
 }
 

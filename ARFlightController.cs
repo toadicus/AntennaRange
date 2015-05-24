@@ -26,6 +26,8 @@
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#pragma warning disable 1591
+
 using KSP;
 using System;
 using System.Collections.Generic;
@@ -38,22 +40,27 @@ namespace AntennaRange
 	public class ARFlightController : MonoBehaviour
 	{
 		#region Fields
-		protected Dictionary<ConnectionStatus, string> connectionTextures;
-		protected Dictionary<ConnectionStatus, Texture> appLauncherTextures;
+		private Dictionary<ConnectionStatus, string> connectionTextures;
+		private Dictionary<ConnectionStatus, Texture> appLauncherTextures;
 
-		protected IButton toolbarButton;
+		private ARMapRenderer mapRenderer;
 
-		protected ApplicationLauncherButton appLauncherButton;
+		private IButton toolbarButton;
+
+		private ApplicationLauncherButton appLauncherButton;
+		private Tools.DebugLogger log;
+
+		private System.Diagnostics.Stopwatch updateTimer;
 		#endregion
 
 		#region Properties
 		public ConnectionStatus currentConnectionStatus
 		{
 			get;
-			protected set;
+			private set;
 		}
 
-		protected string currentConnectionTexture
+		private string currentConnectionTexture
 		{
 			get
 			{
@@ -61,7 +68,7 @@ namespace AntennaRange
 			}
 		}
 
-		protected Texture currentAppLauncherTexture
+		private Texture currentAppLauncherTexture
 		{
 			get
 			{
@@ -85,7 +92,7 @@ namespace AntennaRange
 		public string lockID
 		{
 			get;
-			protected set;
+			private set;
 		}
 
 		public ControlTypes lockSet
@@ -111,9 +118,13 @@ namespace AntennaRange
 		#endregion
 
 		#region MonoBehaviour LifeCycle
-		protected void Awake()
+		private void Awake()
 		{
 			this.lockID = "ARConnectionRequired";
+
+			this.log = Tools.DebugLogger.New(this);
+
+			this.updateTimer = new System.Diagnostics.Stopwatch();
 
 			this.connectionTextures = new Dictionary<ConnectionStatus, string>();
 
@@ -144,17 +155,22 @@ namespace AntennaRange
 			GameEvents.onVesselChange.Add(this.onVesselChange);
 		}
 
-		protected void FixedUpdate()
+		private void Start()
+		{
+			this.mapRenderer = MapView.MapCamera.gameObject.AddComponent<ARMapRenderer>();
+		}
+
+		private void FixedUpdate()
 		{
 			if (this.appLauncherButton == null && !ToolbarManager.ToolbarAvailable && ApplicationLauncher.Ready)
 			{
 				this.appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
-					ApplicationLauncher.AppScenes.FLIGHT,
+					ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW,
 					this.appLauncherTextures[ConnectionStatus.None]
 				);
 			}
 
-			Tools.DebugLogger log = Tools.DebugLogger.New(this);
+			this.log.Clear();
 
 			VesselCommand availableCommand;
 
@@ -203,99 +219,97 @@ namespace AntennaRange
 				InputLockManager.RemoveControlLock(this.lockID);
 			}
 
-			if (
-				(this.toolbarButton != null || this.appLauncherButton != null) &&
-				HighLogic.LoadedSceneIsFlight &&
-				FlightGlobals.ActiveVessel != null
-			)
+			log.Print();
+		}
+
+		private void Update()
+		{
+			if (!this.updateTimer.IsRunning || this.updateTimer.ElapsedMilliseconds > 16L)
 			{
-				log.Append("Checking vessel relay status.\n");
+				this.updateTimer.Restart();
+			}
+			else
+			{
+				return;
+			}
 
-				List<ModuleLimitedDataTransmitter> relays =
-					FlightGlobals.ActiveVessel.getModulesOfType<ModuleLimitedDataTransmitter>();
+			this.log.Clear();
 
-				log.AppendFormat("\t...found {0} relays\n", relays.Count);
+			if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ActiveVessel != null)
+			{
+				Vessel vessel;
+				IAntennaRelay relay;
+				IList<IAntennaRelay> activeVesselRelays;
 
-				bool vesselCanTransmit = false;
-				bool vesselHasOptimalRelay = false;
-
-				foreach (ModuleLimitedDataTransmitter relay in relays)
+				for (int vIdx = 0; vIdx < FlightGlobals.Vessels.Count; vIdx++)
 				{
-					log.AppendFormat("\tvesselCanTransmit: {0}, vesselHasOptimalRelay: {1}\n",
-						vesselCanTransmit, vesselHasOptimalRelay);
+					vessel = FlightGlobals.Vessels[vIdx];
 
-					log.AppendFormat("\tChecking relay {0}\n" +
-						"\t\tCanTransmit: {1}, transmitDistance: {2}, nominalRange: {3}\n",
-						relay,
-						relay.CanTransmit(),
-						relay.transmitDistance,
-						relay.nominalRange
-					);
-
-					bool relayCanTransmit = relay.CanTransmit();
-
-					if (!vesselCanTransmit && relayCanTransmit)
+					if (vessel == null || vessel == FlightGlobals.ActiveVessel)
 					{
-						vesselCanTransmit = true;
+						continue;
 					}
 
-					if (!vesselHasOptimalRelay &&
-						relayCanTransmit &&
-						relay.transmitDistance <= (double)relay.nominalRange)
-					{
-						vesselHasOptimalRelay = true;
-					}
+					log.AppendFormat("Fetching best relay for vessel {0}", vessel);
 
-					if (vesselCanTransmit && vesselHasOptimalRelay)
+					relay = vessel.GetBestRelay();
+
+					if (relay != null)
 					{
-						break;
+						log.AppendFormat("Finding nearest relay for best relay {0}", relay);
+
+						relay.FindNearestRelay();
 					}
 				}
 
-				log.AppendFormat("Done checking.  vesselCanTransmit: {0}, vesselHasOptimalRelay: {1}\n",
-					vesselCanTransmit, vesselHasOptimalRelay);
+				activeVesselRelays = RelayDatabase.Instance[FlightGlobals.ActiveVessel];
+				for (int rIdx = 0; rIdx < activeVesselRelays.Count; rIdx++)
+				{
+					relay = activeVesselRelays[rIdx];
 
-				if (vesselHasOptimalRelay)
-				{
-					this.currentConnectionStatus = ConnectionStatus.Optimal;
-				}
-				else if (vesselCanTransmit)
-				{
-					this.currentConnectionStatus = ConnectionStatus.Suboptimal;
-				}
-				else
-				{
-					this.currentConnectionStatus = ConnectionStatus.None;
+					relay.FindNearestRelay();
 				}
 
-				log.AppendFormat("currentConnectionStatus: {0}, setting texture to {1}",
-					this.currentConnectionStatus, this.currentConnectionTexture);
-
-				if (this.toolbarButton != null)
+				if (this.toolbarButton != null || this.appLauncherButton != null)
 				{
-					this.toolbarButton.TexturePath = this.currentConnectionTexture;
+					log.Append("Checking vessel relay status.\n");
 
-					if (this.currentConnectionStatus == ConnectionStatus.None)
+					this.currentConnectionStatus = FlightGlobals.ActiveVessel.GetConnectionStatus();
+
+					log.AppendFormat("currentConnectionStatus: {0}, setting texture to {1}",
+						this.currentConnectionStatus, this.currentConnectionTexture);
+
+					if (this.toolbarButton != null)
 					{
-						this.toolbarButton.Important = true;
+						this.toolbarButton.TexturePath = this.currentConnectionTexture;
+
+						if (this.currentConnectionStatus == ConnectionStatus.None)
+						{
+							if (!this.toolbarButton.Important) this.toolbarButton.Important = true;
+						}
+						else
+						{
+							if (this.toolbarButton.Important) this.toolbarButton.Important = false;
+						}
 					}
-					else
+					if (this.appLauncherButton != null)
 					{
-						this.toolbarButton.Important = false;
+						this.appLauncherButton.SetTexture(this.currentAppLauncherTexture);
 					}
-				}
-				if (this.appLauncherButton != null)
-				{
-					this.appLauncherButton.SetTexture(this.currentAppLauncherTexture);
 				}
 			}
 
 			log.Print();
 		}
 
-		protected void OnDestroy()
+		private void OnDestroy()
 		{
 			InputLockManager.RemoveControlLock(this.lockID);
+
+			if (this.mapRenderer != null)
+			{
+				GameObject.Destroy(this.mapRenderer);
+			}
 
 			if (this.toolbarButton != null)
 			{
@@ -316,23 +330,16 @@ namespace AntennaRange
 		#endregion
 
 		#region Event Handlers
-		protected void onSceneChangeRequested(GameScenes scene)
+		private void onSceneChangeRequested(GameScenes scene)
 		{
 			print("ARFlightController: Requesting Destruction.");
 			MonoBehaviour.Destroy(this);
 		}
 
-		protected void onVesselChange(Vessel vessel)
+		private void onVesselChange(Vessel vessel)
 		{
 			InputLockManager.RemoveControlLock(this.lockID);
 		}
 		#endregion
-
-		public enum ConnectionStatus
-		{
-			None,
-			Suboptimal,
-			Optimal
-		}
 	}
 }

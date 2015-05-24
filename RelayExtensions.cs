@@ -28,14 +28,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using ToadicusTools;
 
 namespace AntennaRange
 {
-	/*
-	 * A class of utility extensions for Vessels and Relays to help find a relay path back to Kerbin.
-	 * */
+	/// <summary>
+	/// A class of utility extensions for Vessels and Relays to help find a relay path back to Kerbin.
+	/// </summary>
 	public static class RelayExtensions
 	{
 		/// <summary>
@@ -69,12 +68,42 @@ namespace AntennaRange
 		}
 
 		/// <summary>
+		/// Returns the square of the distance between this IAntennaRelay and a Vessel
+		/// </summary>
+		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
+		/// <param name="vessel">A <see cref="Vessel"/></param>
+		public static double sqrDistanceTo(this AntennaRelay relay, Vessel vessel)
+		{
+			return relay.vessel.sqrDistanceTo(vessel);
+		}
+
+		/// <summary>
+		/// Returns the square of the distance between this IAntennaRelay and a CelestialBody
+		/// </summary>
+		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
+		/// <param name="body">A <see cref="CelestialBody"/></param>
+		public static double sqrDistanceTo(this AntennaRelay relay, CelestialBody body)
+		{
+			return relay.vessel.sqrDistanceTo(body);
+		}
+
+		/// <summary>
+		/// Returns the square of the distance between this IAntennaRelay and another IAntennaRelay
+		/// </summary>
+		/// <param name="relayOne">This <see cref="IAntennaRelay"/></param>
+		/// <param name="relayTwo">Another <see cref="IAntennaRelay"/></param>
+		public static double sqrDistanceTo(this AntennaRelay relayOne, IAntennaRelay relayTwo)
+		{
+			return relayOne.vessel.sqrDistanceTo(relayTwo.vessel);
+		}
+
+		/// <summary>
 		/// Returns all of the PartModules or ProtoPartModuleSnapshots implementing IAntennaRelay in this Vessel.
 		/// </summary>
 		/// <param name="vessel">This <see cref="Vessel"/></param>
-		public static IEnumerable<IAntennaRelay> GetAntennaRelays (this Vessel vessel)
+		public static IList<IAntennaRelay> GetAntennaRelays (this Vessel vessel)
 		{
-			return RelayDatabase.Instance[vessel].Values.ToList();
+			return RelayDatabase.Instance[vessel];
 		}
 
 		/// <summary>
@@ -84,8 +113,11 @@ namespace AntennaRange
 		/// <param name="vessel"></param>
 		public static bool HasConnectedRelay(this Vessel vessel)
 		{
-			foreach (IAntennaRelay relay in RelayDatabase.Instance[vessel].Values)
+			IList<IAntennaRelay> vesselRelays = RelayDatabase.Instance[vessel];
+			IAntennaRelay relay;
+			for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
 			{
+				relay = vesselRelays[rIdx];
 				if (relay.CanTransmit())
 				{
 					return true;
@@ -94,6 +126,59 @@ namespace AntennaRange
 
 			return false;
 		}
+
+		/// <summary>
+		/// Gets the <see cref="AntennaRange.ConnectionStatus"/> for this <see cref="Vessel"/>
+		/// </summary>
+		/// <param name="vessel">This <see cref="Vessel"/></param>
+		public static ConnectionStatus GetConnectionStatus(this Vessel vessel)
+		{
+			bool canTransmit = false;
+
+			IList<IAntennaRelay> vesselRelays = RelayDatabase.Instance[vessel];
+			IAntennaRelay relay;
+			for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
+			{
+				relay = vesselRelays[rIdx];
+				if (relay.CanTransmit())
+				{
+					canTransmit = true;
+					if (relay.transmitDistance <= relay.nominalTransmitDistance)
+					{
+						return ConnectionStatus.Optimal;
+					}
+				}
+			}
+
+			if (canTransmit)
+			{
+				return ConnectionStatus.Suboptimal;
+			}
+			else
+			{
+				return ConnectionStatus.None;
+			}
+		}
+
+		/// <summary>
+		/// Gets the best relay on this Vessel.  The best relay may not be able to transmit.
+		/// </summary>
+		/// <param name="vessel">This <see cref="Vessel"/></param>
+		public static IAntennaRelay GetBestRelay(this Vessel vessel)
+		{
+			return RelayDatabase.Instance.GetBestVesselRelay(vessel);
+		}
+	}
+
+	#pragma warning disable 1591
+	/// <summary>
+	/// An Enum describing the connection status of a vessel or relay.
+	/// </summary>
+	public enum ConnectionStatus
+	{
+		None,
+		Suboptimal,
+		Optimal
 	}
 }
 

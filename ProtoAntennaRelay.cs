@@ -28,33 +28,65 @@
 
 using KSP;
 using System;
-using System.Linq;
 using ToadicusTools;
 
 namespace AntennaRange
 {
-	/*
-	 * Wrapper class for ProtoPartModuleSnapshot extending AntennaRelay and implementing IAntennaRelay.
-	 * This is used for finding relays in unloaded Vessels.
-	 * */
+	/// <summary>
+	/// Wrapper class for ProtoPartModuleSnapshot extending AntennaRelay and implementing IAntennaRelay.
+	/// This is used for finding relays in unloaded Vessels.
+	/// </summary>
 	public class ProtoAntennaRelay : AntennaRelay, IAntennaRelay
 	{
 		// Stores the prototype part so we can make sure we haven't exploded or so.
-		protected ProtoPartSnapshot protoPart;
+		private ProtoPartSnapshot protoPart;
 
+		/// <summary>
+		/// Gets the parent Vessel.
+		/// </summary>
 		public override Vessel vessel
 		{
 			get
 			{
-				return this.protoPart.pVesselRef.vesselRef;
+				if (
+					this.protoPart != null &&
+					this.protoPart.pVesselRef != null &&
+					this.protoPart.pVesselRef.vesselRef != null
+				)
+				{
+					return this.protoPart.pVesselRef.vesselRef;
+				}
+				else
+				{
+					Tools.PostErrorMessage("{0}: Could not fetch vessel!  {1}{2}{3}",
+						this.ToString(),
+						this.protoPart == null ? "\n\tprotoPart=null" : string.Empty,
+						this.protoPart != null && this.protoPart.pVesselRef == null ?
+							"\n\tthis.protoPart.pVesselRef=null" : string.Empty,
+						this.protoPart != null && this.protoPart.pVesselRef != null &&
+							this.protoPart.pVesselRef.vesselRef == null ?
+							"\n\tthis.protoPart.pVesselRef.vesselRef=null" : string.Empty
+					);
+					return null;
+				}
 			}
 		}
 
 		/// <summary>
-		/// The maximum distance at which this transmitter can operate.
+		/// Gets the nominal transmit distance at which the Antenna behaves just as prescribed by Squad's config.
 		/// </summary>
-		/// <value>The max transmit distance.</value>
-		public override float maxTransmitDistance
+		public override double nominalTransmitDistance
+		{
+			get
+			{
+				return this.moduleRef.nominalTransmitDistance;
+			}
+		}
+
+		/// <summary>
+		/// The maximum distance at which this relay can operate.
+		/// </summary>
+		public override double maxTransmitDistance
 		{
 			get
 			{
@@ -63,28 +95,26 @@ namespace AntennaRange
 		}
 
 		/// <summary>
-		/// Gets a value indicating whether this <see cref="AntennaRange.ProtoDataTransmitter"/> has been checked during
-		/// the current relay attempt.
-		/// </summary>
-		/// <value><c>true</c> if relay checked; otherwise, <c>false</c>.</value>
-		public override bool relayChecked
-		{
-			get;
-			protected set;
-		}
-
-		/// <summary>
 		/// Gets the underlying part's title.
 		/// </summary>
 		/// <value>The title.</value>
-		public string title
+		public string Title
 		{
 			get
 			{
-				return this.protoPart.partInfo.title;
+				if (this.protoPart != null && this.protoPart.partInfo != null)
+				{
+					return this.protoPart.partInfo.title;
+				}
+
+				return string.Empty;
 			}
 		}
 
+		/// <summary>
+		/// Determines whether this instance can transmit.
+		/// <c>true</c> if this instance can transmit; otherwise, <c>false</c>.
+		/// </summary>
 		public override bool CanTransmit()
 		{
 			PartStates partState = (PartStates)this.protoPart.state;
@@ -93,7 +123,7 @@ namespace AntennaRange
 				Tools.PostDebugMessage(string.Format(
 					"{0}: {1} on {2} cannot transmit: {3}",
 					this.GetType().Name,
-					this.title,
+					this.Title,
 					this.vessel.vesselName,
 					Enum.GetName(typeof(PartStates), partState)
 				));
@@ -102,31 +132,37 @@ namespace AntennaRange
 			return base.CanTransmit();
 		}
 
+		/// <summary>
+		/// Returns a <see cref="System.String"/> that represents the current <see cref="AntennaRange.ProtoAntennaRelay"/>.
+		/// </summary>
+		/// <returns>A <see cref="System.String"/> that represents the current <see cref="AntennaRange.ProtoAntennaRelay"/>.</returns>
 		public override string ToString()
 		{
-			return string.Format(
-				"{0} on {1} (proto)",
-				this.title,
-				this.protoPart.pVesselRef.vesselName
-			);
+			System.Text.StringBuilder sb = Tools.GetStringBuilder();
+
+			sb.Append(this.Title);
+
+			if (this.protoPart != null && this.protoPart.pVesselRef != null)
+			{
+				sb.AppendFormat(" on {0}", this.protoPart.pVesselRef.vesselName);
+			}
+
+			Tools.PutStringBuilder(sb);
+
+			return sb.ToString();
 		}
 
 		/// <summary>
-		/// Initializes a new instance of the <see cref="AntennaRange.ProtoAntennaRelay"/> class.
+		/// Initializes a new instance of the <see cref="AntennaRange.AntennaRelay"/> class.
 		/// </summary>
-		/// <param name="ms">The ProtoPartModuleSnapshot to wrap</param>
-		/// <param name="vessel">The parent Vessel</param>
+		/// <param name="prefabRelay">The module reference underlying this AntennaRelay,
+		/// as an <see cref="AntennaRange.IAntennaRelay"/></param>
+		/// <param name="pps">The prototype partreference on which the module resides.</param>
 		public ProtoAntennaRelay(IAntennaRelay prefabRelay, ProtoPartSnapshot pps) : base(prefabRelay)
 		{
 			this.protoPart = pps;
-		}
 
-		~ProtoAntennaRelay()
-		{
-			Tools.PostDebugMessage(string.Format(
-				"{0}: destroyed",
-				this.ToString()
-			));
+			Tools.PostLogMessage("{0}: constructed {1}", this.GetType().Name, this.ToString());
 		}
 	}
 }

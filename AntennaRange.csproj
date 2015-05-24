@@ -40,6 +40,7 @@
         <Command type="AfterBuild" command="xcopy /y ${TargetFile} ${ProjectDir}\GameData\AntennaRange\" />
       </CustomCommands>
     </CustomCommands>
+    <DocumentationFile>bin\Release\AntennaRange.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug_linux|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -78,6 +79,7 @@
     <Compile Include="RelayExtensions.cs" />
     <Compile Include="ARConfiguration.cs" />
     <Compile Include="ARFlightController.cs" />
+    <Compile Include="ARMapRenderer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
