@@ -40,7 +40,7 @@ namespace AntennaRange
 	public class ARFlightController : MonoBehaviour
 	{
 		#region Fields
-		private Dictionary<ConnectionStatus, string> connectionTextures;
+		private Dictionary<ConnectionStatus, string> toolbarTextures;
 		private Dictionary<ConnectionStatus, Texture> appLauncherTextures;
 
 		private ARMapRenderer mapRenderer;
@@ -64,7 +64,7 @@ namespace AntennaRange
 		{
 			get
 			{
-				return this.connectionTextures[this.currentConnectionStatus];
+				return this.toolbarTextures[this.currentConnectionStatus];
 			}
 		}
 
@@ -126,11 +126,11 @@ namespace AntennaRange
 
 			this.updateTimer = new System.Diagnostics.Stopwatch();
 
-			this.connectionTextures = new Dictionary<ConnectionStatus, string>();
+			this.toolbarTextures = new Dictionary<ConnectionStatus, string>();
 
-			this.connectionTextures[ConnectionStatus.None] = "AntennaRange/Textures/toolbarIconNoConnection";
-			this.connectionTextures[ConnectionStatus.Suboptimal] = "AntennaRange/Textures/toolbarIconSubOptimal";
-			this.connectionTextures[ConnectionStatus.Optimal] = "AntennaRange/Textures/toolbarIcon";
+			this.toolbarTextures[ConnectionStatus.None] = "AntennaRange/Textures/toolbarIconNoConnection";
+			this.toolbarTextures[ConnectionStatus.Suboptimal] = "AntennaRange/Textures/toolbarIconSubOptimal";
+			this.toolbarTextures[ConnectionStatus.Optimal] = "AntennaRange/Textures/toolbarIcon";
 
 			this.appLauncherTextures = new Dictionary<ConnectionStatus, Texture>();
 
@@ -145,7 +145,7 @@ namespace AntennaRange
 			{
 				this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConnectionStatus");
 
-				this.toolbarButton.TexturePath = this.connectionTextures[ConnectionStatus.None];
+				this.toolbarButton.TexturePath = this.toolbarTextures[ConnectionStatus.None];
 				this.toolbarButton.Text = "AntennaRange";
 				this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.FLIGHT);
 				this.toolbarButton.Enabled = false;
