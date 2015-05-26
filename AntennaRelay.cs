@@ -331,8 +331,11 @@ namespace AntennaRange
 					needle = potentialBestRelay;
 					bool isCircular = false;
 
+					int iterCount = 0;
 					while (needle != null)
 					{
+						iterCount++;
+
 						if (needle.KerbinDirect)
 						{
 							break;
@@ -345,6 +348,29 @@ namespace AntennaRange
 
 						if (needle.targetRelay.vessel == this.vessel || needle == this.moduleRef)
 						{
+							isCircular = true;
+							break;
+						}
+
+						// Avoid infinite loops when we're not catching things right.
+						if (iterCount > FlightGlobals.Vessels.Count)
+						{
+							Tools.PostErrorMessage(
+								"[{0}] iterCount exceeded while checking for circular network; assuming it is circular" +
+								"\n\tneedle={1}" +
+								"\n\tthis.moduleRef={2}",
+								this,
+								needle == null ? "null" : string.Format(
+									"{0}, needle.KerbinDirect={1}, needle.targetRelay={2}",
+									needle, needle.KerbinDirect, needle.targetRelay == null ? "null" : string.Format(
+										"{0}\n\tneedle.targetRelay.vessel={1}",
+										needle.targetRelay,
+										needle.targetRelay.vessel == null ?
+											"null" : needle.targetRelay.vessel.vesselName
+									)
+								),
+								this.moduleRef == null ? "null" : this.moduleRef.ToString()
+							);
 							isCircular = true;
 							break;
 						}
