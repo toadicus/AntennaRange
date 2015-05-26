@@ -389,7 +389,10 @@ namespace AntennaRange
 			);
 
 			// If we don't have LOS to Kerbin, focus on relays
-			if (!this.vessel.hasLineOfSightTo(Kerbin, out bodyOccludingKerbin, ARConfiguration.RadiusRatio))
+			if (
+				ARConfiguration.RequireLineOfSight &&
+				!this.vessel.hasLineOfSightTo(Kerbin, out bodyOccludingKerbin, ARConfiguration.RadiusRatio)
+			)
 			{
 				log.AppendFormat("\n\tKerbin LOS is blocked by {0}.", bodyOccludingKerbin.bodyName);
 
