@@ -149,6 +149,14 @@ namespace AntennaRange
 				{
 					return this.part.vessel;
 				}
+				else if (
+					this.part.protoPartSnapshot != null &&
+					this.part.protoPartSnapshot.pVesselRef != null &&
+					this.part.protoPartSnapshot.pVesselRef.vesselRef != null
+				)
+				{
+					return this.part.protoPartSnapshot.pVesselRef.vesselRef;
+				}
 				else
 				{
 					this.LogError("Vessel and/or part reference are null, returning null vessel.");
