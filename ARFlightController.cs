@@ -148,7 +148,7 @@ namespace AntennaRange
 				this.toolbarButton.TexturePath = this.toolbarTextures[ConnectionStatus.None];
 				this.toolbarButton.Text = "AntennaRange";
 				this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.FLIGHT);
-				this.toolbarButton.Enabled = false;
+				this.toolbarButton.OnClick += (e) => (this.buttonToggle());
 			}
 
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
@@ -162,14 +162,6 @@ namespace AntennaRange
 
 		private void FixedUpdate()
 		{
-			if (this.appLauncherButton == null && !ToolbarManager.ToolbarAvailable && ApplicationLauncher.Ready)
-			{
-				this.appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
-					ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW,
-					this.appLauncherTextures[ConnectionStatus.None]
-				);
-			}
-
 			this.log.Clear();
 
 			VesselCommand availableCommand;
@@ -224,7 +216,21 @@ namespace AntennaRange
 
 		private void Update()
 		{
-			if (!this.updateTimer.IsRunning || this.updateTimer.ElapsedMilliseconds > 16L)
+			if (this.toolbarButton != null)
+			{
+				this.toolbarButton.Enabled = MapView.MapIsEnabled;
+			}
+
+			if (this.appLauncherButton == null && !ToolbarManager.ToolbarAvailable && ApplicationLauncher.Ready)
+			{
+				this.appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
+					this.buttonToggle, this.buttonToggle,
+					ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW,
+					this.appLauncherTextures[ConnectionStatus.None]
+				);
+			}
+
+			if (!this.updateTimer.IsRunning || this.updateTimer.ElapsedMilliseconds > ARConfiguration.UpdateDelay)
 			{
 				this.updateTimer.Restart();
 			}
@@ -328,6 +334,14 @@ namespace AntennaRange
 			print("ARFlightController: Destroyed.");
 		}
 		#endregion
+
+		private void buttonToggle()
+		{
+			if (MapView.MapIsEnabled)
+			{
+				ARConfiguration.PrettyLines = !ARConfiguration.PrettyLines;
+			}
+		}
 
 		#region Event Handlers
 		private void onSceneChangeRequested(GameScenes scene)
