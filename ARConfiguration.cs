@@ -16,6 +16,14 @@ namespace AntennaRange
 	[KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
 	public class ARConfiguration : MonoBehaviour
 	{
+		private const string WINDOW_POS_KEY = "configWindowPos";
+		private const string REQUIRE_LOS_KEY = "requireLineOfSight";
+		private const string GRACE_RATIO_KEY = "graceRatio";
+		private const string REQUIRE_PROBE_CONNECTION_KEY = "requireConnectionForControl";
+		private const string FIXED_POWER_KEY = "fixedPowerCost";
+		private const string PRETTY_LINES_KEY = "drawPrettyLines";
+		private const string UPDATE_DELAY_KEY = "updateDelay";
+
 		/// <summary>
 		/// Indicates whether connections require line of sight.
 		/// </summary>
@@ -59,6 +67,12 @@ namespace AntennaRange
 		public static bool PrettyLines
 		{
 			get;
+			set;
+		}
+
+		public static long UpdateDelay
+		{
+			get;
 			private set;
 		}
 
@@ -66,6 +80,9 @@ namespace AntennaRange
 
 		private bool showConfigWindow;
 		private Rect configWindowPos;
+
+		private string updateDelayStr;
+		private long updateDelay;
 
 		private IButton toolbarButton;
 		private ApplicationLauncherButton appLauncherButton;
@@ -96,19 +113,23 @@ namespace AntennaRange
 			this.configWindowPos = new Rect(Screen.width / 4, Screen.height / 2, 180, 15);
 
 
-			this.configWindowPos = this.LoadConfigValue("configWindowPos", this.configWindowPos);
+			this.configWindowPos = this.LoadConfigValue(WINDOW_POS_KEY, this.configWindowPos);
 
-			ARConfiguration.RequireLineOfSight = this.LoadConfigValue("requireLineOfSight", false);
+			ARConfiguration.RequireLineOfSight = this.LoadConfigValue(REQUIRE_LOS_KEY, false);
 
-			ARConfiguration.RadiusRatio = (1 - this.LoadConfigValue("graceRatio", .05d));
+			ARConfiguration.RadiusRatio = (1 - this.LoadConfigValue(GRACE_RATIO_KEY, .05d));
 			ARConfiguration.RadiusRatio *= ARConfiguration.RadiusRatio;
 
 			ARConfiguration.RequireConnectionForControl =
-				this.LoadConfigValue("requireConnectionForControl", false);
+				this.LoadConfigValue(REQUIRE_PROBE_CONNECTION_KEY, false);
 
-			ARConfiguration.FixedPowerCost = this.LoadConfigValue("fixedPowerCost", false);
+			ARConfiguration.FixedPowerCost = this.LoadConfigValue(FIXED_POWER_KEY, false);
 
-			ARConfiguration.PrettyLines = this.LoadConfigValue("drawPrettyLines", true);
+			ARConfiguration.PrettyLines = this.LoadConfigValue(PRETTY_LINES_KEY, true);
+
+			ARConfiguration.UpdateDelay = this.LoadConfigValue(UPDATE_DELAY_KEY, 16L);
+
+			this.updateDelayStr = ARConfiguration.UpdateDelay.ToString();
 
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
 
@@ -167,7 +188,7 @@ namespace AntennaRange
 				if (configPos != this.configWindowPos)
 				{
 					this.configWindowPos = configPos;
-					this.SaveConfigValue("configWindowPos", this.configWindowPos);
+					this.SaveConfigValue(WINDOW_POS_KEY, this.configWindowPos);
 				}
 			}
 		}
@@ -182,7 +203,7 @@ namespace AntennaRange
 			if (requireLineOfSight != ARConfiguration.RequireLineOfSight)
 			{
 				ARConfiguration.RequireLineOfSight = requireLineOfSight;
-				this.SaveConfigValue("requireLineOfSight", requireLineOfSight);
+				this.SaveConfigValue(REQUIRE_LOS_KEY, requireLineOfSight);
 			}
 
 			GUILayout.EndHorizontal();
@@ -197,7 +218,7 @@ namespace AntennaRange
 			if (requireConnectionForControl != ARConfiguration.RequireConnectionForControl)
 			{
 				ARConfiguration.RequireConnectionForControl = requireConnectionForControl;
-				this.SaveConfigValue("requireConnectionForControl", requireConnectionForControl);
+				this.SaveConfigValue(REQUIRE_PROBE_CONNECTION_KEY, requireConnectionForControl);
 			}
 
 			GUILayout.EndHorizontal();
@@ -208,7 +229,7 @@ namespace AntennaRange
 			if (fixedPowerCost != ARConfiguration.FixedPowerCost)
 			{
 				ARConfiguration.FixedPowerCost = fixedPowerCost;
-				this.SaveConfigValue("fixedPowerCost", fixedPowerCost);
+				this.SaveConfigValue(FIXED_POWER_KEY, fixedPowerCost);
 			}
 
 			GUILayout.EndHorizontal();
@@ -219,10 +240,26 @@ namespace AntennaRange
 			if (prettyLines != ARConfiguration.PrettyLines)
 			{
 				ARConfiguration.PrettyLines = prettyLines;
-				this.SaveConfigValue("drawPrettyLines", prettyLines);
+				this.SaveConfigValue(PRETTY_LINES_KEY, prettyLines);
 			}
 
 			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
+
+			GUILayout.Label("Update Delay", GUILayout.ExpandWidth(false));
+
+			this.updateDelayStr = GUILayout.TextField(this.updateDelayStr, 4, GUILayout.Width(40f));
+
+			GUILayout.Label("ms", GUILayout.ExpandWidth(false));
+
+			GUILayout.EndHorizontal();
+
+			if (this.updateDelayStr.Length > 1 && long.TryParse(this.updateDelayStr, out this.updateDelay))
+			{
+				ARConfiguration.UpdateDelay = Math.Min(Math.Max(this.updateDelay, 16), 2500);
+				this.updateDelayStr = ARConfiguration.UpdateDelay.ToString();
+			}
 
 			if (requireLineOfSight)
 			{
@@ -243,7 +280,7 @@ namespace AntennaRange
 				if (newRatio != graceRatio)
 				{
 					ARConfiguration.RadiusRatio = (1d - newRatio) * (1d - newRatio);
-					this.SaveConfigValue("graceRatio", newRatio);
+					this.SaveConfigValue(GRACE_RATIO_KEY, newRatio);
 				}
 
 				GUILayout.EndHorizontal();
@@ -281,6 +318,7 @@ namespace AntennaRange
 		private void toggleConfigWindow()
 		{
 			this.showConfigWindow = !this.showConfigWindow;
+			this.updateDelayStr = ARConfiguration.UpdateDelay.ToString();
 		}
 
 		private T LoadConfigValue<T>(string key, T defaultValue)
