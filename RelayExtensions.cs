@@ -38,63 +38,115 @@ namespace AntennaRange
 	public static class RelayExtensions
 	{
 		/// <summary>
-		/// Returns the distance between this IAntennaRelay and a Vessel
+		/// Returns the world distance between two <see cref="AntennaRange.IPositionedObject"/> objects.
 		/// </summary>
-		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
-		/// <param name="Vessel">A <see cref="Vessel"/></param>
-		public static double DistanceTo(this AntennaRelay relay, Vessel Vessel)
+		public static double DistanceTo(this IPositionedObject object1, IPositionedObject object2)
 		{
-			return relay.vessel.DistanceTo(Vessel);
+			double dist = (object1.WorldPos - object2.WorldPos).magnitude;
+
+			if (object1 is BodyWrapper)
+			{
+				dist -= ((BodyWrapper)object1).HostObject.Radius;
+			}
+
+			if (object2 is BodyWrapper)
+			{
+				dist -= ((BodyWrapper)object2).HostObject.Radius;
+			}
+
+			return dist;
 		}
 
 		/// <summary>
-		/// Returns the distance between this IAntennaRelay and a CelestialBody
+		/// Returns the world distance between an <see cref="AntennaRange.IAntennaRelay"/> and
+		/// an <see cref="AntennaRange.IPositionedObject"/>.
 		/// </summary>
-		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
-		/// <param name="body">A <see cref="CelestialBody"/></param>
-		public static double DistanceTo(this AntennaRelay relay, CelestialBody body)
+		public static double DistanceTo(this IAntennaRelay relay, IPositionedObject obj)
 		{
-			return relay.vessel.DistanceTo(body) - body.Radius;
+			return relay.Host.DistanceTo(obj);
 		}
 
 		/// <summary>
-		/// Returns the distance between this IAntennaRelay and another IAntennaRelay
+		/// Returns the world distance between two <see cref="AntennaRange.IAntennaRelay"/> objects.
 		/// </summary>
-		/// <param name="relayOne">This <see cref="IAntennaRelay"/></param>
-		/// <param name="relayTwo">Another <see cref="IAntennaRelay"/></param>
-		public static double DistanceTo(this AntennaRelay relayOne, IAntennaRelay relayTwo)
+		public static double DistanceTo(this IAntennaRelay relay1, IAntennaRelay relay2)
 		{
-			return relayOne.DistanceTo(relayTwo.vessel);
+			return relay1.Host.DistanceTo(relay2.Host);
 		}
 
 		/// <summary>
-		/// Returns the square of the distance between this IAntennaRelay and a Vessel
+		/// Returns the world distance between an <see cref="AntennaRange.IAntennaRelay"/> and a <see cref="Vessel"/>.
 		/// </summary>
-		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
-		/// <param name="vessel">A <see cref="Vessel"/></param>
-		public static double sqrDistanceTo(this AntennaRelay relay, Vessel vessel)
+		public static double DistanceTo(this IAntennaRelay relay, Vessel vessel)
 		{
-			return relay.vessel.sqrDistanceTo(vessel);
+			return relay.Host.DistanceTo((VesselWrapper)vessel);
 		}
 
 		/// <summary>
-		/// Returns the square of the distance between this IAntennaRelay and a CelestialBody
+		/// Returns the square of the world distance between two <see cref="AntennaRange.IPositionedObject"/> objects.
 		/// </summary>
-		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
-		/// <param name="body">A <see cref="CelestialBody"/></param>
-		public static double sqrDistanceTo(this AntennaRelay relay, CelestialBody body)
+		public static double sqrDistanceTo(this IPositionedObject object1, IPositionedObject object2)
 		{
-			return relay.vessel.sqrDistanceTo(body);
+			if (object1 is BodyWrapper || object2 is BodyWrapper)
+			{
+				double dist = object1.DistanceTo(object2);
+				dist *= dist;
+				return dist;
+			}
+			else
+			{
+				return (object1.WorldPos - object2.WorldPos).sqrMagnitude;
+			}
 		}
 
 		/// <summary>
-		/// Returns the square of the distance between this IAntennaRelay and another IAntennaRelay
+		/// Returns the square of the world distance between an <see cref="AntennaRange.IAntennaRelay"/>
+		/// and a <see cref="Vessel"/>.
 		/// </summary>
-		/// <param name="relayOne">This <see cref="IAntennaRelay"/></param>
-		/// <param name="relayTwo">Another <see cref="IAntennaRelay"/></param>
-		public static double sqrDistanceTo(this AntennaRelay relayOne, IAntennaRelay relayTwo)
+		public static double sqrDistanceTo(this IAntennaRelay relay, Vessel vessel)
 		{
-			return relayOne.vessel.sqrDistanceTo(relayTwo.vessel);
+			return relay.Host.sqrDistanceTo((VesselWrapper)vessel);
+		}
+
+		/// <summary>
+		/// Returns the square of the world distance between an <see cref="AntennaRange.IAntennaRelay"/>
+		/// and a <see cref="CelestialBody"/>.
+		/// </summary>
+		public static double sqrDistanceTo(this IAntennaRelay relay, CelestialBody body)
+		{
+			return relay.Host.sqrDistanceTo((BodyWrapper)body);
+		}
+
+		/// <summary>
+		/// Returns <c>true</c> if the origin <see cref="AntennaRange.IPositionedObject"/> has line of sight to the
+		/// target <see cref="AntennaRange.IPositionedObject"/>, <c>false</c> otherwise.  If not, firstOccludingBody
+		/// outputs the first <see cref="CelestialBody"/> blocking line of sight.
+		/// </summary>
+		public static bool hasLineOfSightTo(
+			this IPositionedObject origin,
+			IPositionedObject target,
+			out CelestialBody firstOccludingBody,
+			double sqrRatio = 1d
+		)
+		{
+			CelestialBody[] excludedBodies;
+
+			if (target is BodyWrapper)
+			{
+				excludedBodies = new CelestialBody[] { (target as BodyWrapper).HostObject };
+			}
+			else
+			{
+				excludedBodies = null;
+			}
+
+			return VectorTools.IsLineOfSightBetween(
+				origin.WorldPos,
+				target.WorldPos,
+				out firstOccludingBody,
+				excludedBodies,
+				sqrRatio
+			);
 		}
 
 		/// <summary>

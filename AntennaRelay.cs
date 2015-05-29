@@ -35,21 +35,21 @@ namespace AntennaRange
 	/// <summary>
 	/// Relay code at the heart of AntennaRange
 	/// </summary>
-	public class AntennaRelay
+	public class AntennaRelay : IAntennaRelay
 	{
 		// We don't have a Bard, so we'll hide Kerbin here.
-		private static CelestialBody _Kerbin;
+		private static BodyWrapper _Kerbin;
 
 		/// <summary>
 		/// Fetches, caches, and returns a <see cref="CelestialBody"/> reference to Kerbin
 		/// </summary>
-		public static CelestialBody Kerbin
+		public static BodyWrapper Kerbin
 		{
 			get
 			{
 				if (_Kerbin == null && FlightGlobals.ready)
 				{
-					_Kerbin = FlightGlobals.GetHomeBody();
+					_Kerbin = (BodyWrapper)FlightGlobals.GetHomeBody();
 				}
 
 				return _Kerbin;
@@ -72,11 +72,11 @@ namespace AntennaRange
 		/// Gets the parent Vessel.
 		/// </summary>
 		/// <value>The parent Vessel.</value>
-		public virtual Vessel vessel
+		public virtual IPositionedObject Host
 		{
 			get
 			{
-				return this.moduleRef.vessel;
+				return this.moduleRef.Host;
 			}
 		}
 
@@ -144,6 +144,14 @@ namespace AntennaRange
 		{
 			get;
 			protected set;
+		}
+
+		public virtual string Title
+		{
+			get
+			{
+				return this.moduleRef.Title;
+			}
 		}
 
 		/// <summary>
@@ -251,7 +259,7 @@ namespace AntennaRange
 				
 				log.Append("\n\tchecking if vessel is this vessel");
 				// Skip vessels with the wrong ID
-				if (potentialVessel.id == vessel.id)
+				if (OBJ.ReferenceEquals(potentialVessel, Host.HostObject))
 				{
 					log.Append("\n\tSkipping because vessel is this vessel.");
 					continue;
@@ -276,7 +284,7 @@ namespace AntennaRange
 				// Skip vessels to which we do not have line of sight.
 				if (
 					ARConfiguration.RequireLineOfSight &&
-					!this.vessel.hasLineOfSightTo(potentialVessel, out fob, ARConfiguration.RadiusRatio)
+					!this.Host.hasLineOfSightTo((VesselWrapper)potentialVessel, out fob, ARConfiguration.RadiusRatio)
 				)
 				{
 					log.Append("\n\t\t...failed LOS check");
@@ -346,7 +354,7 @@ namespace AntennaRange
 							break;
 						}
 
-						if (needle.targetRelay.vessel == this.vessel || needle == this.moduleRef)
+						if (needle.targetRelay.Host == this.Host || needle == this.moduleRef)
 						{
 							isCircular = true;
 							break;
@@ -363,10 +371,10 @@ namespace AntennaRange
 								needle == null ? "null" : string.Format(
 									"{0}, needle.KerbinDirect={1}, needle.targetRelay={2}",
 									needle, needle.KerbinDirect, needle.targetRelay == null ? "null" : string.Format(
-										"{0}\n\tneedle.targetRelay.vessel={1}",
+										"{0}\n\tneedle.targetRelay.Host={1}",
 										needle.targetRelay,
-										needle.targetRelay.vessel == null ?
-											"null" : needle.targetRelay.vessel.vesselName
+										needle.targetRelay.Host == null ?
+											"null" : needle.targetRelay.Host.ToString()
 									)
 								),
 								this.moduleRef == null ? "null" : this.moduleRef.ToString()
@@ -400,8 +408,7 @@ namespace AntennaRange
 
 			CelestialBody bodyOccludingKerbin = null;
 
-			double kerbinSqrDistance = this.vessel.DistanceTo(Kerbin) - Kerbin.Radius;
-			kerbinSqrDistance *= kerbinSqrDistance;
+			double kerbinSqrDistance = this.sqrDistanceTo(Kerbin);
 
 			log.AppendFormat("\n{0} ({1}): Search done, figuring status.", this.ToString(), this.GetType().Name);
 			log.AppendFormat(
@@ -417,7 +424,7 @@ namespace AntennaRange
 			// If we don't have LOS to Kerbin, focus on relays
 			if (
 				ARConfiguration.RequireLineOfSight &&
-				!this.vessel.hasLineOfSightTo(Kerbin, out bodyOccludingKerbin, ARConfiguration.RadiusRatio)
+				!this.Host.hasLineOfSightTo((BodyWrapper)Kerbin, out bodyOccludingKerbin, ARConfiguration.RadiusRatio)
 			)
 			{
 				log.AppendFormat("\n\tKerbin LOS is blocked by {0}.", bodyOccludingKerbin.bodyName);

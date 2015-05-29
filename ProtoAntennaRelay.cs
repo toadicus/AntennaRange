@@ -44,7 +44,7 @@ namespace AntennaRange
 		/// <summary>
 		/// Gets the parent Vessel.
 		/// </summary>
-		public override Vessel vessel
+		public override IPositionedObject Host
 		{
 			get
 			{
@@ -54,7 +54,7 @@ namespace AntennaRange
 					this.protoPart.pVesselRef.vesselRef != null
 				)
 				{
-					return this.protoPart.pVesselRef.vesselRef;
+					return (VesselWrapper)this.protoPart.pVesselRef.vesselRef;
 				}
 				else
 				{
@@ -124,7 +124,7 @@ namespace AntennaRange
 					"{0}: {1} on {2} cannot transmit: {3}",
 					this.GetType().Name,
 					this.Title,
-					this.vessel.vesselName,
+					this.Host.ToString(),
 					Enum.GetName(typeof(PartStates), partState)
 				));
 				return false;

@@ -137,17 +137,17 @@ namespace AntennaRange
 		/// <summary>
 		/// Gets the parent Vessel.
 		/// </summary>
-		public new Vessel vessel
+		public VesselWrapper Host
 		{
 			get
 			{
 				if (base.vessel != null)
 				{
-					return base.vessel;
+					return (VesselWrapper)base.vessel;
 				}
 				else if (this.part != null && this.part.vessel != null)
 				{
-					return this.part.vessel;
+					return (VesselWrapper)this.part.vessel;
 				}
 				else if (
 					this.part.protoPartSnapshot != null &&
@@ -155,13 +155,20 @@ namespace AntennaRange
 					this.part.protoPartSnapshot.pVesselRef.vesselRef != null
 				)
 				{
-					return this.part.protoPartSnapshot.pVesselRef.vesselRef;
+					return (VesselWrapper)this.part.protoPartSnapshot.pVesselRef.vesselRef;
 				}
 				else
 				{
 					this.LogError("Vessel and/or part reference are null, returning null vessel.");
 					return null;
 				}
+			}
+		}
+		IPositionedObject IAntennaRelay.Host
+		{
+			get
+			{
+				return this.Host;
 			}
 		}
 
@@ -434,7 +441,7 @@ namespace AntennaRange
 						"{0}: {1} on {2} cannot transmit: {3}",
 						this.GetType().Name,
 						this.part.partInfo.title,
-						this.vessel.vesselName,
+						this.Host.HostObject.vesselName,
 						Enum.GetName(typeof(PartStates), this.part.State)
 					));
 					return false;
@@ -499,7 +506,7 @@ namespace AntennaRange
 
 				var logger = Tools.DebugLogger.New(this);
 
-				IList<ModuleScienceContainer> vesselContainers = this.vessel.getModulesOfType<ModuleScienceContainer>();
+				IList<ModuleScienceContainer> vesselContainers = this.Host.HostObject.getModulesOfType<ModuleScienceContainer>();
 				ModuleScienceContainer scienceContainer;
 				for (int cIdx = 0; cIdx < vesselContainers.Count; cIdx++)
 				{
@@ -658,7 +665,7 @@ namespace AntennaRange
 
 				if (this.KerbinDirect)
 				{
-					this.UIrelayTarget = AntennaRelay.Kerbin.bodyName;
+					this.UIrelayTarget = AntennaRelay.Kerbin.HostObject.bodyName;
 				}
 				else
 				{
@@ -678,10 +685,10 @@ namespace AntennaRange
 
 			sb.Append(this.part.partInfo.title);
 
-			if (vessel != null)
+			if (Host != null)
 			{
 				sb.Append(" on ");
-				sb.Append(vessel.vesselName);
+				sb.Append(Host.HostObject.vesselName);
 			}
 			else if (
 				this.part != null &&

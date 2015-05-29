@@ -24,6 +24,8 @@ namespace AntennaRange
 		private const string PRETTY_LINES_KEY = "drawPrettyLines";
 		private const string UPDATE_DELAY_KEY = "updateDelay";
 
+		private bool runOnce;
+
 		/// <summary>
 		/// Indicates whether connections require line of sight.
 		/// </summary>
@@ -133,9 +135,23 @@ namespace AntennaRange
 
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
 
+			this.runOnce = true;
+
 			Debug.Log(string.Format("{0} v{1} - ARConfiguration loaded!", this.GetType().Name, this.runningVersion));
 
 			Tools.PostDebugMessage(this, "Awake.");
+		}
+
+		public void Update()
+		{
+			if (runOnce)
+			{
+				KerbinRelay.TrackingStationMaxLevel =
+					ScenarioUpgradeableFacilities.protoUpgradeables[SpaceCenterFacility.TrackingStation.ToString()]
+						.facilityRefs[0].MaxLevel;
+				
+				runOnce = false;
+			}
 		}
 
 		public void OnGUI()

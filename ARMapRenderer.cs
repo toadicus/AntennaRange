@@ -39,7 +39,7 @@ namespace AntennaRange
 	public class ARMapRenderer : MonoBehaviour
 	{
 		#region Fields
-		private Dictionary<Guid, LineRenderer> vesselLineRenderers;
+		private Dictionary<IPositionedObject, LineRenderer> vesselLineRenderers;
 
 		// Debug Stuff
 		#pragma warning disable 649
@@ -55,13 +55,13 @@ namespace AntennaRange
 		#endregion
 
 		#region Properties
-		public LineRenderer this[Guid idx]
+		public LineRenderer this[IPositionedObject idx]
 		{
 			get
 			{
 				if (this.vesselLineRenderers == null)
 				{
-					this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
+					this.vesselLineRenderers = new Dictionary<IPositionedObject, LineRenderer>();
 				}
 
 				LineRenderer lr;
@@ -94,7 +94,7 @@ namespace AntennaRange
 		{
 			if (ARConfiguration.PrettyLines)
 			{
-				this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
+				this.vesselLineRenderers = new Dictionary<IPositionedObject, LineRenderer>();
 			}
 
 			#if DEBUG
@@ -216,14 +216,14 @@ namespace AntennaRange
 		{
 			log.AppendFormat("\n\t\tDrawing line for relay chain starting at {0}.", relay);
 
-			if (relay.vessel == null)
+			if (relay.Host == null)
 			{
 				log.Append("\n\t\tvessel is null, bailing out");
 				return;
 			}
 
-			LineRenderer renderer = this[relay.vessel.id];
-			Vector3d start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());
+			LineRenderer renderer = this[relay.Host];
+			Vector3d start = ScaledSpace.LocalToScaledSpace(relay.Host.WorldPos);
 
 			float lineWidth;
 			float d = Screen.height / 2f + 0.01f;
@@ -273,11 +273,11 @@ namespace AntennaRange
 
 			if (relay.KerbinDirect)
 			{
-				nextPoint = ScaledSpace.LocalToScaledSpace(AntennaRelay.Kerbin.position);
+				nextPoint = ScaledSpace.LocalToScaledSpace(AntennaRelay.Kerbin.WorldPos);
 			}
 			else
 			{
-				if (relay.targetRelay == null || relay.targetRelay.vessel == null)
+				if (relay.targetRelay == null || relay.targetRelay.Host == null)
 				{
 					this.LogError(
 						"SetRelayVertices: relay {0} has null target relay or vessel when not KerbinDirect, bailing out!",
@@ -288,7 +288,7 @@ namespace AntennaRange
 					return;
 				}
 
-				nextPoint = ScaledSpace.LocalToScaledSpace(relay.targetRelay.vessel.GetWorldPos3D());
+				nextPoint = ScaledSpace.LocalToScaledSpace(relay.targetRelay.Host.WorldPos);
 			}
 
 			renderer.SetColors(thisColor, thisColor);

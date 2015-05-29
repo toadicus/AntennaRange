@@ -39,7 +39,7 @@ namespace AntennaRange
 		/// <summary>
 		/// Gets the parent Vessel.
 		/// </summary>
-		Vessel vessel { get; }
+		IPositionedObject Host { get; }
 
 		/// <summary>
 		/// Gets the target <see cref="AntennaRange.IAntennaRelay"/>relay.
