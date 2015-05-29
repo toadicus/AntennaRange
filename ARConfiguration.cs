@@ -70,6 +70,9 @@ namespace AntennaRange
 			set;
 		}
 
+		/// <summary>
+		/// Gets the update delay.
+		/// </summary>
 		public static long UpdateDelay
 		{
 			get;
