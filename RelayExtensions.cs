@@ -128,6 +128,36 @@ namespace AntennaRange
 		}
 
 		/// <summary>
+		/// Calculates the nominal link distance.
+		/// </summary>
+		public static double NominalLinkDistance(this IAntennaRelay relay)
+		{
+			if (relay.KerbinDirect)
+			{
+				return Math.Sqrt(relay.nominalTransmitDistance * ARConfiguration.KerbinNominalRange);
+			}
+			else
+			{
+				return Math.Sqrt(relay.nominalTransmitDistance * relay.targetRelay.nominalTransmitDistance);
+			}
+		}
+
+		/// <summary>
+		/// Calculates the maximum link distance.
+		/// </summary>
+		public static double MaxLinkDistance(this IAntennaRelay relay)
+		{
+			if (relay.KerbinDirect)
+			{
+				return Math.Sqrt(relay.maxTransmitDistance * ARConfiguration.KerbinRelayRange);
+			}
+			else
+			{
+				return Math.Sqrt(relay.maxTransmitDistance * relay.targetRelay.maxTransmitDistance);
+			}
+		}
+
+		/// <summary>
 		/// Gets the <see cref="AntennaRange.ConnectionStatus"/> for this <see cref="Vessel"/>
 		/// </summary>
 		/// <param name="vessel">This <see cref="Vessel"/></param>
@@ -143,7 +173,10 @@ namespace AntennaRange
 				if (relay.CanTransmit())
 				{
 					canTransmit = true;
-					if (relay.transmitDistance <= relay.nominalTransmitDistance)
+
+					double quo = relay.transmitDistance / relay.NominalLinkDistance();
+
+					if (quo <= 1d)
 					{
 						return ConnectionStatus.Optimal;
 					}

@@ -200,9 +200,13 @@ namespace AntennaRange
 			CelestialBody bodyOccludingBestOccludedRelay = null;
 			IAntennaRelay needle;
 
-			double nearestRelaySqrDistance = double.PositiveInfinity;
-			double bestOccludedSqrDistance = double.PositiveInfinity;
-			double maxTransmitSqrDistance = this.maxTransmitDistance * this.maxTransmitDistance;
+			// double nearestRelaySqrDistance = double.PositiveInfinity;
+			// double bestOccludedSqrDistance = double.PositiveInfinity;
+
+			double maxTransmitSqrDistance = double.NegativeInfinity;
+
+			double nearestRelaySqrQuotient = double.PositiveInfinity;
+			double bestOccludedSqrQuotient = double.PositiveInfinity;
 
 			/*
 			 * Loop through all the vessels and exclude this vessel, vessels of the wrong type, and vessels that are too
@@ -257,11 +261,6 @@ namespace AntennaRange
 					continue;
 				}
 
-				// Find the distance from here to the vessel...
-				log.Append("\n\tgetting distance to potential vessel");
-				double potentialSqrDistance = this.sqrDistanceTo(potentialVessel);
-				log.Append("\n\tgetting best vessel relay");
-
 				potentialBestRelay = potentialVessel.GetBestRelay();
 				log.AppendFormat("\n\t\tgot best vessel relay {0}",
 					potentialBestRelay == null ? "null" : potentialBestRelay.ToString());
@@ -271,6 +270,17 @@ namespace AntennaRange
 					log.Append("\n\t\t...skipping null relay");
 					continue;
 				}
+
+				// Find the distance from here to the vessel...
+				log.Append("\n\tgetting distance to potential vessel");
+				double potentialSqrDistance = this.sqrDistanceTo(potentialVessel);
+				log.Append("\n\tgetting best vessel relay");
+
+				log.Append("\n\tgetting max link distance to potential relay");
+				double maxLinkSqrDistance = this.maxTransmitDistance * potentialBestRelay.maxTransmitDistance;
+				log.AppendFormat("\n\tmax link distance: {0}", maxTransmitSqrDistance);
+
+				double potentialSqrQuotient = potentialSqrDistance / maxLinkSqrDistance;
 
 				log.Append("\n\t\tdoing LOS check");
 				// Skip vessels to which we do not have line of sight.
@@ -285,12 +295,12 @@ namespace AntennaRange
 						this.ToString(), potentialVessel.vesselName);
 					
 					log.AppendFormat("\n\t\t\tpotentialSqrDistance: {0}", potentialSqrDistance);
-					log.AppendFormat("\n\t\t\tbestOccludedSqrDistance: {0}", bestOccludedSqrDistance);
+					log.AppendFormat("\n\t\t\tbestOccludedSqrQuotient: {0}", bestOccludedSqrQuotient);
 					log.AppendFormat("\n\t\t\tmaxTransmitSqrDistance: {0}", maxTransmitSqrDistance);
 
 					if (
-						(potentialSqrDistance < bestOccludedSqrDistance) &&
-						(potentialSqrDistance < maxTransmitSqrDistance) &&
+						(potentialSqrQuotient < bestOccludedSqrQuotient) &&
+						(potentialSqrQuotient <= 1d) &&
 						potentialBestRelay.CanTransmit()
 					)
 					{
@@ -299,7 +309,7 @@ namespace AntennaRange
 
 						this.bestOccludedRelay = potentialBestRelay;
 						bodyOccludingBestOccludedRelay = fob;
-						bestOccludedSqrDistance = potentialSqrDistance;
+						bestOccludedSqrQuotient = potentialSqrQuotient;
 					}
 					else
 					{
@@ -314,7 +324,7 @@ namespace AntennaRange
 				/*
 				 * ...so that we can skip the vessel if it is further away than a vessel we've already checked.
 				 * */
-				if (potentialSqrDistance > nearestRelaySqrDistance)
+				if (potentialSqrQuotient > nearestRelaySqrQuotient)
 				{
 					
 					log.AppendFormat("\n\t{0}: Vessel {1} discarded because it is farther than another the nearest relay.",
@@ -380,13 +390,13 @@ namespace AntennaRange
 
 					if (!isCircular)
 					{
-						nearestRelaySqrDistance = potentialSqrDistance;
+						nearestRelaySqrQuotient = potentialSqrQuotient;
 						this.nearestRelay = potentialBestRelay;
 
-						log.AppendFormat("\n\t{0}: found new nearest relay {1} ({2}m)",
+						log.AppendFormat("\n\t{0}: found new nearest relay {1} ({2}m²)",
 							this.ToString(),
 							this.nearestRelay.ToString(),
-							Math.Sqrt(nearestRelaySqrDistance)
+							Math.Sqrt(nearestRelaySqrQuotient)
 						);
 					}
 					else
@@ -403,14 +413,17 @@ namespace AntennaRange
 			double kerbinSqrDistance = this.vessel.DistanceTo(Kerbin) - Kerbin.Radius;
 			kerbinSqrDistance *= kerbinSqrDistance;
 
+			double kerbinSqrQuotient = kerbinSqrDistance /
+				(this.maxTransmitDistance * ARConfiguration.KerbinRelayRange);
+
 			log.AppendFormat("\n{0} ({1}): Search done, figuring status.", this.ToString(), this.GetType().Name);
 			log.AppendFormat(
 				"\n{0}: nearestRelay={1} ({2}m²)), bestOccludedRelay={3} ({4}m²), kerbinSqrDistance={5}m²)",
 				this,
 				this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
-				nearestRelaySqrDistance,
+				nearestRelaySqrQuotient,
 				this.bestOccludedRelay == null ? "null" : this.bestOccludedRelay.ToString(),
-				bestOccludedSqrDistance,
+				bestOccludedSqrQuotient,
 				kerbinSqrDistance
 			);
 
@@ -424,11 +437,11 @@ namespace AntennaRange
 
 				// nearestRelaySqrDistance will be infinity if all relays are occluded or none exist.
 				// Therefore, this will only be true if a valid relay is in range.
-				if (nearestRelaySqrDistance <= maxTransmitSqrDistance)
+				if (nearestRelaySqrQuotient <= 1d)
 				{
 					log.AppendFormat("\n\t\tCan transmit to nearby relay {0} ({1} <= {2}).",
 						this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
-							nearestRelaySqrDistance, maxTransmitSqrDistance);
+						nearestRelaySqrQuotient, maxTransmitSqrDistance);
 
 					this.KerbinDirect = false;
 					this.canTransmit = true;
@@ -439,13 +452,13 @@ namespace AntennaRange
 				{
 					log.AppendFormat("\n\t\tCan't transmit to nearby relay {0} ({1} > {2}).",
 						this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
-							nearestRelaySqrDistance, maxTransmitSqrDistance);
+						nearestRelaySqrQuotient, maxTransmitSqrDistance);
 
 					this.canTransmit = false;
 
 					// If the best occluded relay is closer than Kerbin, check it against the nearest relay.
 					// Since bestOccludedSqrDistance is infinity if there are no occluded relays, this is safe
-					if (bestOccludedSqrDistance < kerbinSqrDistance)
+					if (bestOccludedSqrQuotient < kerbinSqrQuotient)
 					{
 						log.AppendFormat("\n\t\t\tBest occluded relay is closer than Kerbin ({0} < {1})",
 							bestOccludedRelay, kerbinSqrDistance);
@@ -454,10 +467,10 @@ namespace AntennaRange
 
 						// If the nearest relay is closer than the best occluded relay, pick it.
 						// Since nearestRelaySqrDistane is infinity if there are no nearby relays, this is safe.
-						if (nearestRelaySqrDistance < bestOccludedSqrDistance)
+						if (nearestRelaySqrQuotient < bestOccludedSqrQuotient)
 						{
 							log.AppendFormat("\n\t\t\t\t...but the nearest relay is closer ({0} < {1}), so picking it.",
-								nearestRelaySqrDistance, bestOccludedSqrDistance);
+								nearestRelaySqrQuotient, bestOccludedSqrQuotient);
 							
 							this.targetRelay = this.nearestRelay;
 							this.firstOccludingBody = null;
@@ -466,7 +479,7 @@ namespace AntennaRange
 						else
 						{
 							log.AppendFormat("\n\t\t\t\t...and closer than the nearest relay ({0} >= {1}), so picking it.",
-								nearestRelaySqrDistance, bestOccludedSqrDistance);
+								nearestRelaySqrQuotient, bestOccludedSqrQuotient);
 							
 							this.targetRelay = bestOccludedRelay;
 							this.firstOccludingBody = bodyOccludingBestOccludedRelay;
@@ -479,25 +492,25 @@ namespace AntennaRange
 						log.AppendFormat("\n\t\t\tKerbin is closer than the best occluded relay ({0} >= {1})",
 							bestOccludedRelay, kerbinSqrDistance);
 						
-						this.firstOccludingBody = null;
-
 						// If the nearest relay is closer than Kerbin, pick it.
 						// Since nearestRelaySqrDistane is infinity if there are no nearby relays, this is safe.
-						if (nearestRelaySqrDistance < kerbinSqrDistance)
+						if (nearestRelaySqrQuotient < kerbinSqrQuotient)
 						{
 							log.AppendFormat("\n\t\t\t\t...but the nearest relay is closer ({0} < {1}), so picking it.",
-								nearestRelaySqrDistance, kerbinSqrDistance);
+								nearestRelaySqrQuotient, kerbinSqrQuotient);
 							
 							this.KerbinDirect = false;
+							this.firstOccludingBody = null;
 							this.targetRelay = this.nearestRelay;
 						}
 						// Otherwise, pick Kerbin.
 						else
 						{
 							log.AppendFormat("\n\t\t\t\t...and closer than the nearest relay ({0} >= {1}), so picking it.",
-								nearestRelaySqrDistance, kerbinSqrDistance);
+								nearestRelaySqrQuotient, kerbinSqrQuotient);
 							
 							this.KerbinDirect = true;
+							this.firstOccludingBody = bodyOccludingKerbin;
 							this.targetRelay = null;
 						}
 					}
@@ -509,20 +522,20 @@ namespace AntennaRange
 				log.AppendFormat("\n\tKerbin is in LOS.");
 
 				// If the nearest relay is closer than Kerbin and in range, transmit to it.
-				if (nearestRelaySqrDistance <= maxTransmitSqrDistance)
+				if (nearestRelaySqrQuotient <= 1d)
 				{
 					log.AppendFormat("\n\t\tCan transmit to nearby relay {0} ({1} <= {2}).",
 						this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
-							nearestRelaySqrDistance, maxTransmitSqrDistance);
+						nearestRelaySqrQuotient, 1d);
 
 					this.canTransmit = true;
 
 					// If the nearestRelay is closer than Kerbin, use it.
-					if (nearestRelaySqrDistance < kerbinSqrDistance)
+					if (nearestRelaySqrQuotient < kerbinSqrQuotient)
 					{
 						log.AppendFormat("\n\t\t\tPicking relay {0} over Kerbin ({1} < {2}).",
 							this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
-							nearestRelaySqrDistance, kerbinSqrDistance);
+							nearestRelaySqrQuotient, kerbinSqrQuotient);
 
 						this.KerbinDirect = false;
 						this.targetRelay = this.nearestRelay;
@@ -532,7 +545,7 @@ namespace AntennaRange
 					{
 						log.AppendFormat("\n\t\t\tBut picking Kerbin over nearby relay {0} ({1} >= {2}).",
 							this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
-								nearestRelaySqrDistance, kerbinSqrDistance);
+							nearestRelaySqrQuotient, kerbinSqrQuotient);
 
 						this.KerbinDirect = true;
 						this.targetRelay = null;
@@ -543,10 +556,10 @@ namespace AntennaRange
 				{
 					log.AppendFormat("\n\t\tCan't transmit to nearby relay {0} ({1} > {2}).",
 						this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
-							nearestRelaySqrDistance, maxTransmitSqrDistance);
+							nearestRelaySqrQuotient, 1d);
 
 					// If Kerbin is in range, use it.
-					if (kerbinSqrDistance <= maxTransmitSqrDistance)
+					if (kerbinSqrQuotient <= 1d)
 					{
 						log.AppendFormat("\n\t\t\tCan transmit to Kerbin ({0} <= {1}).",
 							kerbinSqrDistance, maxTransmitSqrDistance);
@@ -566,7 +579,7 @@ namespace AntennaRange
 
 						// If the best occluded relay is closer than Kerbin, check it against the nearest relay.
 						// Since bestOccludedSqrDistance is infinity if there are no occluded relays, this is safe
-						if (bestOccludedSqrDistance < kerbinSqrDistance)
+						if (bestOccludedSqrQuotient < kerbinSqrQuotient)
 						{
 							log.AppendFormat("\n\t\t\tBest occluded relay is closer than Kerbin ({0} < {1})",
 								bestOccludedRelay, kerbinSqrDistance);
@@ -575,10 +588,10 @@ namespace AntennaRange
 
 							// If the nearest relay is closer than the best occluded relay, pick it.
 							// Since nearestRelaySqrDistane is infinity if there are no nearby relays, this is safe.
-							if (nearestRelaySqrDistance < bestOccludedSqrDistance)
+							if (nearestRelaySqrQuotient < bestOccludedSqrQuotient)
 							{
 								log.AppendFormat("\n\t\t\t\t...but the nearest relay is closer ({0} < {1}), so picking it.",
-									nearestRelaySqrDistance, bestOccludedSqrDistance);
+									nearestRelaySqrQuotient, bestOccludedSqrQuotient);
 								
 								this.targetRelay = this.nearestRelay;
 								this.firstOccludingBody = null;
@@ -587,7 +600,7 @@ namespace AntennaRange
 							else
 							{
 								log.AppendFormat("\n\t\t\t\t...and closer than the nearest relay ({0} >= {1}), so picking it.",
-									nearestRelaySqrDistance, bestOccludedSqrDistance);
+									nearestRelaySqrQuotient, bestOccludedSqrQuotient);
 								
 								this.targetRelay = bestOccludedRelay;
 								this.firstOccludingBody = bodyOccludingBestOccludedRelay;
@@ -604,10 +617,10 @@ namespace AntennaRange
 
 							// If the nearest relay is closer than Kerbin, pick it.
 							// Since nearestRelaySqrDistane is infinity if there are no nearby relays, this is safe.
-							if (nearestRelaySqrDistance < kerbinSqrDistance)
+							if (nearestRelaySqrQuotient < kerbinSqrQuotient)
 							{
 								log.AppendFormat("\n\t\t\t\t...but the nearest relay is closer ({0} < {1}), so picking it.",
-									nearestRelaySqrDistance, kerbinSqrDistance);
+									nearestRelaySqrQuotient, kerbinSqrQuotient);
 								
 								this.KerbinDirect = false;
 								this.targetRelay = this.nearestRelay;
@@ -616,7 +629,7 @@ namespace AntennaRange
 							else
 							{
 								log.AppendFormat("\n\t\t\t\t...and closer than the nearest relay ({0} >= {1}), so picking it.",
-									nearestRelaySqrDistance, kerbinSqrDistance);
+									nearestRelaySqrQuotient, kerbinSqrQuotient);
 								
 								this.KerbinDirect = true;
 								this.targetRelay = null;
