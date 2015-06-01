@@ -23,6 +23,7 @@ namespace AntennaRange
 		private const string FIXED_POWER_KEY = "fixedPowerCost";
 		private const string PRETTY_LINES_KEY = "drawPrettyLines";
 		private const string UPDATE_DELAY_KEY = "updateDelay";
+		private const string USE_ADDITIVE_KEY = "useAdditiveRanges";
 
 		private const string TRACKING_STATION_RANGES_KEY = "TRACKING_STATION_RANGES";
 		private const string RANGE_KEY = "range";
@@ -77,6 +78,12 @@ namespace AntennaRange
 		/// Gets the update delay.
 		/// </summary>
 		public static long UpdateDelay
+		{
+			get;
+			private set;
+		}
+
+		public static bool UseAdditiveRanges
 		{
 			get;
 			private set;
@@ -158,6 +165,8 @@ namespace AntennaRange
 			ARConfiguration.PrettyLines = this.LoadConfigValue(PRETTY_LINES_KEY, true);
 
 			ARConfiguration.UpdateDelay = this.LoadConfigValue(UPDATE_DELAY_KEY, 16L);
+
+			ARConfiguration.UseAdditiveRanges = this.LoadConfigValue(USE_ADDITIVE_KEY, true);
 
 			this.updateDelayStr = ARConfiguration.UpdateDelay.ToString();
 
@@ -308,6 +317,17 @@ namespace AntennaRange
 			{
 				ARConfiguration.FixedPowerCost = fixedPowerCost;
 				this.SaveConfigValue(FIXED_POWER_KEY, fixedPowerCost);
+			}
+
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
+
+			bool useAdditive = GUITools.Toggle(ARConfiguration.UseAdditiveRanges, "Use Additive Ranges");
+			if (useAdditive != ARConfiguration.UseAdditiveRanges)
+			{
+				ARConfiguration.UseAdditiveRanges = useAdditive;
+				this.SaveConfigValue(USE_ADDITIVE_KEY, useAdditive);
 			}
 
 			GUILayout.EndHorizontal();

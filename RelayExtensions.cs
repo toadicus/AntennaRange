@@ -132,13 +132,20 @@ namespace AntennaRange
 		/// </summary>
 		public static double NominalLinkDistance(this IAntennaRelay relay)
 		{
-			if (relay.KerbinDirect)
+			if (ARConfiguration.UseAdditiveRanges)
 			{
-				return Math.Sqrt(relay.nominalTransmitDistance * ARConfiguration.KerbinNominalRange);
+				if (relay.KerbinDirect)
+				{
+					return Math.Sqrt(relay.nominalTransmitDistance * ARConfiguration.KerbinNominalRange);
+				}
+				else
+				{
+					return Math.Sqrt(relay.nominalTransmitDistance * relay.targetRelay.nominalTransmitDistance);
+				}
 			}
 			else
 			{
-				return Math.Sqrt(relay.nominalTransmitDistance * relay.targetRelay.nominalTransmitDistance);
+				return relay.nominalTransmitDistance;
 			}
 		}
 
@@ -147,13 +154,20 @@ namespace AntennaRange
 		/// </summary>
 		public static double MaxLinkDistance(this IAntennaRelay relay)
 		{
-			if (relay.KerbinDirect)
+			if (ARConfiguration.UseAdditiveRanges)
 			{
-				return Math.Sqrt(relay.maxTransmitDistance * ARConfiguration.KerbinRelayRange);
+				if (relay.KerbinDirect)
+				{
+					return Math.Sqrt(relay.maxTransmitDistance * ARConfiguration.KerbinRelayRange);
+				}
+				else
+				{
+					return Math.Sqrt(relay.maxTransmitDistance * relay.targetRelay.maxTransmitDistance);
+				}
 			}
 			else
 			{
-				return Math.Sqrt(relay.maxTransmitDistance * relay.targetRelay.maxTransmitDistance);
+				return relay.maxTransmitDistance;
 			}
 		}
 

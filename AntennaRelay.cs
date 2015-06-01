@@ -203,7 +203,7 @@ namespace AntennaRange
 			// double nearestRelaySqrDistance = double.PositiveInfinity;
 			// double bestOccludedSqrDistance = double.PositiveInfinity;
 
-			double maxTransmitSqrDistance = double.NegativeInfinity;
+			// double maxTransmitSqrDistance = double.NegativeInfinity;
 
 			double nearestRelaySqrQuotient = double.PositiveInfinity;
 			double bestOccludedSqrQuotient = double.PositiveInfinity;
@@ -277,8 +277,18 @@ namespace AntennaRange
 				log.Append("\n\tgetting best vessel relay");
 
 				log.Append("\n\tgetting max link distance to potential relay");
-				double maxLinkSqrDistance = this.maxTransmitDistance * potentialBestRelay.maxTransmitDistance;
-				log.AppendFormat("\n\tmax link distance: {0}", maxTransmitSqrDistance);
+				double maxLinkSqrDistance;
+
+				if (ARConfiguration.UseAdditiveRanges)
+				{
+					maxLinkSqrDistance = this.maxTransmitDistance * potentialBestRelay.maxTransmitDistance;
+				}
+				else
+				{
+					maxLinkSqrDistance = this.maxTransmitDistance * this.maxTransmitDistance;
+				}
+
+				log.AppendFormat("\n\tmax link distance: {0}", maxLinkSqrDistance);
 
 				double potentialSqrQuotient = potentialSqrDistance / maxLinkSqrDistance;
 
@@ -296,7 +306,7 @@ namespace AntennaRange
 					
 					log.AppendFormat("\n\t\t\tpotentialSqrDistance: {0}", potentialSqrDistance);
 					log.AppendFormat("\n\t\t\tbestOccludedSqrQuotient: {0}", bestOccludedSqrQuotient);
-					log.AppendFormat("\n\t\t\tmaxTransmitSqrDistance: {0}", maxTransmitSqrDistance);
+					log.AppendFormat("\n\t\t\tmaxTransmitSqrDistance: {0}", maxLinkSqrDistance);
 
 					if (
 						(potentialSqrQuotient < bestOccludedSqrQuotient) &&
@@ -413,8 +423,18 @@ namespace AntennaRange
 			double kerbinSqrDistance = this.vessel.DistanceTo(Kerbin) - Kerbin.Radius;
 			kerbinSqrDistance *= kerbinSqrDistance;
 
-			double kerbinSqrQuotient = kerbinSqrDistance /
-				(this.maxTransmitDistance * ARConfiguration.KerbinRelayRange);
+			double kerbinSqrQuotient;
+
+			if (ARConfiguration.UseAdditiveRanges)
+			{
+				kerbinSqrQuotient = kerbinSqrDistance /
+					(this.maxTransmitDistance * ARConfiguration.KerbinRelayRange);
+			}
+			else
+			{
+				kerbinSqrQuotient = kerbinSqrDistance /
+					(this.maxTransmitDistance * this.maxTransmitDistance);
+			}
 
 			log.AppendFormat("\n{0} ({1}): Search done, figuring status.", this.ToString(), this.GetType().Name);
 			log.AppendFormat(
@@ -441,7 +461,7 @@ namespace AntennaRange
 				{
 					log.AppendFormat("\n\t\tCan transmit to nearby relay {0} ({1} <= {2}).",
 						this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
-						nearestRelaySqrQuotient, maxTransmitSqrDistance);
+						nearestRelaySqrQuotient, 1d);
 
 					this.KerbinDirect = false;
 					this.canTransmit = true;
@@ -452,7 +472,7 @@ namespace AntennaRange
 				{
 					log.AppendFormat("\n\t\tCan't transmit to nearby relay {0} ({1} > {2}).",
 						this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
-						nearestRelaySqrQuotient, maxTransmitSqrDistance);
+						nearestRelaySqrQuotient, 1d);
 
 					this.canTransmit = false;
 
@@ -562,7 +582,7 @@ namespace AntennaRange
 					if (kerbinSqrQuotient <= 1d)
 					{
 						log.AppendFormat("\n\t\t\tCan transmit to Kerbin ({0} <= {1}).",
-							kerbinSqrDistance, maxTransmitSqrDistance);
+							kerbinSqrQuotient, 1d);
 
 						this.canTransmit = true;
 						this.KerbinDirect = true;
@@ -573,7 +593,7 @@ namespace AntennaRange
 					else
 					{
 						log.AppendFormat("\n\t\t\tCan't transmit to Kerbin ({0} > {1}).",
-							kerbinSqrDistance, maxTransmitSqrDistance);
+								kerbinSqrQuotient, 1d);
 
 						this.canTransmit = false;
 
