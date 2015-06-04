@@ -659,6 +659,9 @@ namespace AntennaRange
 				}
 			}
 
+			// @TODO Cache connection status
+			// @TODO Cache link distances
+
 			log.AppendFormat("\n{0}: Target search and status determination complete.", this.ToString());
 			
 			#if DEBUG

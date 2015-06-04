@@ -132,6 +132,7 @@ namespace AntennaRange
 		/// </summary>
 		public static double NominalLinkDistance(this IAntennaRelay relay)
 		{
+			// @TODO Remove in favor of cached link distance
 			if (ARConfiguration.UseAdditiveRanges)
 			{
 				if (relay.KerbinDirect)

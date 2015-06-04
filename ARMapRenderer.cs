@@ -261,7 +261,8 @@ namespace AntennaRange
 			}
 			else
 			{
-				if (relay.transmitDistance < relay.nominalTransmitDistance)
+				// @TODO Use cached connection status
+				if (relay.transmitDistance / relay.NominalLinkDistance() <= 1d)
 				{
 					thisColor = Color.green;
 				}
