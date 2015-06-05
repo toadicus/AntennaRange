@@ -61,11 +61,18 @@ namespace AntennaRange
 		private ScreenMessage ErrorMsg;
 
 		/// <summary>
-		/// The distance from Kerbin at which the antenna will perform exactly as prescribed by packetResourceCost
-		/// and packetSize.
+		/// When additive ranges are enabled, the distance from Kerbin at which the antenna will perform exactly as
+		/// prescribed by packetResourceCost and packetSize.
 		/// </summary>
 		[KSPField(isPersistant = false)]
 		public double nominalRange;
+
+		/// <summary>
+		/// When additive ranges are disabled, the distance from Kerbin at which the antenna will perform exactly as
+		/// prescribed by packetResourceCost and packetSize.
+		/// </summary>
+		[KSPField(isPersistant = false)]
+		public double simpleRange;
 
 		/// <summary>
 		/// Relay status string for use in action menus.
@@ -182,6 +189,55 @@ namespace AntennaRange
 		}
 
 		/// <summary>
+		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
+		/// directly with Kerbin.
+		/// </summary>
+		public bool KerbinDirect
+		{
+			get
+			{
+				if (this.relay != null)
+				{
+					return this.relay.KerbinDirect;
+				}
+
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// Gets or sets the nominal link distance, in meters.
+		/// </summary>
+		public double NominalLinkDistance
+		{
+			get
+			{
+				if (this.relay != null)
+				{
+					return this.relay.NominalLinkDistance;
+				}
+
+				return 0d;
+			}
+		}
+
+		/// <summary>
+		/// Gets or sets the maximum link distance, in meters.
+		/// </summary>
+		public double MaximumLinkDistance
+		{
+			get
+			{
+				if (this.relay != null)
+				{
+					return this.relay.MaximumLinkDistance;
+				}
+
+				return 0d;
+			}
+		}
+
+		/// <summary>
 		/// Gets the distance to the nearest relay or Kerbin, whichever is closer.
 		/// </summary>
 		public double transmitDistance
@@ -197,6 +253,19 @@ namespace AntennaRange
 			}
 		}
 
+		public ConnectionStatus LinkStatus
+		{
+			get
+			{
+				if (this.relay == null)
+				{
+					return ConnectionStatus.None;
+				}
+
+				return this.relay.LinkStatus;
+			}
+		}
+
 		/// <summary>
 		/// Gets the nominal transmit distance at which the Antenna behaves just as prescribed by Squad's config.
 		/// </summary>
@@ -204,7 +273,14 @@ namespace AntennaRange
 		{
 			get
 			{
-				return this.nominalRange;
+				if (ARConfiguration.UseAdditiveRanges)
+				{
+					return this.nominalRange;
+				}
+				else
+				{
+					return this.simpleRange;
+				}
 			}
 		}
 
@@ -297,23 +373,6 @@ namespace AntennaRange
 		}
 
 		/// <summary>
-		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
-		/// directly with Kerbin.
-		/// </summary>
-		public bool KerbinDirect
-		{
-			get
-			{
-				if (this.relay != null)
-				{
-					return this.relay.KerbinDirect;
-				}
-
-				return false;
-			}
-		}
-
-		/// <summary>
 		/// Gets the Part title.
 		/// </summary>
 		public string Title
@@ -375,11 +434,11 @@ namespace AntennaRange
 
 			if (state >= StartState.PreLaunch)
 			{
-				this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalRange;
+				this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalTransmitDistance;
 
 				this.relay = new AntennaRelay(this);
+				this.relay.nominalTransmitDistance = this.nominalTransmitDistance;
 				this.relay.maxTransmitDistance = this.maxTransmitDistance;
-				this.relay.nominalTransmitDistance = this.nominalRange;
 
 				this.UImaxTransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m", this.maxTransmitDistance);
 
@@ -401,7 +460,7 @@ namespace AntennaRange
 
 			base.OnLoad (node);
 
-			this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalRange;
+			this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalTransmitDistance;
 		}
 
 		/// <summary>
@@ -644,7 +703,7 @@ namespace AntennaRange
 			if (this.actionUIUpdate)
 			{
 				this.UImaxTransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m", 
-					this.MaxLinkDistance());
+					this.MaximumLinkDistance);
 				
 				if (this.CanTransmit())
 				{
@@ -757,13 +816,13 @@ namespace AntennaRange
 		// transmission fails (see CanTransmit).
 		private void PreTransmit_SetPacketResourceCost()
 		{
-			if (ARConfiguration.FixedPowerCost || this.transmitDistance <= this.NominalLinkDistance())
+			if (ARConfiguration.FixedPowerCost || this.transmitDistance <= this.NominalLinkDistance)
 			{
 				base.packetResourceCost = this._basepacketResourceCost;
 			}
 			else
 			{
-				float rangeFactor = (float)(this.transmitDistance / this.NominalLinkDistance());
+				float rangeFactor = (float)(this.transmitDistance / this.NominalLinkDistance);
 				rangeFactor *= rangeFactor;
 
 				base.packetResourceCost = this._basepacketResourceCost
@@ -777,13 +836,13 @@ namespace AntennaRange
 		// distance.  packetSize maxes out at _basepacketSize * maxDataFactor.
 		private void PreTransmit_SetPacketSize()
 		{
-			if (!ARConfiguration.FixedPowerCost && this.transmitDistance >= this.NominalLinkDistance())
+			if (!ARConfiguration.FixedPowerCost && this.transmitDistance >= this.NominalLinkDistance)
 			{
 				base.packetSize = this._basepacketSize;
 			}
 			else
 			{
-				float rangeFactor = (float)(this.NominalLinkDistance() / this.transmitDistance);
+				float rangeFactor = (float)(this.NominalLinkDistance / this.transmitDistance);
 				rangeFactor *= rangeFactor;
 
 				base.packetSize = Mathf.Min(

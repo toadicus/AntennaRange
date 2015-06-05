@@ -90,6 +90,34 @@ namespace AntennaRange
 		}
 
 		/// <summary>
+		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
+		/// directly with Kerbin.
+		/// </summary>
+		public virtual bool KerbinDirect
+		{
+			get;
+			protected set;
+		}
+
+		/// <summary>
+		/// Gets or sets the nominal link distance, in meters.
+		/// </summary>
+		public virtual double NominalLinkDistance
+		{
+			get;
+			protected set;
+		}
+
+		/// <summary>
+		/// Gets or sets the maximum link distance, in meters.
+		/// </summary>
+		public virtual double MaximumLinkDistance
+		{
+			get;
+			protected set;
+		}
+
+		/// <summary>
 		/// Gets the first <see cref="CelestialBody"/> found to be blocking line of sight.
 		/// </summary>
 		public virtual CelestialBody firstOccludingBody
@@ -117,6 +145,12 @@ namespace AntennaRange
 			}
 		}
 
+		public virtual ConnectionStatus LinkStatus
+		{
+			get;
+			protected set;
+		}
+
 		/// <summary>
 		/// Gets the nominal transmit distance at which the Antenna behaves just as prescribed by Squad's config.
 		/// </summary>
@@ -134,16 +168,6 @@ namespace AntennaRange
 		{
 			get;
 			set;
-		}
-
-		/// <summary>
-		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
-		/// directly with Kerbin.
-		/// </summary>
-		public virtual bool KerbinDirect
-		{
-			get;
-			protected set;
 		}
 
 		/// <summary>
@@ -659,8 +683,40 @@ namespace AntennaRange
 				}
 			}
 
-			// @TODO Cache connection status
-			// @TODO Cache link distances
+			if (ARConfiguration.UseAdditiveRanges)
+			{
+				if (this.KerbinDirect)
+				{
+					this.NominalLinkDistance = Math.Sqrt(this.nominalTransmitDistance * ARConfiguration.KerbinNominalRange);
+					this.MaximumLinkDistance = Math.Sqrt(this.maxTransmitDistance * ARConfiguration.KerbinRelayRange);
+				}
+				else
+				{
+					this.NominalLinkDistance = Math.Sqrt(this.nominalTransmitDistance * this.targetRelay.nominalTransmitDistance);
+					this.MaximumLinkDistance = Math.Sqrt(this.maxTransmitDistance * this.targetRelay.maxTransmitDistance);
+				}
+			}
+			else
+			{
+				this.NominalLinkDistance = this.nominalTransmitDistance;
+				this.MaximumLinkDistance = this.maxTransmitDistance;
+			}
+
+			if (this.canTransmit)
+			{
+				if (this.transmitDistance < this.NominalLinkDistance)
+				{
+					this.LinkStatus = ConnectionStatus.Optimal;
+				}
+				else
+				{
+					this.LinkStatus = ConnectionStatus.Suboptimal;
+				}
+			}
+			else
+			{
+				this.LinkStatus = ConnectionStatus.None;
+			}
 
 			log.AppendFormat("\n{0}: Target search and status determination complete.", this.ToString());
 			

@@ -38,6 +38,50 @@ namespace AntennaRange
 	public static class RelayExtensions
 	{
 		/// <summary>
+		/// Returns the distance between two IAntennaRelays.
+		/// </summary>
+		/// <param name="relayOne">Relay one.</param>
+		/// <param name="relayTwo">Relay two.</param>
+		public static double DistanceTo(this IAntennaRelay relayOne, IAntennaRelay relayTwo)
+		{
+			return relayOne.vessel.DistanceTo(relayTwo.vessel);
+		}
+
+		/// <summary>
+		/// Returns the distance from this IAntennaRelay to the given CelestialBody
+		/// </summary>
+		/// <param name="relay">Relay.</param>
+		/// <param name="body">Body.</param>
+		public static double SqrDistanceTo(this IAntennaRelay relay, CelestialBody body)
+		{
+			double range = relay.vessel.DistanceTo(body) - body.Radius;
+
+			return range * range;
+		}
+
+		/// <summary>
+		/// Returns the distance between two IAntennaRelays.
+		/// </summary>
+		/// <param name="relayOne">Relay one.</param>
+		/// <param name="relayTwo">Relay two.</param>
+		public static double SqrDistanceTo(this IAntennaRelay relayOne, IAntennaRelay relayTwo)
+		{
+			return relayOne.vessel.sqrDistanceTo(relayTwo.vessel);
+		}
+
+		/// <summary>
+		/// Returns the distance from this IAntennaRelay to the given CelestialBody
+		/// </summary>
+		/// <param name="relay">Relay.</param>
+		/// <param name="body">Body.</param>
+		public static double DistanceTo(this IAntennaRelay relay, CelestialBody body)
+		{
+			double range = relay.vessel.DistanceTo(body) - body.Radius;
+
+			return range;
+		}
+
+		/// <summary>
 		/// Returns the distance between this IAntennaRelay and a Vessel
 		/// </summary>
 		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
@@ -128,51 +172,6 @@ namespace AntennaRange
 		}
 
 		/// <summary>
-		/// Calculates the nominal link distance.
-		/// </summary>
-		public static double NominalLinkDistance(this IAntennaRelay relay)
-		{
-			// @TODO Remove in favor of cached link distance
-			if (ARConfiguration.UseAdditiveRanges)
-			{
-				if (relay.KerbinDirect)
-				{
-					return Math.Sqrt(relay.nominalTransmitDistance * ARConfiguration.KerbinNominalRange);
-				}
-				else
-				{
-					return Math.Sqrt(relay.nominalTransmitDistance * relay.targetRelay.nominalTransmitDistance);
-				}
-			}
-			else
-			{
-				return relay.nominalTransmitDistance;
-			}
-		}
-
-		/// <summary>
-		/// Calculates the maximum link distance.
-		/// </summary>
-		public static double MaxLinkDistance(this IAntennaRelay relay)
-		{
-			if (ARConfiguration.UseAdditiveRanges)
-			{
-				if (relay.KerbinDirect)
-				{
-					return Math.Sqrt(relay.maxTransmitDistance * ARConfiguration.KerbinRelayRange);
-				}
-				else
-				{
-					return Math.Sqrt(relay.maxTransmitDistance * relay.targetRelay.maxTransmitDistance);
-				}
-			}
-			else
-			{
-				return relay.maxTransmitDistance;
-			}
-		}
-
-		/// <summary>
 		/// Gets the <see cref="AntennaRange.ConnectionStatus"/> for this <see cref="Vessel"/>
 		/// </summary>
 		/// <param name="vessel">This <see cref="Vessel"/></param>
@@ -185,13 +184,11 @@ namespace AntennaRange
 			for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
 			{
 				relay = vesselRelays[rIdx];
-				if (relay.CanTransmit())
+				if (relay.LinkStatus > ConnectionStatus.None)
 				{
 					canTransmit = true;
 
-					double quo = relay.transmitDistance / relay.NominalLinkDistance();
-
-					if (quo <= 1d)
+					if (relay.LinkStatus == ConnectionStatus.Optimal)
 					{
 						return ConnectionStatus.Optimal;
 					}
