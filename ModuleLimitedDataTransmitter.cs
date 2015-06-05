@@ -412,13 +412,13 @@ namespace AntennaRange
 				"{0} loaded:\n" +
 				"packetSize: {1}\n" +
 				"packetResourceCost: {2}\n" +
-				"nominalRange: {3}\n" +
+				"nominalTransmitDistance: {3}\n" +
 				"maxPowerFactor: {4}\n" +
 				"maxDataFactor: {5}\n",
 				this.name,
 				base.packetSize,
 				this._basepacketResourceCost,
-				this.nominalRange,
+				this.nominalTransmitDistance,
 				this.maxPowerFactor,
 				this.maxDataFactor
 			));
@@ -472,7 +472,7 @@ namespace AntennaRange
 			string text;
 
 			sb.Append(base.GetInfo());
-			sb.AppendFormat(Tools.SIFormatter, "Nominal Range: {0:S3}m\n", this.nominalRange);
+			sb.AppendFormat(Tools.SIFormatter, "Nominal Range: {0:S3}m\n", this.nominalTransmitDistance);
 			sb.AppendFormat(Tools.SIFormatter, "Maximum Range: {0:S3}m\n", this.maxTransmitDistance);
 
 			text = sb.ToString();
