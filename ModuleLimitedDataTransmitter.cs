@@ -93,9 +93,15 @@ namespace AntennaRange
 		public string UItransmitDistance;
 
 		/// <summary>
+		/// The nominal range string for use in action menus.
+		/// </summary>
+		[KSPField(isPersistant = false, guiActive = true, guiName = "Nominal Range")]
+		public string UInominalLinkDistance;
+
+		/// <summary>
 		/// Maximum distance string for use in action menus.
 		/// </summary>
-		[KSPField(isPersistant = false, guiActive = true, guiName = "Maximum Distance")]
+		[KSPField(isPersistant = false, guiActive = true, guiName = "Maximum Range")]
 		public string UImaxTransmitDistance;
 
 		/// <summary>
@@ -702,12 +708,12 @@ namespace AntennaRange
 		{
 			if (this.actionUIUpdate)
 			{
-				this.UImaxTransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m", 
-					this.MaximumLinkDistance);
+				this.UImaxTransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m", this.MaximumLinkDistance);
+				this.UInominalLinkDistance = string.Format(Tools.SIFormatter, "{0:S3}m", this.NominalLinkDistance);
 				
 				if (this.CanTransmit())
 				{
-					this.UIrelayStatus = "Connected";
+					this.UIrelayStatus = this.LinkStatus.ToString();
 					this.UItransmitDistance = Tools.MuMech_ToSI(this.transmitDistance) + "m";
 					this.UIpacketSize = Tools.MuMech_ToSI(this.DataRate) + "MiT";
 					this.UIpacketCost = Tools.MuMech_ToSI(this.DataResourceCost) + "E";
