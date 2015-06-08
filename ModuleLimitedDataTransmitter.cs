@@ -714,15 +714,15 @@ namespace AntennaRange
 				if (this.CanTransmit())
 				{
 					this.UIrelayStatus = this.LinkStatus.ToString();
-					this.UItransmitDistance = Tools.MuMech_ToSI(this.transmitDistance) + "m";
-					this.UIpacketSize = Tools.MuMech_ToSI(this.DataRate) + "MiT";
-					this.UIpacketCost = Tools.MuMech_ToSI(this.DataResourceCost) + "E";
+					this.UItransmitDistance = string.Format("{0:S3}m", this.transmitDistance);
+					this.UIpacketSize = string.Format(Tools.SIFormatter, "{0:S3}MiT", this.DataRate);
+					this.UIpacketCost = string.Format(Tools.SIFormatter, "{0:S3}EC", this.DataResourceCost);
 				}
 				else
 				{
 					if (this.relay.firstOccludingBody == null)
 					{
-						this.UItransmitDistance = Tools.MuMech_ToSI(this.transmitDistance) + "m";
+						this.UItransmitDistance = string.Format("{0:S3}m", this.transmitDistance);
 						this.UIrelayStatus = "Out of range";
 					}
 					else
