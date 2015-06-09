@@ -38,6 +38,13 @@ namespace AntennaRange
 {
 	public class ARMapRenderer : MonoBehaviour
 	{
+		#if BENCH
+		private static ulong updateCount = 0u;
+		private static ulong updateTimer = 0u;
+		private readonly static RollingAverage averager = new RollingAverage();
+		private static long twiceAverageTime = long.MaxValue;
+		#endif
+
 		#region Fields
 		private Dictionary<Guid, LineRenderer> vesselLineRenderers;
 
@@ -97,8 +104,10 @@ namespace AntennaRange
 				this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
 			}
 
-			#if DEBUG
+			#if DEBUG || BENCH
 			this.timer = new System.Diagnostics.Stopwatch();
+			#endif
+			#if DEBUG
 			this.log = Tools.DebugLogger.New(this);
 			#endif
 		}
@@ -112,7 +121,7 @@ namespace AntennaRange
 				return;
 			}
 
-			#if DEBUG
+			#if DEBUG || BENCH
 			timer.Restart();
 			#endif
 
@@ -199,6 +208,27 @@ namespace AntennaRange
 				log.AppendFormat("\n\tOnPreCull finished in {0}ms\n", timer.ElapsedMilliseconds);
 
 				log.Print();
+			}
+			#endif
+
+			#if BENCH
+			ARMapRenderer.updateCount++;
+			ARMapRenderer.updateTimer += (ulong)this.timer.ElapsedTicks;
+
+			if (ARMapRenderer.updateCount >= (ulong)(8d / Time.smoothDeltaTime))
+			{
+				ARMapRenderer.averager.AddItem((double)ARMapRenderer.updateTimer / (double)ARMapRenderer.updateCount);
+				ARMapRenderer.updateTimer = 0u;
+				ARMapRenderer.updateCount = 0u;
+				ARMapRenderer.twiceAverageTime = (long)(ARMapRenderer.averager.Average * 2d);
+			}
+
+			if (this.timer.ElapsedTicks > ARMapRenderer.twiceAverageTime)
+			{
+				this.Log("PreCull took significant longer than usual ({0:S3}s vs {1:S3}s)",
+					(double)this.timer.ElapsedTicks / (double)System.Diagnostics.Stopwatch.Frequency,
+					ARMapRenderer.averager.Average / (double)System.Diagnostics.Stopwatch.Frequency
+				);
 			}
 			#endif
 		}
