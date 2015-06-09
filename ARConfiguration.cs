@@ -83,6 +83,9 @@ namespace AntennaRange
 			private set;
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether AntennaRange will use additive ranges.
+		/// </summary>
 		public static bool UseAdditiveRanges
 		{
 			get;
