@@ -3,24 +3,24 @@ A KSP mod that enforces and encourages the use of the bigger antennas.
 
 # For Part Developers
 ## The Fields
-AntennaRange extends and augments the functionality of the stock ModuleDataTransmitter through the new ModuleLimitedDataTransmitter class. This class uses five additional configurable fields to define the part's behavior.
+AntennaRange extends and augments the functionality of the stock ModuleDataTransmitter through the new `ModuleLimitedDataTransmitter` class. This class uses five additional configurable fields to define the part's behavior.
 
-nominalRange is the range, in meters, at which the part should function identically to the stock module, i.e. without any modification to the power cost or packet size. This is used along with maxPowerFactor to calculate the maximum range of the part.
-simpleRange is the same as nominalRange, but is used when the mod is in "simple" mode. In general it will probably need to be a much larger number than nominalRange.
-maxPowerFactor effectively sets the maximum range of the antenna by essentially capping how much the power may be "turned up" to get better range. I originally used 8 for this number, because it felt right. I've since used 4 (for my DTS) and 16 (for my Comm. 88-88). You don't want this number to be too high, or small probes will go uncontrollable a lot when transmitting.
-maxDataFactor defines the maximum "speed up" bonus that comes from using antennas at less their nominal range. I originally used 4 for this number for all parts; the DTS has a higher bonus now.
+`nominalRange` is the range, in meters, at which the part should function identically to the stock module, i.e. without any modification to the power cost or packet size. This is used along with maxPowerFactor to calculate the maximum range of the part.  
+`simpleRange` is the same as nominalRange, but is used when the mod is in "simple" mode. In general it will probably need to be a much larger number than nominalRange.  
+`maxPowerFactor` effectively sets the maximum range of the antenna by essentially capping how much the power may be "turned up" to get better range. I originally used 8 for this number, because it felt right. I've since used 4 (for my DTS) and 16 (for my Comm. 88-88). You don't want this number to be too high, or small probes will go uncontrollable a lot when transmitting.  
+`maxDataFactor` defines the maximum "speed up" bonus that comes from using antennas at less their nominal range. I originally used 4 for this number for all parts; the DTS has a higher bonus now.
 
-Note that all of the fields needed for Squad's ModuleDataTransmitter still need to be filled out. Depending on how you're defining your parts, they might need to go in your AntennaRange patch, or they might already be defined on the base part.
+Note that all of the fields needed for Squad's `ModuleDataTransmitter` still need to be filled out. Depending on how you're defining your parts, they might need to go in your AntennaRange patch, or they might already be defined on the base part.
 
 ## The Mechanic
-In general, the scaling functions assume the relation `D² α P/R,` where D is the total transmission distance, P is the transmission power, and R is the data rate.  Data rate increases as range decreases below nominalRange: `R α nominalRange² / D²`.  By default, power use increases as range increases above nominalRange: `P α D² / nominalRange²`.  Optionally, power use may remain fixed, and data rate instead decreases as range increases above nominalRange: `R α nominalRange² / D²`.
+In general, the scaling functions assume the relation `D² α P/R,` where D is the total transmission distance, P is the transmission power, and R is the data rate.  Data rate increases as range decreases below nominalRange: `R α nominalRange² / D²`.  By default, power use increases as range increases above `nominalRange`: `P α D² / nominalRange²`.  Optionally, power use may remain fixed, and data rate instead decreases as range increases above `nominalRange`: `R α nominalRange² / D²`.
 
 ## Patch Conventions
 To maximize cross-compatibility, please consider the following conventions for ModuleManager patches regarding AntennaRange:
 
-When providing new definitions for your own parts, always specify a :FOR[YourModHere] pass name.
-Whenever changing default AntennaRange definitions (e.g. if you were going to rebalance my antennas to suit your mod), please do so in the :AFTER[AntennaRange] pass.
-I recommend providing all optional functionality (e.g. enabling RemoteTech vs. AntennaRange modules) in separate patches using :NEEDS[] blocks.
+When providing new definitions for your own parts, always specify a `:FOR[YourModHere]` pass name.
+Whenever changing default AntennaRange definitions (e.g. if you were going to rebalance my antennas to suit your mod), please do so in the `:AFTER[AntennaRange]` pass.
+I recommend providing all optional functionality (e.g. enabling RemoteTech vs. AntennaRange modules) in separate patches using `:NEEDS[]` blocks.
 
 A sample AntennaRange configuration for an all-new mod part might look like this:
 ```
@@ -78,7 +78,7 @@ A sample AntennaRange configuration for an all-new mod part might look like this
 }
 ```
 
-This example assumes that the base part definition does not include a ModuleDataTransmitter module, or any RT modules. If the base part definition includes a ModuleDataTransmitter module, a sample AntennaRange patch could look like this:
+This example assumes that the base part definition does not include a `ModuleDataTransmitter` module, or any RT modules. If the base part definition includes a `ModuleDataTransmitter` module, a sample AntennaRange patch could look like this:
 ```
 @PART[modPartName]:FOR[YourModName]:NEEDS[AntennaRange,!RemoteTech]
 {
@@ -104,7 +104,7 @@ This example assumes that the base part definition does not include a ModuleData
 }
 ```
 
-IIRC, RemoteTech parts should not have ModuleDataTransmitter definitions. In that case, to facilitate RT, AR, and Stock compatibility, a suite of patches like this might be appropriate:
+IIRC, RemoteTech parts should not have `ModuleDataTransmitter` definitions. In that case, to facilitate RT, AR, and Stock compatibility, a suite of patches like this might be appropriate:
 
 ```
 // If we don't have RemoteTech, add a stock ModuleDataTransmitter first.
