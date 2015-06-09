@@ -259,6 +259,9 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the link status.
+		/// </summary>
 		public ConnectionStatus LinkStatus
 		{
 			get
@@ -714,7 +717,7 @@ namespace AntennaRange
 				if (this.CanTransmit())
 				{
 					this.UIrelayStatus = this.LinkStatus.ToString();
-					this.UItransmitDistance = string.Format("{0:S3}m", this.transmitDistance);
+					this.UItransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m", this.transmitDistance);
 					this.UIpacketSize = string.Format(Tools.SIFormatter, "{0:S3}MiT", this.DataRate);
 					this.UIpacketCost = string.Format(Tools.SIFormatter, "{0:S3}EC", this.DataResourceCost);
 				}
@@ -722,7 +725,7 @@ namespace AntennaRange
 				{
 					if (this.relay.firstOccludingBody == null)
 					{
-						this.UItransmitDistance = string.Format("{0:S3}m", this.transmitDistance);
+						this.UItransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m", this.transmitDistance);
 						this.UIrelayStatus = "Out of range";
 					}
 					else
