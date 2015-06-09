@@ -25,7 +25,7 @@
 // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#define BENCH
+
 using System;
 using System.Collections.Generic;
 using ToadicusTools;
@@ -269,7 +269,7 @@ namespace AntennaRange
 			 * and that can transmit.  Once we find a suitable candidate, assign it to nearestRelay for comparison
 			 * against future finds.
 			 * */
-			Vessel potentialVessel;
+			// Vessel potentialVessel;
 			IAntennaRelay potentialBestRelay;
 			CelestialBody fob;
 
@@ -277,49 +277,9 @@ namespace AntennaRange
 			startVesselLoopTicks = performanceTimer.ElapsedTicks;
 			#endif
 
-			for (int vIdx = 0; vIdx < FlightGlobals.Vessels.Count; vIdx++)
+			for (int rIdx = 0; rIdx < ARFlightController.UsefulRelays.Count; rIdx++)
 			{
-				log.AppendFormat("\nFetching vessel at index {0}", vIdx);
-				potentialVessel = FlightGlobals.Vessels[vIdx];
-				
-				if (potentialVessel == null)
-				{
-					Tools.PostErrorMessage("{0}: Skipping vessel at index {1} because it is null.", this, vIdx);
-					log.AppendFormat("\n\tSkipping vessel at index {0} because it is null.", vIdx);
-					log.Print();
-					return;
-				}
-				#if DEBUG
-				else
-				{
-					log.AppendFormat("\n\tGot vessel {0}", potentialVessel);
-				}
-				#endif
-
-				// Skip vessels of the wrong type.
-				log.Append("\n\tchecking vessel type");
-				switch (potentialVessel.vesselType)
-				{
-					case VesselType.Debris:
-					case VesselType.Flag:
-					case VesselType.EVA:
-					case VesselType.SpaceObject:
-					case VesselType.Unknown:
-							log.Append("\n\tSkipping because vessel is the wrong type.");
-						continue;
-					default:
-						break;
-				}
-				
-				log.Append("\n\tchecking if vessel is this vessel");
-				// Skip vessels with the wrong ID
-				if (potentialVessel.id == vessel.id)
-				{
-					log.Append("\n\tSkipping because vessel is this vessel.");
-					continue;
-				}
-
-				potentialBestRelay = potentialVessel.GetBestRelay();
+				potentialBestRelay = ARFlightController.UsefulRelays[rIdx];
 				log.AppendFormat("\n\t\tgot best vessel relay {0}",
 					potentialBestRelay == null ? "null" : potentialBestRelay.ToString());
 
@@ -329,13 +289,18 @@ namespace AntennaRange
 					continue;
 				}
 
+				if (potentialBestRelay == this || potentialBestRelay.vessel == this.vessel)
+				{
+					continue;
+				}
+
 				#if BENCH
 				usefulVesselCount++;
 				#endif
 
 				// Find the distance from here to the vessel...
 				log.Append("\n\tgetting distance to potential vessel");
-				potentialSqrDistance = this.SqrDistanceTo(potentialVessel);
+				potentialSqrDistance = this.SqrDistanceTo(potentialBestRelay);
 				log.Append("\n\tgetting best vessel relay");
 
 				log.Append("\n\tgetting max link distance to potential relay");
@@ -361,7 +326,7 @@ namespace AntennaRange
 				// Skip vessels to which we do not have line of sight.
 				if (
 					ARConfiguration.RequireLineOfSight &&
-					!this.vessel.hasLineOfSightTo(potentialVessel, out fob, ARConfiguration.RadiusRatio)
+					!this.vessel.hasLineOfSightTo(potentialBestRelay.vessel, out fob, ARConfiguration.RadiusRatio)
 				)
 				{
 					#if BENCH
@@ -376,8 +341,8 @@ namespace AntennaRange
 
 					log.Append("\n\t\t...failed LOS check");
 
-					log.AppendFormat("\n\t\t\t{0}: Vessel {1} not in line of sight.",
-						this.ToString(), potentialVessel.vesselName);
+					log.AppendFormat("\n\t\t\t{0}: Relay {1} not in line of sight.",
+						this.ToString(), potentialBestRelay);
 					
 					log.AppendFormat("\n\t\t\tpotentialSqrDistance: {0}", potentialSqrDistance);
 					log.AppendFormat("\n\t\t\tbestOccludedSqrQuotient: {0}", bestOccludedSqrQuotient);
@@ -424,9 +389,9 @@ namespace AntennaRange
 				if (potentialSqrQuotient > nearestRelaySqrQuotient)
 				{
 					
-					log.AppendFormat("\n\t{0}: Vessel {1} discarded because it is farther than another the nearest relay.",
+					log.AppendFormat("\n\t{0}: Relay {1} discarded because it is farther than another the nearest relay.",
 						this.ToString(),
-						potentialVessel.vesselName
+						potentialBestRelay
 					);
 					continue;
 				}

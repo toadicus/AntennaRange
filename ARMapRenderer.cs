@@ -132,62 +132,30 @@ namespace AntennaRange
 					MapView.MapCamera.Distance
 				);
 
-				if (FlightGlobals.ready && FlightGlobals.Vessels != null)
+				log.AppendLine("FlightGlobals ready and Vessels list not null.");
+
+				IAntennaRelay relay;
+
+				for (int i = 0; i < ARFlightController.UsefulRelays.Count; i++)
 				{
-					log.AppendLine("FlightGlobals ready and Vessels list not null.");
+					relay = ARFlightController.UsefulRelays[i];
 
-					for (int i = 0; i < FlightGlobals.Vessels.Count; i++)
+					if (relay == null)
 					{
-						Vessel vessel = FlightGlobals.Vessels[i];
-
-						log.AppendFormat("\nStarting check for vessel {0} at {1}ms", vessel, timer.ElapsedMilliseconds);
-
-						if (vessel == null)
-						{
-							log.AppendFormat("\n\tSkipping vessel {0} altogether because it is null.", vessel);
-							continue;
-						}
-
-						switch (vessel.vesselType)
-						{
-							case VesselType.Debris:
-							case VesselType.EVA:
-							case VesselType.Unknown:
-							case VesselType.SpaceObject:
-								log.AppendFormat("\n\tDiscarded because vessel is of invalid type {0}",
-									vessel.vesselType);
-								continue;
-						}
-
-						log.AppendFormat("\n\tChecking vessel {0}.", vessel.vesselName);
-
-						#if DEBUG
-						start = timer.ElapsedMilliseconds;
-						#endif
-
-						IAntennaRelay vesselRelay = vessel.GetBestRelay();
-
-						if (vesselRelay == null)
-						{
-							log.AppendFormat("\n\tGot null relay for vessel {0}", vessel.vesselName);
-							continue;
-						}
-
-						log.AppendFormat("\n\tGot best relay {0} ({3}) for vessel {1} in {2} ms",
-							vesselRelay, vessel, timer.ElapsedMilliseconds - start, vesselRelay.GetType().Name);
-
-						if (vesselRelay != null)
-						{
-							#if DEBUG
-							start = timer.ElapsedMilliseconds;
-							#endif
-
-							this.SetRelayVertices(vesselRelay);
-
-							log.AppendFormat("\n\tSet relay vertices for {0} in {1}ms",
-								vessel, timer.ElapsedMilliseconds - start);
-						}
+						log.AppendFormat("\n\tGot null relay, skipping");
+						continue;
 					}
+
+					log.AppendFormat("\n\tDrawing pretty lines for useful relay {0}", relay);
+					
+					#if DEBUG
+					start = timer.ElapsedMilliseconds;
+					#endif
+
+					this.SetRelayVertices(relay);
+
+					log.AppendFormat("\n\tSet relay vertices for {0} in {1}ms",
+						relay, timer.ElapsedMilliseconds - start);
 				}
 			}
 			catch (Exception ex)

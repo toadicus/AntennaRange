@@ -39,6 +39,11 @@ namespace AntennaRange
 	[KSPAddon(KSPAddon.Startup.Flight, false)]
 	public class ARFlightController : MonoBehaviour
 	{
+		#region Static
+		private static List<IAntennaRelay> usefulRelays;
+		public static IList<IAntennaRelay> UsefulRelays;
+		#endregion
+
 		#region Fields
 		private Dictionary<ConnectionStatus, string> toolbarTextures;
 		private Dictionary<ConnectionStatus, Texture> appLauncherTextures;
@@ -153,6 +158,9 @@ namespace AntennaRange
 
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
 			GameEvents.onVesselChange.Add(this.onVesselChange);
+
+			usefulRelays = new List<IAntennaRelay>();
+			UsefulRelays = usefulRelays.AsReadOnly();
 		}
 
 		private void FixedUpdate()
@@ -241,11 +249,13 @@ namespace AntennaRange
 
 			this.log.Clear();
 
-			if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ActiveVessel != null)
+			if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && FlightGlobals.ActiveVessel != null)
 			{
 				Vessel vessel;
 				IAntennaRelay relay;
 				IList<IAntennaRelay> activeVesselRelays;
+
+				usefulRelays.Clear();
 
 				for (int vIdx = 0; vIdx < FlightGlobals.Vessels.Count; vIdx++)
 				{
@@ -264,6 +274,7 @@ namespace AntennaRange
 					{
 						log.AppendFormat("Finding nearest relay for best relay {0}", relay);
 
+						usefulRelays.Add(relay);
 						relay.FindNearestRelay();
 					}
 				}
@@ -275,6 +286,8 @@ namespace AntennaRange
 
 					relay.FindNearestRelay();
 				}
+
+				usefulRelays.Add(RelayDatabase.Instance.GetBestVesselRelay(FlightGlobals.ActiveVessel));
 
 				if (this.toolbarButton != null || this.appLauncherButton != null)
 				{
