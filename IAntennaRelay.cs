@@ -52,7 +52,15 @@ namespace AntennaRange
 		/// </summary>
 		bool KerbinDirect { get; }
 
+		/// <summary>
+		/// The link distance, in meters, at which this relay behaves nominally.
+		/// </summary>
 		double NominalLinkDistance { get; }
+
+
+		/// <summary>
+		/// The link distance, in meters, beyond which this relay cannot operate.
+		/// </summary>
 		double MaximumLinkDistance { get; }
 
 		/// <summary>
@@ -60,6 +68,9 @@ namespace AntennaRange
 		/// </summary>
 		double transmitDistance { get; }
 
+		/// <summary>
+		/// Gets the link status.
+		/// </summary>
 		ConnectionStatus LinkStatus { get; }
 
 		/// <summary>
