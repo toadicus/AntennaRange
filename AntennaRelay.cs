@@ -237,6 +237,23 @@ namespace AntennaRange
 			try {
 			#endif
 
+			// Declare a bunch of variables we'll be using.
+			CelestialBody bodyOccludingBestOccludedRelay = null;
+			IAntennaRelay needle;
+
+			double nearestRelaySqrQuotient = double.PositiveInfinity;
+			double bestOccludedSqrQuotient = double.PositiveInfinity;
+
+			double potentialSqrDistance;
+			double maxLinkSqrDistance;
+			double potentialSqrQuotient;
+
+			double kerbinSqrDistance;
+			double kerbinSqrQuotient;
+
+			bool isCircular;
+			int iterCount;
+
 			// Blank everything we're trying to find before the search.
 			this.firstOccludingBody = null;
 			this.bestOccludedRelay = null;
@@ -245,17 +262,6 @@ namespace AntennaRange
 
 			// Default to KerbinDirect = true in case something in here doesn't work right.
 			this.KerbinDirect = true;
-
-			CelestialBody bodyOccludingBestOccludedRelay = null;
-			IAntennaRelay needle;
-
-			// double nearestRelaySqrDistance = double.PositiveInfinity;
-			// double bestOccludedSqrDistance = double.PositiveInfinity;
-
-			// double maxTransmitSqrDistance = double.NegativeInfinity;
-
-			double nearestRelaySqrQuotient = double.PositiveInfinity;
-			double bestOccludedSqrQuotient = double.PositiveInfinity;
 
 			/*
 			 * Loop through all the vessels and exclude this vessel, vessels of the wrong type, and vessels that are too
@@ -329,11 +335,10 @@ namespace AntennaRange
 
 				// Find the distance from here to the vessel...
 				log.Append("\n\tgetting distance to potential vessel");
-				double potentialSqrDistance = this.sqrDistanceTo(potentialVessel);
+				potentialSqrDistance = this.sqrDistanceTo(potentialVessel);
 				log.Append("\n\tgetting best vessel relay");
 
 				log.Append("\n\tgetting max link distance to potential relay");
-				double maxLinkSqrDistance;
 
 				if (ARConfiguration.UseAdditiveRanges)
 				{
@@ -346,7 +351,7 @@ namespace AntennaRange
 
 				log.AppendFormat("\n\tmax link distance: {0}", maxLinkSqrDistance);
 
-				double potentialSqrQuotient = potentialSqrDistance / maxLinkSqrDistance;
+				potentialSqrQuotient = potentialSqrDistance / maxLinkSqrDistance;
 
 				#if BENCH
 				startLOSVesselTicks = performanceTimer.ElapsedTicks;
@@ -435,9 +440,9 @@ namespace AntennaRange
 					#endif
 
 					needle = potentialBestRelay;
-					bool isCircular = false;
+					isCircular = false;
 
-					int iterCount = 0;
+					iterCount = 0;
 					while (needle != null)
 					{
 						iterCount++;
@@ -521,10 +526,8 @@ namespace AntennaRange
 
 			CelestialBody bodyOccludingKerbin = null;
 
-			double kerbinSqrDistance = this.vessel.DistanceTo(Kerbin) - Kerbin.Radius;
+			kerbinSqrDistance = this.vessel.DistanceTo(Kerbin) - Kerbin.Radius;
 			kerbinSqrDistance *= kerbinSqrDistance;
-
-			double kerbinSqrQuotient;
 
 			if (ARConfiguration.UseAdditiveRanges)
 			{
