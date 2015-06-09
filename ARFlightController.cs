@@ -155,11 +155,6 @@ namespace AntennaRange
 			GameEvents.onVesselChange.Add(this.onVesselChange);
 		}
 
-		private void Start()
-		{
-			this.mapRenderer = MapView.MapCamera.gameObject.AddComponent<ARMapRenderer>();
-		}
-
 		private void FixedUpdate()
 		{
 			this.log.Clear();
@@ -216,6 +211,11 @@ namespace AntennaRange
 
 		private void Update()
 		{
+			if (MapView.MapIsEnabled && this.mapRenderer == null)
+			{
+				this.mapRenderer = MapView.MapCamera.gameObject.AddComponent<ARMapRenderer>();
+			}
+
 			if (this.toolbarButton != null)
 			{
 				this.toolbarButton.Enabled = MapView.MapIsEnabled;
