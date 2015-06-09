@@ -56,8 +56,18 @@ namespace AntennaRange
 			}
 		}
 
+		#if BENCH
+		private static ushort relayCount = 0;
+		private static ulong searchCount = 0u;
+		private static ulong searchTimer = 0u;
+		private readonly static RollingAverage averager = new RollingAverage(16);
+		private static long doubleAverageTime = long.MaxValue;
+
+
+		private System.Diagnostics.Stopwatch performanceTimer = new System.Diagnostics.Stopwatch();
+		#endif
+
 		private bool canTransmit;
-		private bool isChecked;
 
 		private IAntennaRelay nearestRelay;
 		private IAntennaRelay bestOccludedRelay;
@@ -145,6 +155,9 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets the link status.
+		/// </summary>
 		public virtual ConnectionStatus LinkStatus
 		{
 			get;
@@ -195,22 +208,34 @@ namespace AntennaRange
 			log = Tools.DebugLogger.New(this);
 			#endif
 
-			// Skip vessels that have already been checked for a nearest relay this pass.
-			if (this.isChecked)
-			{
-				log.AppendFormat("{0}: Target search skipped because our vessel has been checked already this search.",
-					this);
-				log.Print();
-				return;
-			}
+			#if BENCH
+			this.performanceTimer.Restart();
+
+			long startVesselLoopTicks;
+			long totalVesselLoopTicks;
+
+			string slowestLOSVesselName = string.Empty;
+			long slowestLOSVesselTicks = long.MinValue;
+			long startLOSVesselTicks;
+			long totalLOSVesselTicks;
+
+			string slowestCircularVesselName = string.Empty;
+			long slowestCircularVesselTicks = long.MinValue;
+			long startCircularVesselTicks;
+			long totalCircularVesselTicks;
+
+			long startKerbinLOSTicks;
+			long totalKerbinLOSTicks;
+			long statusResolutionTicks;
+
+			ushort usefulVesselCount = 0;
+			#endif
 
 			log.AppendFormat("{0}: Target search started).", this.ToString());
 
 			#if DEBUG
 			try {
 			#endif
-			// Set this vessel as checked, so that we don't check it again.
-			this.isChecked = true;
 
 			// Blank everything we're trying to find before the search.
 			this.firstOccludingBody = null;
@@ -242,7 +267,10 @@ namespace AntennaRange
 			IAntennaRelay potentialBestRelay;
 			CelestialBody fob;
 
-			// IList<IAntennaRelay> vesselRelays;
+			#if BENCH
+			startVesselLoopTicks = performanceTimer.ElapsedTicks;
+			#endif
+
 			for (int vIdx = 0; vIdx < FlightGlobals.Vessels.Count; vIdx++)
 			{
 				log.AppendFormat("\nFetching vessel at index {0}", vIdx);
@@ -295,6 +323,10 @@ namespace AntennaRange
 					continue;
 				}
 
+				#if BENCH
+				usefulVesselCount++;
+				#endif
+
 				// Find the distance from here to the vessel...
 				log.Append("\n\tgetting distance to potential vessel");
 				double potentialSqrDistance = this.sqrDistanceTo(potentialVessel);
@@ -316,6 +348,10 @@ namespace AntennaRange
 
 				double potentialSqrQuotient = potentialSqrDistance / maxLinkSqrDistance;
 
+				#if BENCH
+				startLOSVesselTicks = performanceTimer.ElapsedTicks;
+				#endif
+
 				log.Append("\n\t\tdoing LOS check");
 				// Skip vessels to which we do not have line of sight.
 				if (
@@ -323,6 +359,16 @@ namespace AntennaRange
 					!this.vessel.hasLineOfSightTo(potentialVessel, out fob, ARConfiguration.RadiusRatio)
 				)
 				{
+					#if BENCH
+					totalLOSVesselTicks = performanceTimer.ElapsedTicks - startLOSVesselTicks;
+
+					if (totalLOSVesselTicks > slowestLOSVesselTicks)
+					{
+						slowestLOSVesselTicks = totalLOSVesselTicks;
+						slowestLOSVesselName = vessel.vesselName;
+					}
+					#endif
+
 					log.Append("\n\t\t...failed LOS check");
 
 					log.AppendFormat("\n\t\t\t{0}: Vessel {1} not in line of sight.",
@@ -352,6 +398,18 @@ namespace AntennaRange
 					
 					continue;
 				}
+				#if BENCH
+				else
+				{
+					totalLOSVesselTicks = performanceTimer.ElapsedTicks - startLOSVesselTicks;
+				}
+
+				if (totalLOSVesselTicks > slowestLOSVesselTicks)
+				{
+					slowestLOSVesselTicks = totalLOSVesselTicks;
+					slowestLOSVesselName = vessel.vesselName;
+				}
+				#endif
 
 				log.Append("\n\t\t...passed LOS check");
 
@@ -372,6 +430,10 @@ namespace AntennaRange
 
 				if (potentialBestRelay.CanTransmit())
 				{
+					#if BENCH
+					startCircularVesselTicks = performanceTimer.ElapsedTicks;
+					#endif
+
 					needle = potentialBestRelay;
 					bool isCircular = false;
 
@@ -439,8 +501,23 @@ namespace AntennaRange
 							potentialBestRelay
 						);
 					}
+
+					#if BENCH
+					totalCircularVesselTicks = performanceTimer.ElapsedTicks - startCircularVesselTicks;
+
+					if (totalCircularVesselTicks > slowestCircularVesselTicks)
+					{
+						slowestCircularVesselName = vessel.vesselName;
+						slowestCircularVesselTicks = totalCircularVesselTicks;
+					}
+
+					#endif
 				}
 			}
+
+			#if BENCH
+			totalVesselLoopTicks = performanceTimer.ElapsedTicks - startVesselLoopTicks;
+			#endif
 
 			CelestialBody bodyOccludingKerbin = null;
 
@@ -471,12 +548,19 @@ namespace AntennaRange
 				kerbinSqrDistance
 			);
 
+			#if BENCH
+			startKerbinLOSTicks = this.performanceTimer.ElapsedTicks;
+			#endif
+
 			// If we don't have LOS to Kerbin, focus on relays
 			if (
 				ARConfiguration.RequireLineOfSight &&
 				!this.vessel.hasLineOfSightTo(Kerbin, out bodyOccludingKerbin, ARConfiguration.RadiusRatio)
 			)
 			{
+				#if BENCH
+				totalKerbinLOSTicks = this.performanceTimer.ElapsedTicks - startKerbinLOSTicks;
+				#endif
 				log.AppendFormat("\n\tKerbin LOS is blocked by {0}.", bodyOccludingKerbin.bodyName);
 
 				// nearestRelaySqrDistance will be infinity if all relays are occluded or none exist.
@@ -563,6 +647,10 @@ namespace AntennaRange
 			// If we do have LOS to Kerbin, try to prefer the closest of nearestRelay and Kerbin
 			else
 			{
+				#if BENCH
+				totalKerbinLOSTicks = this.performanceTimer.ElapsedTicks - startKerbinLOSTicks;
+				#endif
+
 				log.AppendFormat("\n\tKerbin is in LOS.");
 
 				// If the nearest relay is closer than Kerbin and in range, transmit to it.
@@ -718,6 +806,10 @@ namespace AntennaRange
 				this.LinkStatus = ConnectionStatus.None;
 			}
 
+			#if BENCH
+			statusResolutionTicks = performanceTimer.ElapsedTicks - startKerbinLOSTicks - totalKerbinLOSTicks;
+			#endif
+
 			log.AppendFormat("\n{0}: Target search and status determination complete.", this.ToString());
 			
 			#if DEBUG
@@ -732,9 +824,69 @@ namespace AntennaRange
 			#if DEBUG
 			}
 			#endif
-			// Now that we're done with our recursive CanTransmit checks, flag this relay as not checked so it can be
-			// used next time.
-			this.isChecked = false;
+
+			#if BENCH
+			AntennaRelay.searchTimer += (ulong)this.performanceTimer.ElapsedTicks;
+			AntennaRelay.searchCount++;
+			this.performanceTimer.Stop();
+
+			double averageSearchTime = (double)AntennaRelay.searchTimer / (double)AntennaRelay.searchCount;
+
+			if (AntennaRelay.searchCount >= 8000u / (ulong)ARConfiguration.UpdateDelay)
+			{
+				AntennaRelay.searchCount = 0u;
+				AntennaRelay.searchTimer = 0u;
+
+				AntennaRelay.averager.AddItem(averageSearchTime);
+				AntennaRelay.doubleAverageTime = (long)(AntennaRelay.averager.Average * 2d);
+			}
+
+			if (this.performanceTimer.ElapsedTicks > AntennaRelay.doubleAverageTime)
+			{
+				System.Text.StringBuilder sb = Tools.GetStringBuilder();
+
+				sb.AppendFormat(Tools.SIFormatter, "[AntennaRelay] FindNearestRelay search for {0}" +
+					" took significantly longer than average ({1:S3}s vs {2:S3}s)",
+					this.ToString(),
+					(double)this.performanceTimer.ElapsedTicks / (double)System.Diagnostics.Stopwatch.Frequency,
+					(double)AntennaRelay.averager.Average / (double)System.Diagnostics.Stopwatch.Frequency
+				);
+
+				sb.AppendFormat(Tools.SIFormatter, "\n\tVessel loop time: {0:S3}s",
+					(double)totalVesselLoopTicks / (double)System.Diagnostics.Stopwatch.Frequency
+				);
+
+				sb.AppendFormat(Tools.SIFormatter, "\n\t\tAverage vessel time for each of {1} vessels: {0:S3}s",
+					(double)totalVesselLoopTicks / (double)System.Diagnostics.Stopwatch.Frequency /
+					(double)usefulVesselCount,
+					usefulVesselCount
+				);
+
+				sb.AppendFormat(Tools.SIFormatter, "\n\t\tSlowest vessel LOS check: {0:S3}s to {1}",
+					(double)slowestLOSVesselTicks / (double)System.Diagnostics.Stopwatch.Frequency,
+					slowestLOSVesselName
+				);
+
+				sb.AppendFormat(Tools.SIFormatter, "\n\t\tSlowest circular relay check: {0:S3}s for {1}",
+					(double)slowestCircularVesselTicks / (double)System.Diagnostics.Stopwatch.Frequency,
+					slowestCircularVesselName
+				);
+
+				sb.AppendFormat(Tools.SIFormatter, "\n\tKerbin LOS check: {0:S3}s",
+					(double)totalKerbinLOSTicks / (double)System.Diagnostics.Stopwatch.Frequency
+				);
+
+				sb.AppendFormat(Tools.SIFormatter, "\n\tStatus resolution check: {0:S3}s",
+					(double)statusResolutionTicks / (double)System.Diagnostics.Stopwatch.Frequency
+				);
+
+				// sb.AppendFormat(Tools.SIFormatter, "", start)
+
+				Tools.PostWarningMessage(sb.ToString());
+
+				Tools.PutStringBuilder(sb);
+			}
+			#endif
 		}
 
 		/// <summary>
@@ -758,7 +910,10 @@ namespace AntennaRange
 		public AntennaRelay(IAntennaRelay module)
 		{
 			this.moduleRef = module;
-			this.isChecked = false;
+
+			#if BENCH
+			AntennaRelay.relayCount++;
+			#endif
 
 			Tools.PostLogMessage("{0}: constructed {1}", this.GetType().Name, this.ToString());
 		}
