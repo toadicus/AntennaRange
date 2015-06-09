@@ -66,18 +66,9 @@ namespace AntennaRange
 		{
 			get
 			{
-				if (this.vesselLineRenderers == null)
-				{
-					this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
-				}
-
 				LineRenderer lr;
 
-				if (this.vesselLineRenderers.TryGetValue(idx, out lr))
-				{
-					return lr;
-				}
-				else
+				if (!this.vesselLineRenderers.TryGetValue(idx, out lr))
 				{
 					GameObject obj = new GameObject();
 					obj.layer = 31;
@@ -92,6 +83,8 @@ namespace AntennaRange
 
 					return lr;
 				}
+
+				return lr;
 			}
 		}
 		#endregion
@@ -116,7 +109,7 @@ namespace AntennaRange
 		{
 			if (!HighLogic.LoadedSceneIsFlight || !MapView.MapIsEnabled || !ARConfiguration.PrettyLines)
 			{
-				this.Cleanup();
+				this.Cleanup(!HighLogic.LoadedSceneIsFlight);
 
 				return;
 			}
@@ -200,7 +193,7 @@ namespace AntennaRange
 			catch (Exception ex)
 			{
 				this.LogError("Caught {0}: {1}\n{2}\n", ex.GetType().Name, ex.ToString(), ex.StackTrace.ToString());
-				this.Cleanup();
+				this.Cleanup(false);
 			}
 			#if DEBUG
 			finally
@@ -235,7 +228,7 @@ namespace AntennaRange
 
 		private void OnDestroy()
 		{
-			this.Cleanup();
+			this.Cleanup(true);
 
 			this.Log("Destroyed");
 		}
@@ -337,7 +330,7 @@ namespace AntennaRange
 			log.AppendFormat("\n\t\t\t...finished segment in {0} ms", timer.ElapsedMilliseconds - relayStart);
 		}
 
-		private void Cleanup()
+		private void Cleanup(bool freeObjects)
 		{
 			if (this.vesselLineRenderers != null && this.vesselLineRenderers.Count > 0)
 			{
@@ -348,9 +341,17 @@ namespace AntennaRange
 				{
 					lineRenderer = enumerator.Current;
 					lineRenderer.enabled = false;
-					GameObject.Destroy(lineRenderer.gameObject);
+
+					if (freeObjects)
+					{
+						GameObject.Destroy(lineRenderer.gameObject);
+					}
 				}
-				this.vesselLineRenderers.Clear();
+
+				if (freeObjects)
+				{
+					this.vesselLineRenderers.Clear();
+				}
 			}
 		}
 		#endregion
