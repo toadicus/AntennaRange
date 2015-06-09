@@ -25,7 +25,7 @@
 // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#define BENCH
 using System;
 using System.Collections.Generic;
 using ToadicusTools;
@@ -112,7 +112,7 @@ namespace AntennaRange
 		/// <summary>
 		/// Gets or sets the nominal link distance, in meters.
 		/// </summary>
-		public virtual double NominalLinkDistance
+		public virtual double NominalLinkSqrDistance
 		{
 			get;
 			protected set;
@@ -121,7 +121,7 @@ namespace AntennaRange
 		/// <summary>
 		/// Gets or sets the maximum link distance, in meters.
 		/// </summary>
-		public virtual double MaximumLinkDistance
+		public virtual double MaximumLinkSqrDistance
 		{
 			get;
 			protected set;
@@ -140,17 +140,17 @@ namespace AntennaRange
 		/// Gets the transmit distance.
 		/// </summary>
 		/// <value>The transmit distance.</value>
-		public double transmitDistance
+		public double CurrentLinkSqrDistance
 		{
 			get
 			{
 				if (this.KerbinDirect || this.targetRelay == null)
 				{
-					return this.DistanceTo(Kerbin);
+					return this.sqrDistanceTo(Kerbin);
 				}
 				else
 				{
-					return this.DistanceTo(this.targetRelay);
+					return this.sqrDistanceTo(this.targetRelay);
 				}
 			}
 		}
@@ -778,24 +778,24 @@ namespace AntennaRange
 			{
 				if (this.KerbinDirect)
 				{
-					this.NominalLinkDistance = Math.Sqrt(this.nominalTransmitDistance * ARConfiguration.KerbinNominalRange);
-					this.MaximumLinkDistance = Math.Sqrt(this.maxTransmitDistance * ARConfiguration.KerbinRelayRange);
+					this.NominalLinkSqrDistance = this.nominalTransmitDistance * ARConfiguration.KerbinNominalRange;
+					this.MaximumLinkSqrDistance = this.maxTransmitDistance * ARConfiguration.KerbinRelayRange;
 				}
 				else
 				{
-					this.NominalLinkDistance = Math.Sqrt(this.nominalTransmitDistance * this.targetRelay.nominalTransmitDistance);
-					this.MaximumLinkDistance = Math.Sqrt(this.maxTransmitDistance * this.targetRelay.maxTransmitDistance);
+					this.NominalLinkSqrDistance = this.nominalTransmitDistance * this.targetRelay.nominalTransmitDistance;
+					this.MaximumLinkSqrDistance = this.maxTransmitDistance * this.targetRelay.maxTransmitDistance;
 				}
 			}
 			else
 			{
-				this.NominalLinkDistance = this.nominalTransmitDistance;
-				this.MaximumLinkDistance = this.maxTransmitDistance;
+				this.NominalLinkSqrDistance = this.nominalTransmitDistance * this.nominalTransmitDistance;
+				this.MaximumLinkSqrDistance = this.maxTransmitDistance * this.maxTransmitDistance;
 			}
 
 			if (this.canTransmit)
 			{
-				if (this.transmitDistance < this.NominalLinkDistance)
+				if (this.CurrentLinkSqrDistance < this.NominalLinkSqrDistance)
 				{
 					this.LinkStatus = ConnectionStatus.Optimal;
 				}

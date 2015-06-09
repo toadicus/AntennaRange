@@ -55,18 +55,18 @@ namespace AntennaRange
 		/// <summary>
 		/// The link distance, in meters, at which this relay behaves nominally.
 		/// </summary>
-		double NominalLinkDistance { get; }
+		double NominalLinkSqrDistance { get; }
 
 
 		/// <summary>
 		/// The link distance, in meters, beyond which this relay cannot operate.
 		/// </summary>
-		double MaximumLinkDistance { get; }
+		double MaximumLinkSqrDistance { get; }
 
 		/// <summary>
 		/// Gets the distance to the nearest relay or Kerbin, whichever is closer.
 		/// </summary>
-		double transmitDistance { get; }
+		double CurrentLinkSqrDistance { get; }
 
 		/// <summary>
 		/// Gets the link status.

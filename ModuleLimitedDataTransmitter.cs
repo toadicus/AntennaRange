@@ -214,13 +214,13 @@ namespace AntennaRange
 		/// <summary>
 		/// Gets or sets the nominal link distance, in meters.
 		/// </summary>
-		public double NominalLinkDistance
+		public double NominalLinkSqrDistance
 		{
 			get
 			{
 				if (this.relay != null)
 				{
-					return this.relay.NominalLinkDistance;
+					return this.relay.NominalLinkSqrDistance;
 				}
 
 				return 0d;
@@ -230,13 +230,13 @@ namespace AntennaRange
 		/// <summary>
 		/// Gets or sets the maximum link distance, in meters.
 		/// </summary>
-		public double MaximumLinkDistance
+		public double MaximumLinkSqrDistance
 		{
 			get
 			{
 				if (this.relay != null)
 				{
-					return this.relay.MaximumLinkDistance;
+					return this.relay.MaximumLinkSqrDistance;
 				}
 
 				return 0d;
@@ -246,7 +246,7 @@ namespace AntennaRange
 		/// <summary>
 		/// Gets the distance to the nearest relay or Kerbin, whichever is closer.
 		/// </summary>
-		public double transmitDistance
+		public double CurrentLinkSqrDistance
 		{
 			get
 			{
@@ -255,7 +255,7 @@ namespace AntennaRange
 					return double.PositiveInfinity;
 				}
 
-				return this.relay.transmitDistance;
+				return this.relay.CurrentLinkSqrDistance;
 			}
 		}
 
@@ -654,7 +654,7 @@ namespace AntennaRange
 			}
 
 			Tools.PostDebugMessage (
-				"distance: " + this.transmitDistance
+				"distance: " + this.CurrentLinkSqrDistance
 				+ " packetSize: " + this.packetSize
 				+ " packetResourceCost: " + this.packetResourceCost
 			);
@@ -687,7 +687,7 @@ namespace AntennaRange
 			PreTransmit_SetPacketResourceCost ();
 
 			Tools.PostDebugMessage (
-				"distance: " + this.transmitDistance
+				"distance: " + this.CurrentLinkSqrDistance
 				+ " packetSize: " + this.packetSize
 				+ " packetResourceCost: " + this.packetResourceCost
 				);
@@ -711,13 +711,16 @@ namespace AntennaRange
 		{
 			if (this.actionUIUpdate)
 			{
-				this.UImaxTransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m", this.MaximumLinkDistance);
-				this.UInominalLinkDistance = string.Format(Tools.SIFormatter, "{0:S3}m", this.NominalLinkDistance);
+				this.UImaxTransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m",
+					Math.Sqrt(this.MaximumLinkSqrDistance));
+				this.UInominalLinkDistance = string.Format(Tools.SIFormatter, "{0:S3}m",
+					Math.Sqrt(this.NominalLinkSqrDistance));
 				
 				if (this.CanTransmit())
 				{
 					this.UIrelayStatus = this.LinkStatus.ToString();
-					this.UItransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m", this.transmitDistance);
+					this.UItransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m",
+						Math.Sqrt(this.CurrentLinkSqrDistance));
 					this.UIpacketSize = string.Format(Tools.SIFormatter, "{0:S3}MiT", this.DataRate);
 					this.UIpacketCost = string.Format(Tools.SIFormatter, "{0:S3}EC", this.DataResourceCost);
 				}
@@ -725,7 +728,8 @@ namespace AntennaRange
 				{
 					if (this.relay.firstOccludingBody == null)
 					{
-						this.UItransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m", this.transmitDistance);
+						this.UItransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m",
+							Math.Sqrt(this.CurrentLinkSqrDistance));
 						this.UIrelayStatus = "Out of range";
 					}
 					else
@@ -825,17 +829,15 @@ namespace AntennaRange
 		// transmission fails (see CanTransmit).
 		private void PreTransmit_SetPacketResourceCost()
 		{
-			if (ARConfiguration.FixedPowerCost || this.transmitDistance <= this.NominalLinkDistance)
+			if (ARConfiguration.FixedPowerCost || this.CurrentLinkSqrDistance <= this.NominalLinkSqrDistance)
 			{
 				base.packetResourceCost = this._basepacketResourceCost;
 			}
 			else
 			{
-				float rangeFactor = (float)(this.transmitDistance / this.NominalLinkDistance);
-				rangeFactor *= rangeFactor;
+				float rangeFactor = (float)(this.CurrentLinkSqrDistance / this.NominalLinkSqrDistance);
 
-				base.packetResourceCost = this._basepacketResourceCost
-					* rangeFactor;
+				base.packetResourceCost = this._basepacketResourceCost * rangeFactor;
 			}
 
 			base.packetResourceCost *= this.packetThrottle / 100f;
@@ -845,18 +847,18 @@ namespace AntennaRange
 		// distance.  packetSize maxes out at _basepacketSize * maxDataFactor.
 		private void PreTransmit_SetPacketSize()
 		{
-			if (!ARConfiguration.FixedPowerCost && this.transmitDistance >= this.NominalLinkDistance)
+			if (!ARConfiguration.FixedPowerCost && this.CurrentLinkSqrDistance >= this.NominalLinkSqrDistance)
 			{
 				base.packetSize = this._basepacketSize;
 			}
 			else
 			{
-				float rangeFactor = (float)(this.NominalLinkDistance / this.transmitDistance);
-				rangeFactor *= rangeFactor;
+				float rangeFactor = (float)(this.NominalLinkSqrDistance / this.CurrentLinkSqrDistance);
 
 				base.packetSize = Mathf.Min(
 					this._basepacketSize * rangeFactor,
-					this._basepacketSize * this.maxDataFactor);
+					this._basepacketSize * this.maxDataFactor
+				);
 			}
 
 			base.packetSize *= this.packetThrottle / 100f;

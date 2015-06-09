@@ -128,7 +128,9 @@ namespace AntennaRange
 		/// <param name="body">A <see cref="CelestialBody"/></param>
 		public static double sqrDistanceTo(this AntennaRelay relay, CelestialBody body)
 		{
-			return relay.vessel.sqrDistanceTo(body);
+			double dist = (relay.vessel.GetWorldPos3D() - body.position).magnitude - body.Radius;
+
+			return dist * dist;
 		}
 
 		/// <summary>
