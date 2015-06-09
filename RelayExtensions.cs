@@ -116,7 +116,7 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
 		/// <param name="vessel">A <see cref="Vessel"/></param>
-		public static double sqrDistanceTo(this AntennaRelay relay, Vessel vessel)
+		public static double SqrDistanceTo(this AntennaRelay relay, Vessel vessel)
 		{
 			return relay.vessel.sqrDistanceTo(vessel);
 		}
@@ -126,7 +126,7 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
 		/// <param name="body">A <see cref="CelestialBody"/></param>
-		public static double sqrDistanceTo(this AntennaRelay relay, CelestialBody body)
+		public static double SqrDistanceTo(this AntennaRelay relay, CelestialBody body)
 		{
 			double dist = (relay.vessel.GetWorldPos3D() - body.position).magnitude - body.Radius;
 
@@ -138,7 +138,7 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="relayOne">This <see cref="IAntennaRelay"/></param>
 		/// <param name="relayTwo">Another <see cref="IAntennaRelay"/></param>
-		public static double sqrDistanceTo(this AntennaRelay relayOne, IAntennaRelay relayTwo)
+		public static double SqrDistanceTo(this AntennaRelay relayOne, IAntennaRelay relayTwo)
 		{
 			return relayOne.vessel.sqrDistanceTo(relayTwo.vessel);
 		}

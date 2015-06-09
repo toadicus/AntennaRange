@@ -146,11 +146,11 @@ namespace AntennaRange
 			{
 				if (this.KerbinDirect || this.targetRelay == null)
 				{
-					return this.sqrDistanceTo(Kerbin);
+					return this.SqrDistanceTo(Kerbin);
 				}
 				else
 				{
-					return this.sqrDistanceTo(this.targetRelay);
+					return this.SqrDistanceTo(this.targetRelay);
 				}
 			}
 		}
@@ -335,7 +335,7 @@ namespace AntennaRange
 
 				// Find the distance from here to the vessel...
 				log.Append("\n\tgetting distance to potential vessel");
-				potentialSqrDistance = this.sqrDistanceTo(potentialVessel);
+				potentialSqrDistance = this.SqrDistanceTo(potentialVessel);
 				log.Append("\n\tgetting best vessel relay");
 
 				log.Append("\n\tgetting max link distance to potential relay");
