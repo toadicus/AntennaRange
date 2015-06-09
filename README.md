@@ -3,7 +3,7 @@ A KSP mod that enforces and encourages the use of the bigger antennas.
 
 # For Part Developers
 ## The Fields
-AntennaRange extends and augments the functionality of the stock ModuleDataTransmitter through the new `ModuleLimitedDataTransmitter` class. This class uses five additional configurable fields to define the part's behavior.
+AntennaRange extends and augments the functionality of the stock ModuleDataTransmitter through the new `ModuleLimitedDataTransmitter` class. This class uses four additional configurable fields to define the part's behavior.
 
 `nominalRange` is the range, in meters, at which the part should function identically to the stock module, i.e. without any modification to the power cost or packet size. This is used along with maxPowerFactor to calculate the maximum range of the part.  
 `simpleRange` is the same as nominalRange, but is used when the mod is in "simple" mode. In general it will probably need to be a much larger number than nominalRange.  
