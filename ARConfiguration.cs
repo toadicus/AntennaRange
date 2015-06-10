@@ -171,6 +171,9 @@ namespace AntennaRange
 
 			ARConfiguration.UseAdditiveRanges = this.LoadConfigValue(USE_ADDITIVE_KEY, true);
 
+			ARConfiguration.PrettyLines = this.LoadConfigValue(PRETTY_LINES_KEY, true);
+
+			ARConfiguration.UpdateDelay = this.LoadConfigValue(UPDATE_DELAY_KEY, 16L);
 			this.updateDelayStr = ARConfiguration.UpdateDelay.ToString();
 
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
