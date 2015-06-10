@@ -61,6 +61,9 @@ namespace AntennaRange
 		// Sometimes we will need to communicate errors; this is how we do it.
 		private ScreenMessage ErrorMsg;
 
+		// Used in module info panes for part tooltips in the editor and R&D
+		private GUIContent moduleInfoContent;
+
 		/// <summary>
 		/// When additive ranges are enabled, the distance from Kerbin at which the antenna will perform exactly as
 		/// prescribed by packetResourceCost and packetSize.
@@ -418,6 +421,7 @@ namespace AntennaRange
 
 			this._basepacketSize = base.packetSize;
 			this._basepacketResourceCost = base.packetResourceCost;
+			this.moduleInfoContent = new GUIContent();
 
 			Tools.PostDebugMessage(string.Format(
 				"{0} loaded:\n" +
@@ -474,29 +478,38 @@ namespace AntennaRange
 			this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalTransmitDistance;
 		}
 
+		/// <summary>
+		/// Gets the human-friendly module title.
+		/// </summary>
 		public string GetModuleTitle()
 		{
 			return "Comms Transceiver";
 		}
 
+		/// <summary>
+		/// Returns drawTooltipWidget as a callback for part tooltips.
+		/// </summary>
 		public Callback<Rect> GetDrawModulePanelCallback()
 		{
 			return this.drawTooltipWidget;
 		}
 
+		// Called by Squad's part tooltip system when drawing tooltips.
+		// HACK: Currently hacks around Squad's extraneous layout box, see KSPModders issue #5118
 		private void drawTooltipWidget(Rect rect)
 		{
-			GUIContent content = new GUIContent(this.GetInfo());
+			this.moduleInfoContent.text = this.GetInfo();
+
 			GUIStyle style0 = PartListTooltips.fetch.tooltipSkin.customStyles[0];
 			GUIStyle style1 = PartListTooltips.fetch.tooltipSkin.customStyles[1];
 
 			float width = rect.width;
 			float orgHeight = rect.height;
-			float height = style0.CalcHeight(content, width);
+			float height = style0.CalcHeight(this.moduleInfoContent, width);
 
 			rect.height = height;
 
-			GUI.Box(rect, content, style0);
+			GUI.Box(rect, this.moduleInfoContent, style0);
 			GUI.Label(rect, this.GetModuleTitle(), style1);
 
 			GUILayout.Space(height - orgHeight
@@ -505,6 +518,9 @@ namespace AntennaRange
 			);
 		}
 
+		/// <summary>
+		/// Returns an empty string, because we don't really have a "primary field" like some modules do.
+		/// </summary>
 		public string GetPrimaryField()
 		{
 			return string.Empty;
