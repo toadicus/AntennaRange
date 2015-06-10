@@ -46,7 +46,8 @@ namespace AntennaRange
 	/// 
 	/// <para>where D is the total transmission distance, P is the transmission power, and R is the data rate.</para>
 	/// </summary>
-	public class ModuleLimitedDataTransmitter : ModuleDataTransmitter, IScienceDataTransmitter, IAntennaRelay
+	public class ModuleLimitedDataTransmitter
+		: ModuleDataTransmitter, IScienceDataTransmitter, IAntennaRelay, IModuleInfo
 	{
 		// Stores the packetResourceCost as defined in the .cfg file.
 		private float _basepacketResourceCost;
@@ -442,10 +443,10 @@ namespace AntennaRange
 		{
 			base.OnStart (state);
 
+			this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalTransmitDistance;
+
 			if (state >= StartState.PreLaunch)
 			{
-				this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalTransmitDistance;
-
 				this.relay = new AntennaRelay(this);
 				this.relay.nominalTransmitDistance = this.nominalTransmitDistance;
 				this.relay.maxTransmitDistance = this.maxTransmitDistance;
@@ -473,6 +474,42 @@ namespace AntennaRange
 			this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalTransmitDistance;
 		}
 
+		public string GetModuleTitle()
+		{
+			return "Comms Transceiver";
+		}
+
+		public Callback<Rect> GetDrawModulePanelCallback()
+		{
+			return this.drawTooltipWidget;
+		}
+
+		private void drawTooltipWidget(Rect rect)
+		{
+			GUIContent content = new GUIContent(this.GetInfo());
+			GUIStyle style0 = PartListTooltips.fetch.tooltipSkin.customStyles[0];
+			GUIStyle style1 = PartListTooltips.fetch.tooltipSkin.customStyles[1];
+
+			float width = rect.width;
+			float orgHeight = rect.height;
+			float height = style0.CalcHeight(content, width);
+
+			rect.height = height;
+
+			GUI.Box(rect, content, style0);
+			GUI.Label(rect, this.GetModuleTitle(), style1);
+
+			GUILayout.Space(height - orgHeight
+				- style0.padding.bottom - style0.padding.top
+				- 2f * (style0.margin.bottom + style0.margin.top)
+			);
+		}
+
+		public string GetPrimaryField()
+		{
+			return string.Empty;
+		}
+
 		/// <summary>
 		/// Override ModuleDataTransmitter.GetInfo to add nominal and maximum range to the VAB description.
 		/// </summary>
@@ -482,8 +519,21 @@ namespace AntennaRange
 			string text;
 
 			sb.Append(base.GetInfo());
-			sb.AppendFormat(Tools.SIFormatter, "Nominal Range: {0:S3}m\n", this.nominalTransmitDistance);
-			sb.AppendFormat(Tools.SIFormatter, "Maximum Range: {0:S3}m\n", this.maxTransmitDistance);
+
+			if (ARConfiguration.UseAdditiveRanges)
+			{
+				sb.AppendFormat(Tools.SIFormatter, "Nominal Range to Kerbin: {0:S3}m\n",
+					Math.Sqrt(this.nominalTransmitDistance * ARConfiguration.KerbinNominalRange)
+				);
+				sb.AppendFormat(Tools.SIFormatter, "Maximum Range to Kerbin: {0:S3}m",
+					Math.Sqrt(this.maxTransmitDistance * ARConfiguration.KerbinRelayRange)
+				);
+			}
+			else
+			{
+				sb.AppendFormat(Tools.SIFormatter, "Nominal Range: {0:S3}m\n", this.nominalTransmitDistance);
+				sb.AppendFormat(Tools.SIFormatter, "Maximum Range: {0:S3}m", this.maxTransmitDistance);
+			}
 
 			text = sb.ToString();
 
