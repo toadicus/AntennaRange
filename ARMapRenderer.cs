@@ -38,6 +38,13 @@ namespace AntennaRange
 {
 	public class ARMapRenderer : MonoBehaviour
 	{
+		#if BENCH
+		private static ulong updateCount = 0u;
+		private static ulong updateTimer = 0u;
+		private readonly static RollingAverage averager = new RollingAverage();
+		private static long twiceAverageTime = long.MaxValue;
+		#endif
+
 		#region Fields
 		private Dictionary<Guid, LineRenderer> vesselLineRenderers;
 
@@ -59,32 +66,23 @@ namespace AntennaRange
 		{
 			get
 			{
-				if (this.vesselLineRenderers == null)
-				{
-					this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
-				}
-
 				LineRenderer lr;
 
-				if (this.vesselLineRenderers.TryGetValue(idx, out lr))
-				{
-					return lr;
-				}
-				else
+				if (!this.vesselLineRenderers.TryGetValue(idx, out lr))
 				{
 					GameObject obj = new GameObject();
 					obj.layer = 31;
 
 					lr = obj.AddComponent<LineRenderer>();
 
-					// lr.SetColors(Color.green, Color.green);
 					lr.material = MapView.OrbitLinesMaterial;
-					// lr.SetVertexCount(2);
 
 					this.vesselLineRenderers[idx] = lr;
 
 					return lr;
 				}
+
+				return lr;
 			}
 		}
 		#endregion
@@ -97,8 +95,10 @@ namespace AntennaRange
 				this.vesselLineRenderers = new Dictionary<Guid, LineRenderer>();
 			}
 
-			#if DEBUG
+			#if DEBUG || BENCH
 			this.timer = new System.Diagnostics.Stopwatch();
+			#endif
+			#if DEBUG
 			this.log = Tools.DebugLogger.New(this);
 			#endif
 		}
@@ -107,12 +107,12 @@ namespace AntennaRange
 		{
 			if (!HighLogic.LoadedSceneIsFlight || !MapView.MapIsEnabled || !ARConfiguration.PrettyLines)
 			{
-				this.Cleanup();
+				this.Cleanup(!HighLogic.LoadedSceneIsFlight);
 
 				return;
 			}
 
-			#if DEBUG
+			#if DEBUG || BENCH
 			timer.Restart();
 			#endif
 
@@ -130,68 +130,36 @@ namespace AntennaRange
 					MapView.MapCamera.Distance
 				);
 
-				if (FlightGlobals.ready && FlightGlobals.Vessels != null)
+				log.AppendLine("FlightGlobals ready and Vessels list not null.");
+
+				IAntennaRelay relay;
+
+				for (int i = 0; i < ARFlightController.UsefulRelays.Count; i++)
 				{
-					log.AppendLine("FlightGlobals ready and Vessels list not null.");
+					relay = ARFlightController.UsefulRelays[i];
 
-					for (int i = 0; i < FlightGlobals.Vessels.Count; i++)
+					if (relay == null)
 					{
-						Vessel vessel = FlightGlobals.Vessels[i];
-
-						log.AppendFormat("\nStarting check for vessel {0} at {1}ms", vessel, timer.ElapsedMilliseconds);
-
-						if (vessel == null)
-						{
-							log.AppendFormat("\n\tSkipping vessel {0} altogether because it is null.", vessel);
-							continue;
-						}
-
-						switch (vessel.vesselType)
-						{
-							case VesselType.Debris:
-							case VesselType.EVA:
-							case VesselType.Unknown:
-							case VesselType.SpaceObject:
-								log.AppendFormat("\n\tDiscarded because vessel is of invalid type {0}",
-									vessel.vesselType);
-								continue;
-						}
-
-						log.AppendFormat("\n\tChecking vessel {0}.", vessel.vesselName);
-
-						#if DEBUG
-						start = timer.ElapsedMilliseconds;
-						#endif
-
-						IAntennaRelay vesselRelay = vessel.GetBestRelay();
-
-						if (vesselRelay == null)
-						{
-							log.AppendFormat("\n\tGot null relay for vessel {0}", vessel.vesselName);
-							continue;
-						}
-
-						log.AppendFormat("\n\tGot best relay {0} ({3}) for vessel {1} in {2} ms",
-							vesselRelay, vessel, timer.ElapsedMilliseconds - start, vesselRelay.GetType().Name);
-
-						if (vesselRelay != null)
-						{
-							#if DEBUG
-							start = timer.ElapsedMilliseconds;
-							#endif
-
-							this.SetRelayVertices(vesselRelay);
-
-							log.AppendFormat("\n\tSet relay vertices for {0} in {1}ms",
-								vessel, timer.ElapsedMilliseconds - start);
-						}
+						log.AppendFormat("\n\tGot null relay, skipping");
+						continue;
 					}
+
+					log.AppendFormat("\n\tDrawing pretty lines for useful relay {0}", relay);
+					
+					#if DEBUG
+					start = timer.ElapsedMilliseconds;
+					#endif
+
+					this.SetRelayVertices(relay);
+
+					log.AppendFormat("\n\tSet relay vertices for {0} in {1}ms",
+						relay, timer.ElapsedMilliseconds - start);
 				}
 			}
 			catch (Exception ex)
 			{
 				this.LogError("Caught {0}: {1}\n{2}\n", ex.GetType().Name, ex.ToString(), ex.StackTrace.ToString());
-				this.Cleanup();
+				this.Cleanup(false);
 			}
 			#if DEBUG
 			finally
@@ -201,11 +169,32 @@ namespace AntennaRange
 				log.Print();
 			}
 			#endif
+
+			#if BENCH
+			ARMapRenderer.updateCount++;
+			ARMapRenderer.updateTimer += (ulong)this.timer.ElapsedTicks;
+
+			if (ARMapRenderer.updateCount >= (ulong)(8d / Time.smoothDeltaTime))
+			{
+				ARMapRenderer.averager.AddItem((double)ARMapRenderer.updateTimer / (double)ARMapRenderer.updateCount);
+				ARMapRenderer.updateTimer = 0u;
+				ARMapRenderer.updateCount = 0u;
+				ARMapRenderer.twiceAverageTime = (long)(ARMapRenderer.averager.Average * 2d);
+			}
+
+			if (this.timer.ElapsedTicks > ARMapRenderer.twiceAverageTime)
+			{
+				this.Log("PreCull took significant longer than usual ({0:S3}s vs {1:S3}s)",
+					(double)this.timer.ElapsedTicks / (double)System.Diagnostics.Stopwatch.Frequency,
+					ARMapRenderer.averager.Average / (double)System.Diagnostics.Stopwatch.Frequency
+				);
+			}
+			#endif
 		}
 
 		private void OnDestroy()
 		{
-			this.Cleanup();
+			this.Cleanup(true);
 
 			this.Log("Destroyed");
 		}
@@ -261,7 +250,7 @@ namespace AntennaRange
 			}
 			else
 			{
-				if (relay.transmitDistance < relay.nominalTransmitDistance)
+				if (relay.LinkStatus == ConnectionStatus.Optimal)
 				{
 					thisColor = Color.green;
 				}
@@ -307,7 +296,7 @@ namespace AntennaRange
 			log.AppendFormat("\n\t\t\t...finished segment in {0} ms", timer.ElapsedMilliseconds - relayStart);
 		}
 
-		private void Cleanup()
+		private void Cleanup(bool freeObjects)
 		{
 			if (this.vesselLineRenderers != null && this.vesselLineRenderers.Count > 0)
 			{
@@ -318,9 +307,17 @@ namespace AntennaRange
 				{
 					lineRenderer = enumerator.Current;
 					lineRenderer.enabled = false;
-					GameObject.Destroy(lineRenderer.gameObject);
+
+					if (freeObjects)
+					{
+						GameObject.Destroy(lineRenderer.gameObject);
+					}
 				}
-				this.vesselLineRenderers.Clear();
+
+				if (freeObjects)
+				{
+					this.vesselLineRenderers.Clear();
+				}
 			}
 		}
 		#endregion

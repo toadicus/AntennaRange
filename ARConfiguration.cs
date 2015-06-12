@@ -23,6 +23,10 @@ namespace AntennaRange
 		private const string FIXED_POWER_KEY = "fixedPowerCost";
 		private const string PRETTY_LINES_KEY = "drawPrettyLines";
 		private const string UPDATE_DELAY_KEY = "updateDelay";
+		private const string USE_ADDITIVE_KEY = "useAdditiveRanges";
+
+		private const string TRACKING_STATION_RANGES_KEY = "TRACKING_STATION_RANGES";
+		private const string RANGE_KEY = "range";
 
 		/// <summary>
 		/// Indicates whether connections require line of sight.
@@ -70,10 +74,42 @@ namespace AntennaRange
 			set;
 		}
 
+		/// <summary>
+		/// Gets the update delay.
+		/// </summary>
 		public static long UpdateDelay
 		{
 			get;
 			private set;
+		}
+
+		/// <summary>
+		/// Gets a value indicating whether AntennaRange will use additive ranges.
+		/// </summary>
+		public static bool UseAdditiveRanges
+		{
+			get;
+			private set;
+		}
+
+		/// <summary>
+		/// Gets Kerbin's relay range based on the current tracking station level.
+		/// </summary>
+		public static double KerbinRelayRange
+		{
+			get;
+			private set;
+		}
+
+		/// <summary>
+		/// Gets Kerbin's nominal relay range based on the current tracking station level.
+		/// </summary>
+		public static double KerbinNominalRange
+		{
+			get
+			{
+				return KerbinRelayRange / 2.8284271247461901d;
+			}
 		}
 
 #pragma warning disable 1591
@@ -87,7 +123,11 @@ namespace AntennaRange
 		private IButton toolbarButton;
 		private ApplicationLauncherButton appLauncherButton;
 
+		private double[] trackingStationRanges;
+
 		private System.Version runningVersion;
+
+		private bool runOnce;
 
 		private KSP.IO.PluginConfiguration _config;
 		private KSP.IO.PluginConfiguration config
@@ -105,13 +145,12 @@ namespace AntennaRange
 
 		public void Awake()
 		{
-			Tools.PostDebugMessage(this, "Waking up.");
+			this.LogDebug("Waking up.");
 
 			this.runningVersion = this.GetType().Assembly.GetName().Version;
 
 			this.showConfigWindow = false;
 			this.configWindowPos = new Rect(Screen.width / 4, Screen.height / 2, 180, 15);
-
 
 			this.configWindowPos = this.LoadConfigValue(WINDOW_POS_KEY, this.configWindowPos);
 
@@ -129,13 +168,66 @@ namespace AntennaRange
 
 			ARConfiguration.UpdateDelay = this.LoadConfigValue(UPDATE_DELAY_KEY, 16L);
 
+			ARConfiguration.UseAdditiveRanges = this.LoadConfigValue(USE_ADDITIVE_KEY, true);
+
+			ARConfiguration.PrettyLines = this.LoadConfigValue(PRETTY_LINES_KEY, true);
+
+			ARConfiguration.UpdateDelay = this.LoadConfigValue(UPDATE_DELAY_KEY, 16L);
 			this.updateDelayStr = ARConfiguration.UpdateDelay.ToString();
 
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
+			GameEvents.OnKSCFacilityUpgraded.Add(this.onFacilityUpgraded);
 
 			Debug.Log(string.Format("{0} v{1} - ARConfiguration loaded!", this.GetType().Name, this.runningVersion));
 
-			Tools.PostDebugMessage(this, "Awake.");
+			ConfigNode[] tsRangeNodes = GameDatabase.Instance.GetConfigNodes(TRACKING_STATION_RANGES_KEY);
+
+			if (tsRangeNodes.Length > 0)
+			{
+				string[] rangeValues = tsRangeNodes[0].GetValues(RANGE_KEY);
+
+				this.trackingStationRanges = new double[rangeValues.Length];
+
+				for (int idx = 0; idx < rangeValues.Length; idx++)
+				{
+					if (!double.TryParse(rangeValues[idx], out this.trackingStationRanges[idx]))
+					{
+						this.LogError("Could not parse value '{0}' to double; Tracking Station ranges may not work!");
+						this.trackingStationRanges[idx] = 0d;
+					}
+				}
+
+				this.Log("Loaded Tracking Station ranges from config: [{0}]", this.trackingStationRanges.SPrint());
+			}
+			else
+			{
+				this.trackingStationRanges = new double[]
+				{
+					51696576d,
+					37152180000d,
+					224770770000d
+				};
+
+				this.LogWarning("Failed to load Tracking Station ranges from config, using hard-coded values: [{0}]",
+					this.trackingStationRanges.SPrint());
+			}
+
+			this.runOnce = true;
+
+			this.LogDebug("Awake.");
+		}
+
+		public void Update()
+		{
+			if (
+				this.runOnce &&
+				(ScenarioUpgradeableFacilities.Instance != null || HighLogic.CurrentGame.Mode != Game.Modes.CAREER)
+			)
+			{
+				this.runOnce = false;
+
+				this.SetKerbinRelayRange();
+			}
 		}
 
 		public void OnGUI()
@@ -145,7 +237,7 @@ namespace AntennaRange
 			{
 				if (this.toolbarButton == null)
 				{
-					Tools.PostDebugMessage(this, "Toolbar available; initializing toolbar button.");
+					this.LogDebug("Toolbar available; initializing toolbar button.");
 
 					this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConfiguration");
 					this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.SPACECENTER);
@@ -160,7 +252,7 @@ namespace AntennaRange
 			}
 			else if (this.appLauncherButton == null && ApplicationLauncher.Ready)
 			{
-				Tools.PostDebugMessage(this, "Toolbar available; initializing AppLauncher button.");
+				this.LogDebug("Toolbar available; initializing AppLauncher button.");
 
 				this.appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
 					this.toggleConfigWindow,
@@ -236,6 +328,17 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal();
 
+			bool useAdditive = GUITools.Toggle(ARConfiguration.UseAdditiveRanges, "Use Additive Ranges");
+			if (useAdditive != ARConfiguration.UseAdditiveRanges)
+			{
+				ARConfiguration.UseAdditiveRanges = useAdditive;
+				this.SaveConfigValue(USE_ADDITIVE_KEY, useAdditive);
+			}
+
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
+
 			bool prettyLines = GUITools.Toggle(ARConfiguration.PrettyLines, "Draw Pretty Lines");
 			if (prettyLines != ARConfiguration.PrettyLines)
 			{
@@ -294,24 +397,61 @@ namespace AntennaRange
 		public void OnDestroy()
 		{
 			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChangeRequested);
+			GameEvents.OnKSCFacilityUpgraded.Remove(this.onFacilityUpgraded);
 
 			if (this.toolbarButton != null)
 			{
 				this.toolbarButton.Destroy();
+				this.toolbarButton = null;
 			}
 
 			if (this.appLauncherButton != null)
 			{
 				ApplicationLauncher.Instance.RemoveModApplication(this.appLauncherButton);
+				this.appLauncherButton = null;
 			}
 		}
 
-		protected void onSceneChangeRequested(GameScenes scene)
+		private void onSceneChangeRequested(GameScenes scene)
 		{
 			if (scene != GameScenes.SPACECENTER)
 			{
 				print("ARConfiguration: Requesting Destruction.");
 				MonoBehaviour.Destroy(this);
+			}
+		}
+
+		private void onFacilityUpgraded(Upgradeables.UpgradeableFacility fac, int lvl)
+		{
+			if (fac.id == "SpaceCenter/TrackingStation")
+			{
+				this.Log("Caught onFacilityUpgraded for {0} at level {1}", fac.id, lvl);
+				this.SetKerbinRelayRange();
+			}
+		}
+
+		private void SetKerbinRelayRange()
+		{
+			int tsLevel;
+
+			if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
+			{
+				tsLevel = ScenarioUpgradeableFacilities.protoUpgradeables["SpaceCenter/TrackingStation"]
+					.facilityRefs[0].FacilityLevel;
+			}
+			else
+			{
+				tsLevel = this.trackingStationRanges.Length - 1;
+			}
+
+			if (tsLevel < this.trackingStationRanges.Length && tsLevel >= 0)
+			{
+				KerbinRelayRange = this.trackingStationRanges[tsLevel];
+				this.Log("Setting Kerbin's range to {0}", KerbinRelayRange);
+			}
+			else
+			{
+				this.LogError("Could not set Kerbin's range with invalid Tracking Station level {0}", tsLevel);
 			}
 		}
 

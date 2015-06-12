@@ -47,9 +47,31 @@ namespace AntennaRange
 		IAntennaRelay targetRelay { get; }
 
 		/// <summary>
+		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
+		/// directly with Kerbin.
+		/// </summary>
+		bool KerbinDirect { get; }
+
+		/// <summary>
+		/// The link distance, in meters, at which this relay behaves nominally.
+		/// </summary>
+		double NominalLinkSqrDistance { get; }
+
+
+		/// <summary>
+		/// The link distance, in meters, beyond which this relay cannot operate.
+		/// </summary>
+		double MaximumLinkSqrDistance { get; }
+
+		/// <summary>
 		/// Gets the distance to the nearest relay or Kerbin, whichever is closer.
 		/// </summary>
-		double transmitDistance { get; }
+		double CurrentLinkSqrDistance { get; }
+
+		/// <summary>
+		/// Gets the link status.
+		/// </summary>
+		ConnectionStatus LinkStatus { get; }
 
 		/// <summary>
 		/// Gets the nominal transmit distance at which the Antenna behaves just as prescribed by Squad's config.
@@ -65,12 +87,6 @@ namespace AntennaRange
 		/// The first CelestialBody blocking line of sight to a 
 		/// </summary>
 		CelestialBody firstOccludingBody { get; }
-
-		/// <summary>
-		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
-		/// directly with Kerbin.
-		/// </summary>
-		bool KerbinDirect { get; }
 
 		/// <summary>
 		/// Gets the Part title.

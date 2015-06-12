@@ -38,6 +38,50 @@ namespace AntennaRange
 	public static class RelayExtensions
 	{
 		/// <summary>
+		/// Returns the distance between two IAntennaRelays.
+		/// </summary>
+		/// <param name="relayOne">Relay one.</param>
+		/// <param name="relayTwo">Relay two.</param>
+		public static double DistanceTo(this IAntennaRelay relayOne, IAntennaRelay relayTwo)
+		{
+			return relayOne.vessel.DistanceTo(relayTwo.vessel);
+		}
+
+		/// <summary>
+		/// Returns the distance from this IAntennaRelay to the given CelestialBody
+		/// </summary>
+		/// <param name="relay">Relay.</param>
+		/// <param name="body">Body.</param>
+		public static double SqrDistanceTo(this IAntennaRelay relay, CelestialBody body)
+		{
+			double range = relay.vessel.DistanceTo(body) - body.Radius;
+
+			return range * range;
+		}
+
+		/// <summary>
+		/// Returns the distance between two IAntennaRelays.
+		/// </summary>
+		/// <param name="relayOne">Relay one.</param>
+		/// <param name="relayTwo">Relay two.</param>
+		public static double SqrDistanceTo(this IAntennaRelay relayOne, IAntennaRelay relayTwo)
+		{
+			return relayOne.vessel.sqrDistanceTo(relayTwo.vessel);
+		}
+
+		/// <summary>
+		/// Returns the distance from this IAntennaRelay to the given CelestialBody
+		/// </summary>
+		/// <param name="relay">Relay.</param>
+		/// <param name="body">Body.</param>
+		public static double DistanceTo(this IAntennaRelay relay, CelestialBody body)
+		{
+			double range = relay.vessel.DistanceTo(body) - body.Radius;
+
+			return range;
+		}
+
+		/// <summary>
 		/// Returns the distance between this IAntennaRelay and a Vessel
 		/// </summary>
 		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
@@ -72,7 +116,7 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
 		/// <param name="vessel">A <see cref="Vessel"/></param>
-		public static double sqrDistanceTo(this AntennaRelay relay, Vessel vessel)
+		public static double SqrDistanceTo(this AntennaRelay relay, Vessel vessel)
 		{
 			return relay.vessel.sqrDistanceTo(vessel);
 		}
@@ -82,9 +126,11 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="relay">This <see cref="IAntennaRelay"/></param>
 		/// <param name="body">A <see cref="CelestialBody"/></param>
-		public static double sqrDistanceTo(this AntennaRelay relay, CelestialBody body)
+		public static double SqrDistanceTo(this AntennaRelay relay, CelestialBody body)
 		{
-			return relay.vessel.sqrDistanceTo(body);
+			double dist = (relay.vessel.GetWorldPos3D() - body.position).magnitude - body.Radius;
+
+			return dist * dist;
 		}
 
 		/// <summary>
@@ -92,7 +138,7 @@ namespace AntennaRange
 		/// </summary>
 		/// <param name="relayOne">This <see cref="IAntennaRelay"/></param>
 		/// <param name="relayTwo">Another <see cref="IAntennaRelay"/></param>
-		public static double sqrDistanceTo(this AntennaRelay relayOne, IAntennaRelay relayTwo)
+		public static double SqrDistanceTo(this AntennaRelay relayOne, IAntennaRelay relayTwo)
 		{
 			return relayOne.vessel.sqrDistanceTo(relayTwo.vessel);
 		}
@@ -140,10 +186,11 @@ namespace AntennaRange
 			for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
 			{
 				relay = vesselRelays[rIdx];
-				if (relay.CanTransmit())
+				if (relay.LinkStatus > ConnectionStatus.None)
 				{
 					canTransmit = true;
-					if (relay.transmitDistance <= relay.nominalTransmitDistance)
+
+					if (relay.LinkStatus == ConnectionStatus.Optimal)
 					{
 						return ConnectionStatus.Optimal;
 					}
