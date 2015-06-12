@@ -145,13 +145,12 @@ namespace AntennaRange
 
 		public void Awake()
 		{
-			Tools.PostDebugMessage(this, "Waking up.");
+			this.LogDebug("Waking up.");
 
 			this.runningVersion = this.GetType().Assembly.GetName().Version;
 
 			this.showConfigWindow = false;
 			this.configWindowPos = new Rect(Screen.width / 4, Screen.height / 2, 180, 15);
-
 
 			this.configWindowPos = this.LoadConfigValue(WINDOW_POS_KEY, this.configWindowPos);
 
@@ -215,7 +214,7 @@ namespace AntennaRange
 
 			this.runOnce = true;
 
-			Tools.PostDebugMessage(this, "Awake.");
+			this.LogDebug("Awake.");
 		}
 
 		public void Update()
@@ -238,7 +237,7 @@ namespace AntennaRange
 			{
 				if (this.toolbarButton == null)
 				{
-					Tools.PostDebugMessage(this, "Toolbar available; initializing toolbar button.");
+					this.LogDebug("Toolbar available; initializing toolbar button.");
 
 					this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConfiguration");
 					this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.SPACECENTER);
@@ -253,7 +252,7 @@ namespace AntennaRange
 			}
 			else if (this.appLauncherButton == null && ApplicationLauncher.Ready)
 			{
-				Tools.PostDebugMessage(this, "Toolbar available; initializing AppLauncher button.");
+				this.LogDebug("Toolbar available; initializing AppLauncher button.");
 
 				this.appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
 					this.toggleConfigWindow,
@@ -439,8 +438,6 @@ namespace AntennaRange
 			{
 				tsLevel = ScenarioUpgradeableFacilities.protoUpgradeables["SpaceCenter/TrackingStation"]
 					.facilityRefs[0].FacilityLevel;
-			
-
 			}
 			else
 			{

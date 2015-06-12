@@ -75,9 +75,7 @@ namespace AntennaRange
 
 					lr = obj.AddComponent<LineRenderer>();
 
-					// lr.SetColors(Color.green, Color.green);
 					lr.material = MapView.OrbitLinesMaterial;
-					// lr.SetVertexCount(2);
 
 					this.vesselLineRenderers[idx] = lr;
 

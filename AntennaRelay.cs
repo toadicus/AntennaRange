@@ -264,12 +264,10 @@ namespace AntennaRange
 			this.KerbinDirect = true;
 
 			/*
-			 * Loop through all the vessels and exclude this vessel, vessels of the wrong type, and vessels that are too
-			 * far away.  When we find a candidate, get through its antennae for relays which have not been checked yet
-			 * and that can transmit.  Once we find a suitable candidate, assign it to nearestRelay for comparison
-			 * against future finds.
+			 * Loop through the useful relays as determined by ARFlightController and check each for line of sight and
+			 * distance, searching for the relay with the best distance/maxRange ratio that is in sight, in range, and
+			 * can transmit, also stashing the "best" relay outside of line of sight for failure report.
 			 * */
-			// Vessel potentialVessel;
 			IAntennaRelay potentialBestRelay;
 			CelestialBody fob;
 
