@@ -542,7 +542,10 @@ namespace AntennaRange
 					Math.Sqrt(this.nominalTransmitDistance * ARConfiguration.KerbinNominalRange)
 				);
 				sb.AppendFormat(Tools.SIFormatter, "Maximum Range to Kerbin: {0:S3}m",
-					Math.Sqrt(this.maxTransmitDistance * ARConfiguration.KerbinRelayRange)
+					Math.Sqrt(
+						this.nominalTransmitDistance * Math.Sqrt(this.maxPowerFactor) *
+						ARConfiguration.KerbinRelayRange
+					)
 				);
 			}
 			else
