@@ -215,6 +215,72 @@ namespace AntennaRange
 		{
 			return RelayDatabase.Instance.GetBestVesselRelay(vessel);
 		}
+
+		/// <summary>
+		/// Logs a message on behalf of this relay
+		/// </summary>
+		public static void Log(this AntennaRelay relay, string format, params object[] args)
+		{
+			Tools.PostLogMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
+		}
+
+		/// <summary>
+		/// Logs a message on behalf of this relay
+		/// </summary>
+		public static void Log(this AntennaRelay relay, string msg)
+		{
+			Tools.PostLogMessage("[{0}] {1}", relay.ToString(), msg);
+		}
+
+		/// <summary>
+		/// Logs a warning message on behalf of this relay
+		/// </summary>
+		public static void LogWarning(this AntennaRelay relay, string format, params object[] args)
+		{
+			Tools.PostWarningMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
+		}
+
+		/// <summary>
+		/// Logs a warning message on behalf of this relay
+		/// </summary>
+		public static void LogWarning(this AntennaRelay relay, string msg)
+		{
+			Tools.PostWarningMessage("[{0}] {1}", relay.ToString(), msg);
+		}
+
+		/// <summary>
+		/// Logs an error message on behalf of this relay
+		/// </summary>
+		public static void LogError(this AntennaRelay relay, string format, params object[] args)
+		{
+			Tools.PostErrorMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
+		}
+
+		/// <summary>
+		/// Logs an error message on behalf of this relay
+		/// </summary>
+		public static void LogError(this AntennaRelay relay, string msg)
+		{
+			Tools.PostErrorMessage("[{0}] {1}", relay.ToString(), msg);
+		}
+
+		/// <summary>
+		/// Logs a debug-only message on behalf of this relay
+		/// </summary>
+		[System.Diagnostics.Conditional("DEBUG")]
+		public static void LogDebug(this AntennaRelay relay, string format, params object[] args)
+		{
+			Tools.PostDebugMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
+		}
+
+		/// <summary>
+		/// Logs a debug-only message on behalf of this relay
+		/// </summary>
+		[System.Diagnostics.Conditional("DEBUG")]
+		public static void LogDebug(this AntennaRelay relay, string msg)
+		{
+			Tools.PostDebugMessage("[{0}] {1}", relay.ToString(), msg);
+		}
 	}
 
 	#pragma warning disable 1591

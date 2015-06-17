@@ -249,10 +249,13 @@ namespace AntennaRange
 
 			this.log.Clear();
 
+			this.log.Append("[ARFlightController]: Update");
+
 			if (HighLogic.LoadedSceneIsFlight && FlightGlobals.ready && FlightGlobals.ActiveVessel != null)
 			{
 				Vessel vessel;
 				IAntennaRelay relay;
+				IAntennaRelay bestActiveRelay;
 				IList<IAntennaRelay> activeVesselRelays;
 
 				usefulRelays.Clear();
@@ -266,36 +269,57 @@ namespace AntennaRange
 						continue;
 					}
 
-					log.AppendFormat("Fetching best relay for vessel {0}", vessel);
+					log.AppendFormat("\nFetching best relay for vessel {0}", vessel);
 
 					relay = vessel.GetBestRelay();
 
 					if (relay != null)
 					{
-						log.AppendFormat("Finding nearest relay for best relay {0}", relay);
+						log.AppendFormat("\n\tAdding useful relay {0}", relay);
 
 						usefulRelays.Add(relay);
-						relay.FindNearestRelay();
 					}
 				}
 
+				bestActiveRelay = RelayDatabase.Instance.GetBestVesselRelay(FlightGlobals.ActiveVessel);
 				activeVesselRelays = RelayDatabase.Instance[FlightGlobals.ActiveVessel];
 				for (int rIdx = 0; rIdx < activeVesselRelays.Count; rIdx++)
 				{
 					relay = activeVesselRelays[rIdx];
 
+					// The best active relay will get checked with the other useful relays later.
+					if (relay == bestActiveRelay)
+					{
+						continue;
+					}
+
+					log.AppendFormat("\nFinding nearest relay for active vessel relay {0}", relay);
+
 					relay.FindNearestRelay();
 				}
 
-				usefulRelays.Add(RelayDatabase.Instance.GetBestVesselRelay(FlightGlobals.ActiveVessel));
+				log.AppendFormat("\n\tAdding best active vessel relay {0} to usefulRelays", bestActiveRelay);
+
+				usefulRelays.Add(bestActiveRelay);
+
+				log.AppendFormat("\n\tDoing target searches for {0} useful relays", usefulRelays.Count);
+
+				for (int uIdx = 0; uIdx < usefulRelays.Count; uIdx++)
+				{
+					relay = usefulRelays[uIdx];
+
+					log.AppendFormat("\n\tDoing target search for useful relay {0}", relay);
+
+					relay.FindNearestRelay();
+				}
 
 				if (this.toolbarButton != null || this.appLauncherButton != null)
 				{
-					log.Append("Checking vessel relay status.\n");
+					log.Append("\nChecking active vessel relay status.");
 
 					this.currentConnectionStatus = FlightGlobals.ActiveVessel.GetConnectionStatus();
 
-					log.AppendFormat("currentConnectionStatus: {0}, setting texture to {1}",
+					log.AppendFormat("\n\tcurrentConnectionStatus: {0}, setting texture to {1}",
 						this.currentConnectionStatus, this.currentConnectionTexture);
 
 					if (this.toolbarButton != null)
@@ -318,7 +342,7 @@ namespace AntennaRange
 				}
 			}
 
-			log.Print();
+			log.Print(false);
 		}
 
 		private void OnDestroy()
