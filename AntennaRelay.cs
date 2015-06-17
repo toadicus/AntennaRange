@@ -274,21 +274,28 @@ namespace AntennaRange
 			#if BENCH
 			startVesselLoopTicks = performanceTimer.ElapsedTicks;
 			#endif
-
+			
 			for (int rIdx = 0; rIdx < ARFlightController.UsefulRelays.Count; rIdx++)
 			{
 				potentialBestRelay = ARFlightController.UsefulRelays[rIdx];
-				log.AppendFormat("\n\t\tgot best vessel relay {0}",
+				log.AppendFormat("\n\tgot useful relay {0}",
 					potentialBestRelay == null ? "null" : potentialBestRelay.ToString());
 
 				if (potentialBestRelay == null)
 				{
-					log.Append("\n\t\t...skipping null relay");
+					log.Append("\n\t...skipping null relay");
 					continue;
 				}
 
 				if (potentialBestRelay == this || potentialBestRelay.vessel == this.vessel)
 				{
+					log.AppendFormat(
+						"\n\t...skipping relay {0} because it or its vessel ({1}) is the same as ours" +
+						"\n\t\t(our vessel is {2})",
+						potentialBestRelay,
+						potentialBestRelay.vessel == null ? "null" : potentialBestRelay.vessel.vesselName,
+						this.vessel == null ? "null" : this.vessel.vesselName
+					);
 					continue;
 				}
 
@@ -429,11 +436,10 @@ namespace AntennaRange
 						// Avoid infinite loops when we're not catching things right.
 						if (iterCount > FlightGlobals.Vessels.Count)
 						{
-							Tools.PostErrorMessage(
-								"[{0}] iterCount exceeded while checking for circular network; assuming it is circular" +
-								"\n\tneedle={1}" +
-								"\n\tthis.moduleRef={2}",
-								this,
+							this.LogError(
+								"iterCount exceeded while checking for circular network; assuming it is circular" +
+								"\n\tneedle={0}" +
+								"\n\tthis.moduleRef={1}",
 								needle == null ? "null" : string.Format(
 									"{0}, needle.KerbinDirect={1}, needle.targetRelay={2}",
 									needle, needle.KerbinDirect, needle.targetRelay == null ? "null" : string.Format(
@@ -505,7 +511,7 @@ namespace AntennaRange
 
 			log.AppendFormat("\n{0} ({1}): Search done, figuring status.", this.ToString(), this.GetType().Name);
 			log.AppendFormat(
-				"\n{0}: nearestRelay={1} ({2}m²)), bestOccludedRelay={3} ({4}m²), kerbinSqrDistance={5}m²)",
+				"\n{0}: nearestRelay={1} ({2})), bestOccludedRelay={3} ({4}), kerbinSqrDistance={5}m²)",
 				this,
 				this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
 				nearestRelaySqrQuotient,
@@ -513,7 +519,7 @@ namespace AntennaRange
 				bestOccludedSqrQuotient,
 				kerbinSqrDistance
 			);
-
+			
 			#if BENCH
 			startKerbinLOSTicks = this.performanceTimer.ElapsedTicks;
 			#endif
@@ -848,7 +854,7 @@ namespace AntennaRange
 
 				// sb.AppendFormat(Tools.SIFormatter, "", start)
 
-				Tools.PostWarningMessage(sb.ToString());
+				this.LogWarning(sb.ToString());
 
 				Tools.PutStringBuilder(sb);
 			}
@@ -881,7 +887,7 @@ namespace AntennaRange
 			AntennaRelay.relayCount++;
 			#endif
 
-			Tools.PostLogMessage("{0}: constructed {1}", this.GetType().Name, this.ToString());
+			this.LogDebug("{0}: constructed {1}", this.GetType().Name, this.ToString());
 		}
 	}
 }
