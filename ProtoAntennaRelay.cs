@@ -58,8 +58,7 @@ namespace AntennaRange
 				}
 				else
 				{
-					Tools.PostErrorMessage("{0}: Could not fetch vessel!  {1}{2}{3}",
-						this.ToString(),
+					this.LogError("Could not fetch vessel!  {0}{1}{2}",
 						this.protoPart == null ? "\n\tprotoPart=null" : string.Empty,
 						this.protoPart != null && this.protoPart.pVesselRef == null ?
 							"\n\tthis.protoPart.pVesselRef=null" : string.Empty,
@@ -162,7 +161,7 @@ namespace AntennaRange
 		{
 			this.protoPart = pps;
 
-			Tools.PostLogMessage("{0}: constructed {1}", this.GetType().Name, this.ToString());
+			this.Log("constructed ({0})", this.GetType().Name);
 		}
 	}
 }

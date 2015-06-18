@@ -288,7 +288,7 @@ namespace AntennaRange
 					relay = activeVesselRelays[rIdx];
 
 					// The best active relay will get checked with the other useful relays later.
-					if (relay == bestActiveRelay)
+					if (relay == null || relay == bestActiveRelay)
 					{
 						continue;
 					}
@@ -307,6 +307,11 @@ namespace AntennaRange
 				for (int uIdx = 0; uIdx < usefulRelays.Count; uIdx++)
 				{
 					relay = usefulRelays[uIdx];
+
+					if (relay == null)
+					{
+						continue;
+					}
 
 					log.AppendFormat("\n\tDoing target search for useful relay {0}", relay);
 
