@@ -817,7 +817,14 @@ namespace AntennaRange
 				}
 				else
 				{
-					this.UIrelayTarget = this.targetRelay.ToString();
+					if (this.targetRelay != null)
+					{
+						this.UIrelayTarget = this.targetRelay.ToString();
+					}
+					else
+					{
+						this.UIrelayTarget = "A mysterious null entity";
+					}
 				}
 			}
 		}
