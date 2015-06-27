@@ -96,10 +96,10 @@ namespace AntennaRange
 		public void DirtyVessel(Vessel vessel)
 		{
 			#if DEBUG
-			Tools.PostDebugMessage("RelayDatabase: Dirtying cache for vessel {0} in frame {1}",
+			Logging.PostDebugMessage("RelayDatabase: Dirtying cache for vessel {0} in frame {1}",
 				vessel, new System.Diagnostics.StackTrace().ToString());
 			#else
-			Tools.PostLogMessage("RelayDatabase: Dirtying cache for vessel {0}", vessel.vesselName);
+			Logging.PostLogMessage("RelayDatabase: Dirtying cache for vessel {0}", vessel.vesselName);
 			#endif
 
 			this.relayDatabase.Remove(vessel.id);
@@ -109,7 +109,7 @@ namespace AntennaRange
 
 		public void ClearCache()
 		{
-			Tools.PostLogMessage("RelayDatabase: onSceneChange clearing entire cache.");
+			Logging.PostLogMessage("RelayDatabase: onSceneChange clearing entire cache.");
 
 			this.relayDatabase.Clear();
 			this.bestRelayTable.Clear();
@@ -206,7 +206,7 @@ namespace AntennaRange
 				// or if we've just docked or undocked)...
 				if (this.vesselPartCountTable[vessel.id] != vessel.Parts.Count || vessel.loaded)
 				{
-					Tools.PostDebugMessage(string.Format(
+					Logging.PostDebugMessage(string.Format(
 						"{0}: dirtying cache for vessel '{1}' ({2}).",
 						this.GetType().Name,
 						vessel.vesselName,
@@ -222,7 +222,7 @@ namespace AntennaRange
 		// Runs when the player requests a scene change, such as when changing vessels or leaving flight.
 		private void onSceneChange(GameScenes scene)
 		{
-			Tools.PostDebugMessage(
+			Logging.PostDebugMessage(
 				"RelayDatabase: caught onSceneChangeRequested in scene {0} to scene {1}.  ActiveVessel is {2}",
 				HighLogic.LoadedScene,
 				scene,
@@ -235,7 +235,7 @@ namespace AntennaRange
 				{
 					if (FlightGlobals.ActiveVessel != null)
 					{
-						Tools.PostDebugMessage("RelayDatabase: onSceneChange clearing {0} from cache.",
+						Logging.PostDebugMessage("RelayDatabase: onSceneChange clearing {0} from cache.",
 							FlightGlobals.ActiveVessel.vesselName);
 
 						this.onVesselEvent(FlightGlobals.ActiveVessel);
@@ -275,7 +275,7 @@ namespace AntennaRange
 			// We're going to completely regen this table, so dump the current contents.
 			relays.Clear();
 
-			Tools.PostDebugMessage(string.Format(
+			Logging.PostDebugMessage(string.Format(
 				"{0}: Getting antenna relays from vessel {1}.",
 				"IAntennaRelay",
 				vessel.vesselName
@@ -287,7 +287,7 @@ namespace AntennaRange
 
 			// If the vessel is loaded, we can fetch modules implementing IAntennaRelay directly.
 			if (vessel.loaded) {
-				Tools.PostDebugMessage(string.Format(
+				Logging.PostDebugMessage(string.Format(
 					"{0}: vessel {1} is loaded, searching for modules in loaded parts.",
 					"IAntennaRelay",
 					vessel.vesselName
@@ -327,7 +327,7 @@ namespace AntennaRange
 			// If the vessel is not loaded, we need to build ProtoAntennaRelays when we find relay ProtoPartSnapshots.
 			else
 			{
-				Tools.PostDebugMessage(string.Format(
+				Logging.PostDebugMessage(string.Format(
 					"{0}: vessel {1} is not loaded, searching for modules in prototype parts.",
 					this.GetType().Name,
 					vessel.vesselName
@@ -339,7 +339,7 @@ namespace AntennaRange
 				{
 					pps = vessel.protoVessel.protoPartSnapshots[ppsIdx];
 
-					Tools.PostDebugMessage(string.Format(
+					Logging.PostDebugMessage(string.Format(
 						"{0}: Searching in protopartsnapshot {1}",
 						this.GetType().Name,
 						pps
@@ -348,7 +348,7 @@ namespace AntennaRange
 					// ...Fetch the prefab, because it's more useful for what we're doing.
 					Part partPrefab = PartLoader.getPartInfoByName(pps.partName).partPrefab;
 
-					Tools.PostDebugMessage(string.Format(
+					Logging.PostDebugMessage(string.Format(
 						"{0}: Got partPrefab {1} in protopartsnapshot {2}",
 						this.GetType().Name,
 						partPrefab,
@@ -361,7 +361,7 @@ namespace AntennaRange
 					{
 						module = partPrefab.Modules[modIdx];
 
-						Tools.PostDebugMessage(string.Format(
+						Logging.PostDebugMessage(string.Format(
 							"{0}: Searching in partmodule {1}",
 							this.GetType().Name,
 							module
@@ -370,7 +370,7 @@ namespace AntennaRange
 						// ...if the module is a relay...
 						if (module is IAntennaRelay)
 						{
-							Tools.PostDebugMessage(string.Format(
+							Logging.PostDebugMessage(string.Format(
 								"{0}: partmodule {1} is antennarelay",
 								this.GetType().Name,
 								module
@@ -395,7 +395,7 @@ namespace AntennaRange
 
 			this.bestRelayTable[vessel.id] = bestRelay;
 
-			Tools.PostDebugMessage(string.Format(
+			Logging.PostDebugMessage(string.Format(
 				"{0}: vessel '{1}' ({2}) has {3} transmitters.",
 				"IAntennaRelay",
 				vessel.vesselName,
@@ -436,7 +436,7 @@ namespace AntennaRange
 			GameEvents.onPartUndock.Remove(this.onPartEvent);
 			GameEvents.onGameStateLoad.Remove(this.onGameLoaded);
 
-			Tools.PostDebugMessage(this.GetType().Name + " destroyed.");
+			Logging.PostDebugMessage(this.GetType().Name + " destroyed.");
 
 			KSPLog.print(string.Format(
 				"{0} destructed.  Cache hits: {1}, misses: {2}, hit rate: {3:P1}",
@@ -469,7 +469,7 @@ namespace AntennaRange
 				}
 			}
 
-			Tools.PostDebugMessage(sb.ToString());
+			Logging.PostDebugMessage(sb.ToString());
 
 			Tools.PutStringBuilder(sb);
 		}

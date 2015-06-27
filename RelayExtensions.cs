@@ -28,7 +28,7 @@
 
 using System;
 using System.Collections.Generic;
-using ToadicusTools;
+using ToadicusTools.Extensions;
 
 namespace AntennaRange
 {
@@ -221,7 +221,7 @@ namespace AntennaRange
 		/// </summary>
 		public static void Log(this AntennaRelay relay, string format, params object[] args)
 		{
-			Tools.PostLogMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
+			ToadicusTools.Logging.PostLogMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
 		}
 
 		/// <summary>
@@ -229,7 +229,7 @@ namespace AntennaRange
 		/// </summary>
 		public static void Log(this AntennaRelay relay, string msg)
 		{
-			Tools.PostLogMessage("[{0}] {1}", relay.ToString(), msg);
+			ToadicusTools.Logging.PostLogMessage("[{0}] {1}", relay.ToString(), msg);
 		}
 
 		/// <summary>
@@ -237,7 +237,7 @@ namespace AntennaRange
 		/// </summary>
 		public static void LogWarning(this AntennaRelay relay, string format, params object[] args)
 		{
-			Tools.PostWarningMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
+			ToadicusTools.Logging.PostWarningMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
 		}
 
 		/// <summary>
@@ -245,7 +245,7 @@ namespace AntennaRange
 		/// </summary>
 		public static void LogWarning(this AntennaRelay relay, string msg)
 		{
-			Tools.PostWarningMessage("[{0}] {1}", relay.ToString(), msg);
+			ToadicusTools.Logging.PostWarningMessage("[{0}] {1}", relay.ToString(), msg);
 		}
 
 		/// <summary>
@@ -253,7 +253,7 @@ namespace AntennaRange
 		/// </summary>
 		public static void LogError(this AntennaRelay relay, string format, params object[] args)
 		{
-			Tools.PostErrorMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
+			ToadicusTools.Logging.PostErrorMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
 		}
 
 		/// <summary>
@@ -261,7 +261,7 @@ namespace AntennaRange
 		/// </summary>
 		public static void LogError(this AntennaRelay relay, string msg)
 		{
-			Tools.PostErrorMessage("[{0}] {1}", relay.ToString(), msg);
+			ToadicusTools.Logging.PostErrorMessage("[{0}] {1}", relay.ToString(), msg);
 		}
 
 		/// <summary>
@@ -270,7 +270,7 @@ namespace AntennaRange
 		[System.Diagnostics.Conditional("DEBUG")]
 		public static void LogDebug(this AntennaRelay relay, string format, params object[] args)
 		{
-			Tools.PostDebugMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
+			ToadicusTools.Logging.PostDebugMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
 		}
 
 		/// <summary>
@@ -279,7 +279,7 @@ namespace AntennaRange
 		[System.Diagnostics.Conditional("DEBUG")]
 		public static void LogDebug(this AntennaRelay relay, string msg)
 		{
-			Tools.PostDebugMessage("[{0}] {1}", relay.ToString(), msg);
+			ToadicusTools.Logging.PostDebugMessage("[{0}] {1}", relay.ToString(), msg);
 		}
 	}
 

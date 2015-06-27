@@ -31,7 +31,8 @@
 using KSP;
 using System;
 using System.Collections.Generic;
-using ToadicusTools;
+using ToadicusTools.Extensions;
+using ToadicusTools.DebugTools;
 using UnityEngine;
 
 namespace AntennaRange
@@ -51,7 +52,7 @@ namespace AntennaRange
 		// Debug Stuff
 		#pragma warning disable 649
 		private System.Diagnostics.Stopwatch timer;
-		private Tools.DebugLogger log;
+		private PooledDebugLogger log;
 		private long relayStart;
 		private long start;
 		#pragma warning restore 649
@@ -99,7 +100,7 @@ namespace AntennaRange
 			this.timer = new System.Diagnostics.Stopwatch();
 			#endif
 			#if DEBUG
-			this.log = Tools.DebugLogger.New(this);
+			this.log = PooledDebugLogger.Get(this);
 			#endif
 		}
 

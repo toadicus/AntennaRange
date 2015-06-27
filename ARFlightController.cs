@@ -31,7 +31,10 @@
 using KSP;
 using System;
 using System.Collections.Generic;
-using ToadicusTools;
+using ToadicusTools.Extensions;
+using ToadicusTools.Text;
+using ToadicusTools.DebugTools;
+using ToadicusTools.Wrappers;
 using UnityEngine;
 
 namespace AntennaRange
@@ -53,7 +56,7 @@ namespace AntennaRange
 		private IButton toolbarButton;
 
 		private ApplicationLauncherButton appLauncherButton;
-		private Tools.DebugLogger log;
+		private PooledDebugLogger log;
 
 		private System.Diagnostics.Stopwatch updateTimer;
 		#endregion
@@ -127,7 +130,7 @@ namespace AntennaRange
 		{
 			this.lockID = "ARConnectionRequired";
 
-			this.log = Tools.DebugLogger.New(this);
+			this.log = PooledDebugLogger.New(this);
 
 			this.updateTimer = new System.Diagnostics.Stopwatch();
 

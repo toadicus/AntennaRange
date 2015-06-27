@@ -29,6 +29,7 @@
 using KSP;
 using System;
 using ToadicusTools;
+using ToadicusTools.Text;
 
 namespace AntennaRange
 {
@@ -119,7 +120,7 @@ namespace AntennaRange
 			PartStates partState = (PartStates)this.protoPart.state;
 			if (partState == PartStates.DEAD || partState == PartStates.DEACTIVATED)
 			{
-				Tools.PostDebugMessage(string.Format(
+				Logging.PostDebugMessage(string.Format(
 					"{0}: {1} on {2} cannot transmit: {3}",
 					this.GetType().Name,
 					this.Title,
@@ -137,18 +138,17 @@ namespace AntennaRange
 		/// <returns>A <see cref="System.String"/> that represents the current <see cref="AntennaRange.ProtoAntennaRelay"/>.</returns>
 		public override string ToString()
 		{
-			System.Text.StringBuilder sb = Tools.GetStringBuilder();
-
-			sb.Append(this.Title);
-
-			if (this.protoPart != null && this.protoPart.pVesselRef != null)
+			using (PooledStringBuilder sb = PooledStringBuilder.Get())
 			{
-				sb.AppendFormat(" on {0}", this.protoPart.pVesselRef.vesselName);
+				sb.Append(this.Title);
+
+				if (this.protoPart != null && this.protoPart.pVesselRef != null)
+				{
+					sb.AppendFormat(" on {0}", this.protoPart.pVesselRef.vesselName);
+				}
+
+				return sb.ToString();
 			}
-
-			Tools.PutStringBuilder(sb);
-
-			return sb.ToString();
 		}
 
 		/// <summary>

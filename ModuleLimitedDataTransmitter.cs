@@ -30,7 +30,9 @@ using KSP;
 using System;
 using System.Collections.Generic;
 using System.Text;
-using ToadicusTools;
+using ToadicusTools.DebugTools;
+using ToadicusTools.Extensions;
+using ToadicusTools.Text;
 using UnityEngine;
 
 namespace AntennaRange
@@ -423,20 +425,19 @@ namespace AntennaRange
 			this._basepacketResourceCost = base.packetResourceCost;
 			this.moduleInfoContent = new GUIContent();
 
-			Tools.PostDebugMessage(string.Format(
-				"{0} loaded:\n" +
+			this.LogDebug("{0} loaded:\n" +
 				"packetSize: {1}\n" +
 				"packetResourceCost: {2}\n" +
 				"nominalTransmitDistance: {3}\n" +
 				"maxPowerFactor: {4}\n" +
 				"maxDataFactor: {5}\n",
-				this.name,
+				this,
 				base.packetSize,
 				this._basepacketResourceCost,
 				this.nominalTransmitDistance,
 				this.maxPowerFactor,
 				this.maxDataFactor
-			));
+			);
 		}
 
 		/// <summary>
@@ -455,7 +456,7 @@ namespace AntennaRange
 				this.relay.nominalTransmitDistance = this.nominalTransmitDistance;
 				this.relay.maxTransmitDistance = this.maxTransmitDistance;
 
-				this.UImaxTransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m", this.maxTransmitDistance);
+				this.UImaxTransmitDistance = TextTools.Format("{0:S3}m", this.maxTransmitDistance);
 
 				GameEvents.onPartActionUICreate.Add(this.onPartActionUICreate);
 				GameEvents.onPartActionUIDismiss.Add(this.onPartActionUIDismiss);
@@ -531,34 +532,34 @@ namespace AntennaRange
 		/// </summary>
 		public override string GetInfo()
 		{
-			StringBuilder sb = Tools.GetStringBuilder();
-			string text;
-
-			sb.Append(base.GetInfo());
-
-			if (ARConfiguration.UseAdditiveRanges)
+			using (PooledStringBuilder sb = PooledStringBuilder.Get())
 			{
-				sb.AppendFormat(Tools.SIFormatter, "Nominal Range to Kerbin: {0:S3}m\n",
-					Math.Sqrt(this.nominalTransmitDistance * ARConfiguration.KerbinNominalRange)
-				);
-				sb.AppendFormat(Tools.SIFormatter, "Maximum Range to Kerbin: {0:S3}m",
-					Math.Sqrt(
-						this.nominalTransmitDistance * Math.Sqrt(this.maxPowerFactor) *
-						ARConfiguration.KerbinRelayRange
-					)
-				);
+				string text;
+
+				sb.Append(base.GetInfo());
+
+				if (ARConfiguration.UseAdditiveRanges)
+				{
+					sb.AppendFormat("Nominal Range to Kerbin: {0:S3}m\n",
+						Math.Sqrt(this.nominalTransmitDistance * ARConfiguration.KerbinNominalRange)
+					);
+					sb.AppendFormat("Maximum Range to Kerbin: {0:S3}m",
+						Math.Sqrt(
+							this.nominalTransmitDistance * Math.Sqrt(this.maxPowerFactor) *
+							ARConfiguration.KerbinRelayRange
+						)
+					);
+				}
+				else
+				{
+					sb.AppendFormat("Nominal Range: {0:S3}m\n", this.nominalTransmitDistance);
+					sb.AppendFormat("Maximum Range: {0:S3}m", this.maxTransmitDistance);
+				}
+
+				text = sb.ToString();
+
+				return text;
 			}
-			else
-			{
-				sb.AppendFormat(Tools.SIFormatter, "Nominal Range: {0:S3}m\n", this.nominalTransmitDistance);
-				sb.AppendFormat(Tools.SIFormatter, "Maximum Range: {0:S3}m", this.maxTransmitDistance);
-			}
-
-			text = sb.ToString();
-
-			Tools.PutStringBuilder(sb);
-
-			return text;
 		}
 
 		/// <summary>
@@ -576,13 +577,13 @@ namespace AntennaRange
 			{
 				case PartStates.DEAD:
 				case PartStates.DEACTIVATED:
-					Tools.PostDebugMessage(string.Format(
+					this.LogDebug(
 						"{0}: {1} on {2} cannot transmit: {3}",
 						this.GetType().Name,
 						this.part.partInfo.title,
 						this.vessel.vesselName,
 						Enum.GetName(typeof(PartStates), this.part.State)
-					));
+					);
 					return false;
 				default:
 					break;
@@ -641,9 +642,9 @@ namespace AntennaRange
 			}
 			else
 			{
-				Tools.PostDebugMessage(this, "{0} unable to transmit during TransmitData.", this.part.partInfo.title);
+				this.LogDebug("{0} unable to transmit during TransmitData.", this.part.partInfo.title);
 
-				var logger = Tools.DebugLogger.New(this);
+				var logger = PooledDebugLogger.New(this);
 
 				IList<ModuleScienceContainer> vesselContainers = this.vessel.getModulesOfType<ModuleScienceContainer>();
 				ModuleScienceContainer scienceContainer;
@@ -699,31 +700,30 @@ namespace AntennaRange
 
 				if (dataQueue.Count > 0)
 				{
-					StringBuilder sb = Tools.GetStringBuilder();
-
-					sb.Append('[');
-					sb.Append(this.part.partInfo.title);
-					sb.AppendFormat("]: {0} data items could not be saved: no space available in data containers.\n");
-					sb.Append("Data to be discarded:\n");
-
-					ScienceData data;
-					for (int dIdx = 0; dIdx < dataQueue.Count; dIdx++)
+					using (PooledStringBuilder sb = PooledStringBuilder.Get())
 					{
-						data = dataQueue[dIdx];
-						sb.AppendFormat("\t{0}\n", data.title);
+						sb.Append('[');
+						sb.Append(this.part.partInfo.title);
+						sb.AppendFormat("]: {0} data items could not be saved: no space available in data containers.\n");
+						sb.Append("Data to be discarded:\n");
+
+						ScienceData data;
+						for (int dIdx = 0; dIdx < dataQueue.Count; dIdx++)
+						{
+							data = dataQueue[dIdx];
+							sb.AppendFormat("\t{0}\n", data.title);
+						}
+
+						ScreenMessages.PostScreenMessage(sb.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
+
+						this.LogDebug(sb.ToString());
 					}
-
-					ScreenMessages.PostScreenMessage(sb.ToString(), 4f, ScreenMessageStyle.UPPER_LEFT);
-
-					Tools.PostDebugMessage(sb.ToString());
-
-					Tools.PutStringBuilder(sb);
 				}
 
 				this.PostCannotTransmitError();
 			}
 
-			Tools.PostDebugMessage (
+			this.LogDebug(
 				"distance: " + this.CurrentLinkSqrDistance
 				+ " packetSize: " + this.packetSize
 				+ " packetResourceCost: " + this.packetResourceCost
@@ -756,7 +756,7 @@ namespace AntennaRange
 			PreTransmit_SetPacketSize ();
 			PreTransmit_SetPacketResourceCost ();
 
-			Tools.PostDebugMessage (
+			this.LogDebug(
 				"distance: " + this.CurrentLinkSqrDistance
 				+ " packetSize: " + this.packetSize
 				+ " packetResourceCost: " + this.packetResourceCost
@@ -781,31 +781,31 @@ namespace AntennaRange
 		{
 			if (this.actionUIUpdate)
 			{
-				this.UImaxTransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m",
+				this.UImaxTransmitDistance = TextTools.Format("{0:S3}m",
 					Math.Sqrt(this.MaximumLinkSqrDistance));
-				this.UInominalLinkDistance = string.Format(Tools.SIFormatter, "{0:S3}m",
+				this.UInominalLinkDistance = TextTools.Format("{0:S3}m",
 					Math.Sqrt(this.NominalLinkSqrDistance));
 				
 				if (this.CanTransmit())
 				{
 					this.UIrelayStatus = this.LinkStatus.ToString();
-					this.UItransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m",
+					this.UItransmitDistance = TextTools.Format("{0:S3}m",
 						Math.Sqrt(this.CurrentLinkSqrDistance));
-					this.UIpacketSize = string.Format(Tools.SIFormatter, "{0:S3}MiT", this.DataRate);
-					this.UIpacketCost = string.Format(Tools.SIFormatter, "{0:S3}EC", this.DataResourceCost);
+					this.UIpacketSize = TextTools.Format("{0:S3}MiT", this.DataRate);
+					this.UIpacketCost = TextTools.Format("{0:S3}EC", this.DataResourceCost);
 				}
 				else
 				{
 					if (this.relay.firstOccludingBody == null)
 					{
-						this.UItransmitDistance = string.Format(Tools.SIFormatter, "{0:S3}m",
+						this.UItransmitDistance = TextTools.Format("{0:S3}m",
 							Math.Sqrt(this.CurrentLinkSqrDistance));
 						this.UIrelayStatus = "Out of range";
 					}
 					else
 					{
 						this.UItransmitDistance = "N/A";
-						this.UIrelayStatus = string.Format("Blocked by {0}", this.relay.firstOccludingBody.bodyName);
+						this.UIrelayStatus = TextTools.Format("Blocked by {0}", this.relay.firstOccludingBody.bodyName);
 					}
 					this.UIpacketSize = "N/A";
 					this.UIpacketCost = "N/A";
@@ -835,32 +835,31 @@ namespace AntennaRange
 		/// <returns>A <see cref="System.String"/> that represents the current <see cref="AntennaRange.ModuleLimitedDataTransmitter"/>.</returns>
 		public override string ToString()
 		{
-			StringBuilder sb = Tools.GetStringBuilder();
-			string msg;
-
-			sb.Append(this.part.partInfo.title);
-
-			if (vessel != null)
+			using (PooledStringBuilder sb = PooledStringBuilder.Get())
 			{
-				sb.Append(" on ");
-				sb.Append(vessel.vesselName);
+				string msg;
+
+				sb.Append(this.part.partInfo.title);
+
+				if (vessel != null)
+				{
+					sb.Append(" on ");
+					sb.Append(vessel.vesselName);
+				}
+				else if (
+					this.part != null &&
+					this.part.protoPartSnapshot != null &&
+					this.part.protoPartSnapshot != null &&
+					this.part.protoPartSnapshot.pVesselRef != null)
+				{
+					sb.Append(" on ");
+					sb.Append(this.part.protoPartSnapshot.pVesselRef.vesselName);
+				}
+
+				msg = sb.ToString();
+
+				return msg;
 			}
-			else if (
-				this.part != null &&
-				this.part.protoPartSnapshot != null &&
-				this.part.protoPartSnapshot != null &&
-				this.part.protoPartSnapshot.pVesselRef != null
-			)
-			{
-				sb.Append(" on ");
-				sb.Append(this.part.protoPartSnapshot.pVesselRef.vesselName);
-			}
-
-			msg = sb.ToString();
-
-			Tools.PutStringBuilder(sb);
-
-			return msg;
 		}
 
 		// When we catch an onPartActionUICreate event for our part, go ahead and update every frame to look pretty.
@@ -896,7 +895,7 @@ namespace AntennaRange
 				ErrorText
 			);
 
-			Tools.PostDebugMessage(this.GetType().Name + ": " + this.ErrorMsg.message);
+			this.LogDebug(this.ErrorMsg.message);
 
 			ScreenMessages.PostScreenMessage(this.ErrorMsg, false);
 		}
@@ -943,30 +942,30 @@ namespace AntennaRange
 
 		private string buildTransmitMessage()
 		{
-			StringBuilder sb = Tools.GetStringBuilder();
-			string msg;
-
-			sb.Append("[");
-			sb.Append(base.part.partInfo.title);
-			sb.Append("]: ");
-
-			sb.Append("Beginning transmission ");
-
-			if (this.KerbinDirect)
+			using (PooledStringBuilder sb = PooledStringBuilder.Get())
 			{
-				sb.Append("directly to Kerbin.");
+				string msg;
+
+				sb.Append("[");
+				sb.Append(base.part.partInfo.title);
+				sb.Append("]: ");
+
+				sb.Append("Beginning transmission ");
+
+				if (this.KerbinDirect)
+				{
+					sb.Append("directly to Kerbin.");
+				}
+				else
+				{
+					sb.Append("via ");
+					sb.Append(this.relay.targetRelay);
+				}
+
+				msg = sb.ToString();
+
+				return msg;
 			}
-			else
-			{
-				sb.Append("via ");
-				sb.Append(this.relay.targetRelay);
-			}
-
-			msg = sb.ToString();
-
-			Tools.PutStringBuilder(sb);
-
-			return msg;
 		}
 
 		#if DEBUG

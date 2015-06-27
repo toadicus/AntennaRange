@@ -5,7 +5,10 @@
 
 using KSP;
 using System;
-using ToadicusTools;
+using ToadicusTools.Extensions;
+using ToadicusTools.Text;
+using ToadicusTools.GUIUtils;
+using ToadicusTools.Wrappers;
 using UnityEngine;
 
 namespace AntennaRange
@@ -275,7 +278,7 @@ namespace AntennaRange
 					GUILayout.ExpandWidth(true)
 				);
 
-				configPos = Tools.ClampRectToScreen(configPos, 20);
+				configPos = WindowTools.ClampRectToScreen(configPos, 20);
 
 				if (configPos != this.configWindowPos)
 				{
@@ -291,7 +294,7 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal(GUILayout.ExpandWidth(true));
 
-			bool requireLineOfSight = GUITools.Toggle(ARConfiguration.RequireLineOfSight, "Require Line of Sight");
+			bool requireLineOfSight = Layout.Toggle(ARConfiguration.RequireLineOfSight, "Require Line of Sight");
 			if (requireLineOfSight != ARConfiguration.RequireLineOfSight)
 			{
 				ARConfiguration.RequireLineOfSight = requireLineOfSight;
@@ -303,7 +306,7 @@ namespace AntennaRange
 			GUILayout.BeginHorizontal(GUILayout.ExpandWidth(true));
 
 			bool requireConnectionForControl =
-				GUITools.Toggle(
+				Layout.Toggle(
 					ARConfiguration.RequireConnectionForControl,
 					"Require Connection for Probe Control"
 				);
@@ -317,7 +320,7 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal();
 
-			bool fixedPowerCost = GUITools.Toggle(ARConfiguration.FixedPowerCost, "Use Fixed Power Cost");
+			bool fixedPowerCost = Layout.Toggle(ARConfiguration.FixedPowerCost, "Use Fixed Power Cost");
 			if (fixedPowerCost != ARConfiguration.FixedPowerCost)
 			{
 				ARConfiguration.FixedPowerCost = fixedPowerCost;
@@ -328,7 +331,7 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal();
 
-			bool useAdditive = GUITools.Toggle(ARConfiguration.UseAdditiveRanges, "Use Additive Ranges");
+			bool useAdditive = Layout.Toggle(ARConfiguration.UseAdditiveRanges, "Use Additive Ranges");
 			if (useAdditive != ARConfiguration.UseAdditiveRanges)
 			{
 				ARConfiguration.UseAdditiveRanges = useAdditive;
@@ -339,7 +342,7 @@ namespace AntennaRange
 
 			GUILayout.BeginHorizontal();
 
-			bool prettyLines = GUITools.Toggle(ARConfiguration.PrettyLines, "Draw Pretty Lines");
+			bool prettyLines = Layout.Toggle(ARConfiguration.PrettyLines, "Draw Pretty Lines");
 			if (prettyLines != ARConfiguration.PrettyLines)
 			{
 				ARConfiguration.PrettyLines = prettyLines;

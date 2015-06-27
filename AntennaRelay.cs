@@ -28,7 +28,8 @@
 
 using System;
 using System.Collections.Generic;
-using ToadicusTools;
+using ToadicusTools.DebugTools;
+using ToadicusTools.Extensions;
 
 namespace AntennaRange
 {
@@ -203,9 +204,9 @@ namespace AntennaRange
 				return;
 			}
 
-			Tools.DebugLogger log;
+			PooledDebugLogger log;
 			#if DEBUG
-			log = Tools.DebugLogger.New(this);
+			log = PooledDebugLogger.New(this);
 			#endif
 
 			#if BENCH
