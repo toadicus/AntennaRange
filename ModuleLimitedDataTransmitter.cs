@@ -51,6 +51,11 @@ namespace AntennaRange
 	public class ModuleLimitedDataTransmitter
 		: ModuleDataTransmitter, IScienceDataTransmitter, IAntennaRelay, IModuleInfo
 	{
+		private const string tooltipSkinName = "PartTooltipSkin";
+		private static GUISkin partTooltipSkin;
+		private static GUIStyle partTooltipBodyStyle;
+		private static GUIStyle partTooltipHeaderStyle;
+
 		// Stores the packetResourceCost as defined in the .cfg file.
 		private float _basepacketResourceCost;
 
@@ -501,21 +506,45 @@ namespace AntennaRange
 		{
 			this.moduleInfoContent.text = this.GetInfo();
 
-			GUIStyle style0 = PartListTooltips.fetch.tooltipSkin.customStyles[0];
-			GUIStyle style1 = PartListTooltips.fetch.tooltipSkin.customStyles[1];
+			if (partTooltipSkin == null)
+			{
+				UnityEngine.Object[] skins = Resources.FindObjectsOfTypeAll(typeof(GUISkin));
+				GUISkin skin;
+				for (int sIdx = 0; sIdx < skins.Length; sIdx++)
+				{
+					skin = (GUISkin)skins[sIdx];
+
+					if (skin.name == tooltipSkinName)
+					{
+						partTooltipSkin = skin;
+						partTooltipBodyStyle = partTooltipSkin.customStyles[0];
+						partTooltipHeaderStyle = partTooltipSkin.customStyles[1];
+					}
+				}
+
+				if (partTooltipSkin == null)
+				{
+					this.LogError("Could not find GUISkin {0}?  Please report this!", tooltipSkinName);
+					return;
+				}
+				else
+				{
+					this.Log("Loaded GUISkin {0}", tooltipSkinName);
+				}
+			}
 
 			float width = rect.width;
 			float orgHeight = rect.height;
-			float height = style0.CalcHeight(this.moduleInfoContent, width);
+			float height = partTooltipBodyStyle.CalcHeight(this.moduleInfoContent, width);
 
 			rect.height = height;
 
-			GUI.Box(rect, this.moduleInfoContent, style0);
-			GUI.Label(rect, this.GetModuleTitle(), style1);
+			GUI.Box(rect, this.moduleInfoContent, partTooltipBodyStyle);
+			GUI.Label(rect, this.GetModuleTitle(), partTooltipHeaderStyle);
 
 			GUILayout.Space(height - orgHeight
-				- style0.padding.bottom - style0.padding.top
-				- 2f * (style0.margin.bottom + style0.margin.top)
+				- partTooltipBodyStyle.padding.bottom - partTooltipBodyStyle.padding.top
+				- 2f * (partTooltipBodyStyle.margin.bottom + partTooltipBodyStyle.margin.top)
 			);
 		}
 
