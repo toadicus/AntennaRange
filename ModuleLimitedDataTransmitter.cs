@@ -637,8 +637,7 @@ namespace AntennaRange
 		/// returns false.
 		/// </summary>
 		/// <param name="dataQueue">List of <see cref="ScienceData"/> to transmit.</param>
-		/// <param name="callback">Callback function</param>
-		public new void TransmitData(List<ScienceData> dataQueue, Callback callback)
+		public new void TransmitData(List<ScienceData> dataQueue)
 		{
 			this.LogDebug(
 				"TransmitData(List<ScienceData> dataQueue, Callback callback) called.  dataQueue.Count={0}",
@@ -656,18 +655,10 @@ namespace AntennaRange
 
 				this.LogDebug(
 					"CanTransmit in TransmitData, calling base.TransmitData with dataQueue=[{0}] and callback={1}",
-					dataQueue.SPrint(),
-					callback == null ? "null" : callback.ToString()
+					dataQueue.SPrint()
 				);
 
-				if (callback == null)
-				{
-					base.TransmitData(dataQueue);
-				}
-				else
-				{
-					base.TransmitData(dataQueue, callback);
-				}
+				base.TransmitData(dataQueue);
 			}
 			else
 			{
@@ -757,21 +748,6 @@ namespace AntennaRange
 				+ " packetSize: " + this.packetSize
 				+ " packetResourceCost: " + this.packetResourceCost
 			);
-		}
-
-		/// <summary>
-		/// Override ModuleDataTransmitter.TransmitData to check against CanTransmit and fail out when CanTransmit
-		/// returns false.
-		/// </summary>
-		/// <param name="dataQueue">List of <see cref="ScienceData"/> to transmit.</param>
-		public new void TransmitData(List<ScienceData> dataQueue)
-		{
-			this.LogDebug(
-				"TransmitData(List<ScienceData> dataQueue) called, dataQueue.Count={0}",
-				dataQueue.Count
-			);
-
-			this.TransmitData(dataQueue, null);
 		}
 
 		/// <summary>
