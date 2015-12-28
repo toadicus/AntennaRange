@@ -258,7 +258,7 @@ namespace AntennaRange
 			{
 				Vessel vessel;
 				IAntennaRelay relay;
-				IAntennaRelay bestActiveRelay;
+				IAntennaRelay bestActiveRelay = null;
 				IList<IAntennaRelay> activeVesselRelays;
 
 				usefulRelays.Clear();
@@ -270,6 +270,14 @@ namespace AntennaRange
 					if (vessel == null || vessel == FlightGlobals.ActiveVessel)
 					{
 						continue;
+					}
+
+					switch (vessel.vesselType)
+					{
+						case VesselType.Debris:
+						case VesselType.Flag:
+						case VesselType.Unknown:
+							continue;
 					}
 
 					log.AppendFormat("\nFetching best relay for vessel {0}", vessel);
@@ -290,21 +298,6 @@ namespace AntennaRange
 				{
 					bestActiveRelay = RelayDatabase.Instance.GetBestVesselRelay(FlightGlobals.ActiveVessel);
 
-					for (int rIdx = 0; rIdx < activeVesselRelays.Count; rIdx++)
-					{
-						relay = activeVesselRelays[rIdx];
-
-						// The best active relay will get checked with the other useful relays later.
-						if (relay == null || relay == bestActiveRelay)
-						{
-							continue;
-						}
-
-						log.AppendFormat("\nFinding nearest relay for active vessel relay {0}", relay);
-
-						relay.FindNearestRelay();
-					}
-
 					log.AppendFormat("\n\tAdding best active vessel relay {0} to usefulRelays", bestActiveRelay);
 
 					usefulRelays.Add(bestActiveRelay);
@@ -322,6 +315,22 @@ namespace AntennaRange
 					}
 
 					log.AppendFormat("\n\tDoing target search for useful relay {0}", relay);
+
+					relay.FindNearestRelay();
+				}
+
+				// Very last, find routes for the non-best relays on the active vessel.
+				for (int rIdx = 0; rIdx < activeVesselRelays.Count; rIdx++)
+				{
+					relay = activeVesselRelays[rIdx];
+
+					// The best active relay will get checked with the other useful relays later.
+					if (relay == null || relay == bestActiveRelay)
+					{
+						continue;
+					}
+
+					log.AppendFormat("\nFinding nearest relay for active vessel relay {0}", relay);
 
 					relay.FindNearestRelay();
 				}
