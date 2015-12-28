@@ -100,7 +100,7 @@ namespace AntennaRange
 			this.timer = new System.Diagnostics.Stopwatch();
 			#endif
 			#if DEBUG
-			this.log = PooledDebugLogger.Get(this);
+			this.log = PooledDebugLogger.Get();
 			#endif
 		}
 

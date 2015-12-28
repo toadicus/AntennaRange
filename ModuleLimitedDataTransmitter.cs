@@ -25,7 +25,7 @@
 // SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#define DEBUG
 using KSP;
 using System;
 using System.Collections.Generic;
@@ -184,7 +184,7 @@ namespace AntennaRange
 				else
 				{
 					this.LogError("Vessel and/or part reference are null, returning null vessel.");
-					this.LogError(new System.Diagnostics.StackTrace().ToString());
+					// this.LogError(new System.Diagnostics.StackTrace().ToString());
 					return null;
 				}
 			}
@@ -453,7 +453,7 @@ namespace AntennaRange
 		{
 			base.OnStart (state);
 
-			this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalTransmitDistance;
+			this.RecalculateMaxRange();
 
 			if (state >= StartState.PreLaunch)
 			{
@@ -481,7 +481,7 @@ namespace AntennaRange
 
 			base.OnLoad (node);
 
-			this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalTransmitDistance;
+			this.RecalculateMaxRange();
 		}
 
 		/// <summary>
@@ -834,6 +834,16 @@ namespace AntennaRange
 			}
 		}
 
+		public void RecalculateMaxRange()
+		{
+			this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalTransmitDistance;
+
+			#if DEBUG
+			this.Log("Recalculated max range: sqrt({0}) * {1} = {2}",
+				this.maxPowerFactor, this.nominalTransmitDistance, this.maxTransmitDistance);
+			#endif
+		}
+
 		/// <summary>
 		/// Returns a <see cref="System.String"/> that represents the current <see cref="AntennaRange.ModuleLimitedDataTransmitter"/>.
 		/// </summary>
@@ -844,7 +854,14 @@ namespace AntennaRange
 			{
 				string msg;
 
-				sb.Append(this.part.partInfo.title);
+				if (this.part != null && this.part.partInfo != null)
+				{
+					sb.Append(this.part.partInfo.title);
+				}
+				else
+				{
+					sb.Append(this.GetType().Name);
+				}
 
 				if (vessel != null)
 				{
@@ -987,27 +1004,26 @@ namespace AntennaRange
 		[KSPEvent (guiName = "Dump Vessels", active = true, guiActive = true)]
 		public void PrintAllVessels()
 		{
-			StringBuilder sb = Tools.GetStringBuilder();
-			
-			sb.Append("Dumping FlightGlobals.Vessels:");
-
-			Vessel vessel;
-			for (int i = 0; i < FlightGlobals.Vessels.Count; i++)
+			using (PooledStringBuilder sb = PooledStringBuilder.Get())
 			{
-				vessel = FlightGlobals.Vessels[i];
-				sb.AppendFormat("\n'{0} ({1})'", vessel.vesselName, vessel.id);
-			}
-		    
-			Tools.PostDebugMessage(sb.ToString());
+				sb.Append("Dumping FlightGlobals.Vessels:");
 
-			Tools.PutStringBuilder(sb);
+				Vessel vessel;
+				for (int i = 0; i < FlightGlobals.Vessels.Count; i++)
+				{
+					vessel = FlightGlobals.Vessels[i];
+					sb.AppendFormat("\n'{0} ({1})'", vessel.vesselName, vessel.id);
+				}
+		    
+				ToadicusTools.Logging.PostDebugMessage(sb.ToString());
+			}
 		}
 		 
-		[KSPEvent (guiName = "Dump RelayDB", active = true, guiActive = true)]
+		/*[KSPEvent (guiName = "Dump RelayDB", active = true, guiActive = true)]
 		public void DumpRelayDB()
 		{
 			RelayDatabase.Instance.Dump();
-		}
+		}*/
 		#endif
 	}
 }

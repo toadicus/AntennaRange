@@ -132,6 +132,14 @@ namespace AntennaRange
 			return base.CanTransmit();
 		}
 
+		public void RecalculateMaxRange()
+		{
+			if (this.moduleRef != null)
+			{
+				this.moduleRef.RecalculateMaxRange();
+			}
+		}
+
 		/// <summary>
 		/// Returns a <see cref="System.String"/> that represents the current <see cref="AntennaRange.ProtoAntennaRelay"/>.
 		/// </summary>
@@ -162,6 +170,8 @@ namespace AntennaRange
 			this.protoPart = pps;
 
 			this.Log("constructed ({0})", this.GetType().Name);
+
+			this.RecalculateMaxRange();
 		}
 	}
 }

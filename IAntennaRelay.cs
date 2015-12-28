@@ -105,6 +105,11 @@ namespace AntennaRange
 		void FindNearestRelay();
 
 		/// <summary>
+		/// Recalculates the max range; useful for making sure we're using additive ranges when enabled.
+		/// </summary>
+		void RecalculateMaxRange();
+
+		/// <summary>
 		/// Returns a <see cref="System.String"/> that represents the current <see cref="AntennaRange.IAntennaRelay"/>.
 		/// </summary>
 		string ToString();
