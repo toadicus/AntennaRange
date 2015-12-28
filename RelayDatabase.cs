@@ -450,28 +450,27 @@ namespace AntennaRange
 		#if DEBUG
 		public void Dump()
 		{
-			StringBuilder sb = Tools.GetStringBuilder();
-
-			sb.Append("Dumping RelayDatabase:");
-
-			var dbEnum = this.relayDatabase.GetEnumerator();
-			IList<IAntennaRelay> vesselRelays;
-			while (dbEnum.MoveNext())
+			using (ToadicusTools.Text.PooledStringBuilder sb = ToadicusTools.Text.PooledStringBuilder.Get())
 			{
-				sb.AppendFormat("\nVessel {0}:", dbEnum.Current.Key);
+				sb.Append("Dumping RelayDatabase:");
 
-				vesselRelays = dbEnum.Current.Value;
-				IAntennaRelay relay;
-				for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
+				var dbEnum = this.relayDatabase.GetEnumerator();
+				IList<IAntennaRelay> vesselRelays;
+				while (dbEnum.MoveNext())
 				{
-					relay = vesselRelays[rIdx];
-					sb.AppendFormat("\n\t{0}", relay.ToString());
+					sb.AppendFormat("\nVessel {0}:", dbEnum.Current.Key);
+
+					vesselRelays = dbEnum.Current.Value;
+					IAntennaRelay relay;
+					for (int rIdx = 0; rIdx < vesselRelays.Count; rIdx++)
+					{
+						relay = vesselRelays[rIdx];
+						sb.AppendFormat("\n\t{0}", relay.ToString());
+					}
 				}
+
+				Logging.PostDebugMessage(sb.ToString());
 			}
-
-			Logging.PostDebugMessage(sb.ToString());
-
-			Tools.PutStringBuilder(sb);
 		}
 		#endif
 	}
