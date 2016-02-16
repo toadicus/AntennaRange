@@ -184,7 +184,9 @@ namespace AntennaRange
 				else
 				{
 					this.LogError("Vessel and/or part reference are null, returning null vessel.");
-					// this.LogError(new System.Diagnostics.StackTrace().ToString());
+					#if DEBUG
+					this.LogError(new System.Diagnostics.StackTrace().ToString());
+					#endif
 					return null;
 				}
 			}
