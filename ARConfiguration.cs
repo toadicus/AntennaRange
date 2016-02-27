@@ -31,6 +31,8 @@ namespace AntennaRange
 		private const string TRACKING_STATION_RANGES_KEY = "TRACKING_STATION_RANGES";
 		private const string RANGE_KEY = "range";
 
+		private const string USE_TOOLBAR_KEY = "useToolbarIfAvailable";
+
 		/// <summary>
 		/// Indicates whether connections require line of sight.
 		/// </summary>
@@ -115,6 +117,12 @@ namespace AntennaRange
 			}
 		}
 
+		public static bool UseToolbarIfAvailable
+		{
+			get;
+			private set;
+		}
+
 #pragma warning disable 1591
 
 		private bool showConfigWindow;
@@ -178,6 +186,8 @@ namespace AntennaRange
 			ARConfiguration.UpdateDelay = this.LoadConfigValue(UPDATE_DELAY_KEY, 16L);
 			this.updateDelayStr = ARConfiguration.UpdateDelay.ToString();
 
+			ARConfiguration.UseToolbarIfAvailable = this.LoadConfigValue(USE_TOOLBAR_KEY, true);
+
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
 			GameEvents.OnKSCFacilityUpgraded.Add(this.onFacilityUpgraded);
 
@@ -236,11 +246,17 @@ namespace AntennaRange
 		public void OnGUI()
 		{
 			// Only runs once, if the Toolbar is available.
-			if (ToolbarManager.ToolbarAvailable)
+			if (ToolbarManager.ToolbarAvailable && ARConfiguration.UseToolbarIfAvailable)
 			{
 				if (this.toolbarButton == null)
 				{
 					this.LogDebug("Toolbar available; initializing toolbar button.");
+
+					if (this.appLauncherButton != null)
+					{
+						ApplicationLauncher.Instance.RemoveModApplication(this.appLauncherButton);
+						this.appLauncherButton = null;
+					}
 
 					this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConfiguration");
 					this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.SPACECENTER);
@@ -255,6 +271,12 @@ namespace AntennaRange
 			}
 			else if (this.appLauncherButton == null && ApplicationLauncher.Ready)
 			{
+				if (this.toolbarButton != null)
+				{
+					this.toolbarButton.Destroy();
+					this.toolbarButton = null;
+				}
+
 				this.LogDebug("Toolbar available; initializing AppLauncher button.");
 
 				this.appLauncherButton = ApplicationLauncher.Instance.AddModApplication(
@@ -347,6 +369,17 @@ namespace AntennaRange
 			{
 				ARConfiguration.PrettyLines = prettyLines;
 				this.SaveConfigValue(PRETTY_LINES_KEY, prettyLines);
+			}
+
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
+
+			bool useToolbar = Layout.Toggle(ARConfiguration.UseToolbarIfAvailable, "Use Blizzy's Toolbar, if Available");
+			if (useToolbar != ARConfiguration.UseToolbarIfAvailable)
+			{
+				ARConfiguration.UseToolbarIfAvailable = useToolbar;
+				this.SaveConfigValue(USE_TOOLBAR_KEY, useToolbar);
 			}
 
 			GUILayout.EndHorizontal();

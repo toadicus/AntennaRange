@@ -149,7 +149,7 @@ namespace AntennaRange
 			this.appLauncherTextures[ConnectionStatus.Optimal] =
 				GameDatabase.Instance.GetTexture("AntennaRange/Textures/appLauncherIcon", false);
 
-			if (ToolbarManager.ToolbarAvailable)
+			if (ToolbarManager.ToolbarAvailable && ARConfiguration.UseToolbarIfAvailable)
 			{
 				this.toolbarButton = ToolbarManager.Instance.add("AntennaRange", "ARConnectionStatus");
 
