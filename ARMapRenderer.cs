@@ -278,6 +278,17 @@ namespace AntennaRange
 					return;
 				}
 
+				switch (relay.targetRelay.vessel.vesselType)
+				{
+					case VesselType.Debris:
+					case VesselType.Flag:
+					case VesselType.Unknown:
+						renderer.enabled = false;
+						return;
+					default:
+						break;
+				}
+
 				nextPoint = ScaledSpace.LocalToScaledSpace(relay.targetRelay.vessel.GetWorldPos3D());
 			}
 
