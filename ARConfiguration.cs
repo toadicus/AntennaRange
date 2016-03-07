@@ -4,6 +4,7 @@
 // copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/
 
 using KSP;
+using KSP.UI.Screens;
 using System;
 using ToadicusTools.Extensions;
 using ToadicusTools.Text;

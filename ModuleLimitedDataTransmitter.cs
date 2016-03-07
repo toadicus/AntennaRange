@@ -417,7 +417,7 @@ namespace AntennaRange
 		// Build ALL the objects.
 		public ModuleLimitedDataTransmitter () : base()
 		{
-			this.ErrorMsg = new ScreenMessage("", 4f, false, ScreenMessageStyle.UPPER_LEFT);
+			this.ErrorMsg = new ScreenMessage("", 4f, ScreenMessageStyle.UPPER_LEFT);
 			this.packetThrottle = 100f;
 		}
 
@@ -921,7 +921,7 @@ namespace AntennaRange
 
 			this.LogDebug(this.ErrorMsg.message);
 
-			ScreenMessages.PostScreenMessage(this.ErrorMsg, false);
+			ScreenMessages.PostScreenMessage(this.ErrorMsg);
 		}
 
 		// Before transmission, set packetResourceCost.  Per above, packet cost increases with the square of

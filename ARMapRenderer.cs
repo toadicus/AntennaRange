@@ -122,7 +122,7 @@ namespace AntennaRange
 				log.Clear();
 
 				log.AppendFormat("OnPreCull.\n");
-
+/* @ TODO: Fix
 				log.AppendFormat("\tMapView: Draw3DLines: {0}\n" +
 					"\tMapView.MapCamera.camera.fieldOfView: {1}\n" +
 					"\tMapView.MapCamera.Distance: {2}\n",
@@ -130,7 +130,7 @@ namespace AntennaRange
 					MapView.MapCamera.camera.fieldOfView,
 					MapView.MapCamera.Distance
 				);
-
+*/
 				log.AppendLine("FlightGlobals ready and Vessels list not null.");
 
 				IAntennaRelay relay;
@@ -213,7 +213,7 @@ namespace AntennaRange
 			}
 
 			LineRenderer renderer = this[relay.vessel.id];
-			Vector3d start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());
+			Vector3 start = ScaledSpace.LocalToScaledSpace(relay.vessel.GetWorldPos3D());
 
 			float lineWidth;
 			float d = Screen.height / 2f + 0.01f;
@@ -226,7 +226,9 @@ namespace AntennaRange
 			{
 				lineWidth = 2f;
 
-				start = MapView.MapCamera.camera.WorldToScreenPoint(start);
+				// TODO: No idea if this substitution is right.
+				// start = MapView.MapCamera.camera.WorldToScreenPoint(start);
+				start = PlanetariumCamera.Camera.WorldToScreenPoint(start);
 
 				start.z = start.z >= 0f ? d : -d;
 			}
@@ -241,7 +243,7 @@ namespace AntennaRange
 			relayStart = timer.ElapsedMilliseconds;
 			#endif
 
-			Vector3d nextPoint;
+			Vector3 nextPoint;
 
 			renderer.enabled = true;
 
@@ -296,7 +298,9 @@ namespace AntennaRange
 
 			if (!MapView.Draw3DLines)
 			{
-				nextPoint = MapView.MapCamera.camera.WorldToScreenPoint(nextPoint);
+				// TODO: No idea if this substitution is right.
+				// nextPoint = MapView.MapCamera.camera.WorldToScreenPoint(nextPoint);
+				nextPoint = PlanetariumCamera.Camera.WorldToScreenPoint(nextPoint);
 				nextPoint.z = nextPoint.z >= 0f ? d : -d;
 			}
 

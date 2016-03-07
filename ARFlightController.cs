@@ -29,6 +29,7 @@
 #pragma warning disable 1591
 
 using KSP;
+using KSP.UI.Screens;
 using System;
 using System.Collections.Generic;
 using ToadicusTools.Extensions;
