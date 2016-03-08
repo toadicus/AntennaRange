@@ -220,11 +220,11 @@ namespace AntennaRange
 
 			if (MapView.Draw3DLines)
 			{
-				lineWidth = 0.005859375f * MapView.MapCamera.Distance;
+				lineWidth = 0.00833333333f * MapView.MapCamera.Distance;
 			}
 			else
 			{
-				lineWidth = 2f;
+				lineWidth = 3f;
 
 				// TODO: No idea if this substitution is right.
 				// start = MapView.MapCamera.camera.WorldToScreenPoint(start);
