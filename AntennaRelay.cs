@@ -30,6 +30,7 @@ using System;
 using System.Collections.Generic;
 using ToadicusTools.DebugTools;
 using ToadicusTools.Extensions;
+using UnityEngine;
 
 namespace AntennaRange
 {
@@ -183,6 +184,73 @@ namespace AntennaRange
 			get;
 			set;
 		}
+		/*
+		 * The next two functions overwrite the behavior of the stock functions and do not perform equivalently, except
+		 * in that they both return floats.  Here's some quick justification:
+		 * 
+		 * The stock implementation of GetTransmitterScore (which I cannot override) is:
+		 * 		Score = (1 + DataResourceCost) / DataRate
+		 * 
+		 * The stock DataRate and DataResourceCost are:
+		 * 		DataRate = packetSize / packetInterval
+		 * 		DataResourceCost = packetResourceCost / packetSize
+		 * 
+		 * So, the resulting score is essentially in terms of joules per byte per baud.  Rearranging that a bit, it
+		 * could also look like joule-seconds per byte per byte, or newton-meter-seconds per byte per byte.  Either way,
+		 * that metric is not a very reasonable one.
+		 * 
+		 * Two metrics that might make more sense are joules per byte or joules per byte per second.  The latter case
+		 * would look like:
+		 * 		DataRate = packetSize / packetInterval
+		 * 		DataResourceCost = packetResourceCost
+		 * 
+		 * The former case, which I've chosen to implement below, is:
+		 * 		DataRate = packetSize
+		 * 		DataResourceCost = packetResourceCost
+		 * 
+		 * So... hopefully that doesn't screw with anything else.
+		 * */
+		/// <summary>
+		/// Override ModuleDataTransmitter.DataRate to just return packetSize, because we want antennas to be scored in
+		/// terms of joules/byte
+		/// </summary>
+		public new float DataRate
+		{
+			get
+			{
+				this.RecalculateTransmissionRates();
+
+				if (this.CanTransmit())
+				{
+					return this.moduleRef.PacketSize;
+				}
+				else
+				{
+					return float.Epsilon;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Override ModuleDataTransmitter.DataResourceCost to just return packetResourceCost, because we want antennas
+		/// to be scored in terms of joules/byte
+		/// </summary>
+		public new double DataResourceCost
+		{
+			get
+			{
+				this.RecalculateTransmissionRates();
+
+				if (this.CanTransmit())
+				{
+					return this.moduleRef.PacketResourceCost;
+				}
+				else
+				{
+					return float.PositiveInfinity;
+				}
+			}
+		}
 
 		/// <summary>
 		/// Determines whether this instance can transmit.
@@ -191,6 +259,40 @@ namespace AntennaRange
 		public virtual bool CanTransmit()
 		{
 			return this.canTransmit;
+		}
+
+		// Before transmission, set packetSize.  Per above, packet size increases with the inverse square of
+		// distance.  packetSize maxes out at _basepacketSize * maxDataFactor.
+		public void RecalculateTransmissionRates()
+		{
+			if (!ARConfiguration.FixedPowerCost && this.CurrentLinkSqrDistance >= this.NominalLinkSqrDistance)
+			{
+				this.moduleRef.PacketSize = this.moduleRef.BasePacketSize;
+			}
+			else
+			{
+				float rangeFactor = (float)(this.NominalLinkSqrDistance / this.CurrentLinkSqrDistance);
+
+				this.moduleRef.PacketSize = Mathf.Min(
+					this.moduleRef.BasePacketSize * rangeFactor,
+					this.moduleRef.BasePacketSize * this.moduleRef.MaxDataFactor
+				);
+			}
+
+			this.moduleRef.PacketSize *= this.moduleRef.PacketThrottle / 100f;
+
+			if (ARConfiguration.FixedPowerCost || this.CurrentLinkSqrDistance <= this.NominalLinkSqrDistance)
+			{
+				this.moduleRef.PacketResourceCost = this.moduleRef.BasePacketResourceCost;
+			}
+			else
+			{
+				float rangeFactor = (float)(this.CurrentLinkSqrDistance / this.NominalLinkSqrDistance);
+
+				this.moduleRef.PacketResourceCost = this.moduleRef.BasePacketResourceCost * rangeFactor;
+			}
+
+			this.moduleRef.PacketResourceCost *= this.moduleRef.PacketThrottle / 100f;
 		}
 
 		/// <summary>

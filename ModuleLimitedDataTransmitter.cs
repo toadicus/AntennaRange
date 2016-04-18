@@ -192,6 +192,62 @@ namespace AntennaRange
 			}
 		}
 
+		public float PacketSize
+		{
+			get
+			{
+				return this.packetSize;
+			}
+			set
+			{
+				this.packetSize = value;
+			}
+		}
+
+		public float BasePacketSize
+		{
+			get
+			{
+				return this._basepacketSize;
+			}
+		}
+
+		public float PacketResourceCost
+		{
+			get
+			{
+				return this.packetResourceCost;
+			}
+			set
+			{
+				this.packetResourceCost = value;
+			}
+		}
+
+		public float BasePacketResourceCost
+		{
+			get
+			{
+				return this._basepacketResourceCost;
+			}
+		}
+
+		public float PacketThrottle
+		{
+			get
+			{
+				return this.packetThrottle;
+			}
+		}
+
+		public float MaxDataFactor
+		{
+			get
+			{
+				return this.maxDataFactor;
+			}
+		}
+
 		/// <summary>
 		/// Gets the target <see cref="AntennaRange.IAntennaRelay"/>relay.
 		/// </summary>
@@ -361,7 +417,10 @@ namespace AntennaRange
 		{
 			get
 			{
-				this.PreTransmit_SetPacketSize();
+				if (this.relay != null)
+				{
+					this.relay.RecalculateTransmissionRates();
+				}
 
 				if (this.CanTransmit())
 				{
@@ -382,7 +441,7 @@ namespace AntennaRange
 		{
 			get
 			{
-				this.PreTransmit_SetPacketResourceCost();
+				this.relay.RecalculateTransmissionRates();
 
 				if (this.CanTransmit())
 				{
@@ -645,11 +704,9 @@ namespace AntennaRange
 				"TransmitData(List<ScienceData> dataQueue, Callback callback) called.  dataQueue.Count={0}",
 				dataQueue.Count
 			);
+			this.relay.RecalculateTransmissionRates();
 
 			this.FindNearestRelay();
-
-			this.PreTransmit_SetPacketSize();
-			this.PreTransmit_SetPacketResourceCost();
 
 			if (this.CanTransmit())
 			{
@@ -760,8 +817,7 @@ namespace AntennaRange
 		{
 			this.FindNearestRelay();
 
-			PreTransmit_SetPacketSize ();
-			PreTransmit_SetPacketResourceCost ();
+			this.relay.RecalculateTransmissionRates();
 
 			this.LogDebug(
 				"distance: " + this.CurrentLinkSqrDistance
@@ -922,46 +978,6 @@ namespace AntennaRange
 			this.LogDebug(this.ErrorMsg.message);
 
 			ScreenMessages.PostScreenMessage(this.ErrorMsg);
-		}
-
-		// Before transmission, set packetResourceCost.  Per above, packet cost increases with the square of
-		// distance.  packetResourceCost maxes out at _basepacketResourceCost * maxPowerFactor, at which point
-		// transmission fails (see CanTransmit).
-		private void PreTransmit_SetPacketResourceCost()
-		{
-			if (ARConfiguration.FixedPowerCost || this.CurrentLinkSqrDistance <= this.NominalLinkSqrDistance)
-			{
-				base.packetResourceCost = this._basepacketResourceCost;
-			}
-			else
-			{
-				float rangeFactor = (float)(this.CurrentLinkSqrDistance / this.NominalLinkSqrDistance);
-
-				base.packetResourceCost = this._basepacketResourceCost * rangeFactor;
-			}
-
-			base.packetResourceCost *= this.packetThrottle / 100f;
-		}
-
-		// Before transmission, set packetSize.  Per above, packet size increases with the inverse square of
-		// distance.  packetSize maxes out at _basepacketSize * maxDataFactor.
-		private void PreTransmit_SetPacketSize()
-		{
-			if (!ARConfiguration.FixedPowerCost && this.CurrentLinkSqrDistance >= this.NominalLinkSqrDistance)
-			{
-				base.packetSize = this._basepacketSize;
-			}
-			else
-			{
-				float rangeFactor = (float)(this.NominalLinkSqrDistance / this.CurrentLinkSqrDistance);
-
-				base.packetSize = Mathf.Min(
-					this._basepacketSize * rangeFactor,
-					this._basepacketSize * this.maxDataFactor
-				);
-			}
-
-			base.packetSize *= this.packetThrottle / 100f;
 		}
 
 		private string buildTransmitMessage()

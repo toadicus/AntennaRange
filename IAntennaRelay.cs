@@ -46,6 +46,18 @@ namespace AntennaRange
 		/// </summary>
 		IAntennaRelay targetRelay { get; }
 
+		float PacketSize { get; set; }
+
+		float BasePacketSize { get; }
+
+		float PacketResourceCost { get; set; }
+
+		float BasePacketResourceCost { get; }
+
+		float PacketThrottle { get; }
+
+		float MaxDataFactor { get; }
+
 		/// <summary>
 		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
 		/// directly with Kerbin.
@@ -56,7 +68,6 @@ namespace AntennaRange
 		/// The link distance, in meters, at which this relay behaves nominally.
 		/// </summary>
 		double NominalLinkSqrDistance { get; }
-
 
 		/// <summary>
 		/// The link distance, in meters, beyond which this relay cannot operate.

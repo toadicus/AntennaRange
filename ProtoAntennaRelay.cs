@@ -72,6 +72,102 @@ namespace AntennaRange
 			}
 		}
 
+		public float PacketSize
+		{
+			get
+			{
+				if (this.moduleRef == null)
+				{
+					return float.NaN;
+				}
+
+				return this.moduleRef.PacketSize;
+			}
+			set
+			{
+				if (this.moduleRef == null)
+				{
+					return;
+				}
+
+				this.moduleRef.PacketSize = value;
+			}
+		}
+
+		public float BasePacketSize
+		{
+			get
+			{
+				if (this.moduleRef == null)
+				{
+					return float.NaN;
+				}
+
+				return this.moduleRef.BasePacketSize;
+			}
+		}
+
+		public float PacketResourceCost
+		{
+			get
+			{
+				if (this.moduleRef == null)
+				{
+					return float.NaN;
+				}
+
+				return this.moduleRef.PacketResourceCost;
+			}
+			set
+			{
+				if (this.moduleRef == null)
+				{
+					return;
+				}
+
+				this.moduleRef.PacketResourceCost = value;
+			}
+		}
+
+		public float BasePacketResourceCost
+		{
+			get
+			{
+				if (this.moduleRef == null)
+				{
+					return float.NaN;
+				}
+
+				return this.moduleRef.BasePacketResourceCost;
+			}
+		}
+
+		public float PacketThrottle
+		{
+			get
+			{
+				if (this.moduleRef == null)
+				{
+					return float.NaN;
+				}
+
+				return this.moduleRef.PacketThrottle;
+			}
+		}
+
+		public float MaxDataFactor
+		{
+			get
+			{
+				if (this.moduleRef == null)
+				{
+					return float.NaN;
+				}
+
+				return this.moduleRef.MaxDataFactor;
+			}
+		}
+
 		/// <summary>
 		/// Gets the nominal transmit distance at which the Antenna behaves just as prescribed by Squad's config.
 		/// </summary>
