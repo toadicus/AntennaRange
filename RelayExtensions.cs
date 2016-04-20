@@ -143,6 +143,12 @@ namespace AntennaRange
 			return relayOne.vessel.sqrDistanceTo(relayTwo.vessel);
 		}
 
+		/// <summary>
+		/// Returns the square of the maximum link range between two relays.
+		/// </summary>
+		/// <returns>The maximum link range between two relays.</returns>
+		/// <param name="relayOne">Relay one.</param>
+		/// <param name="relayTwo">Relay two.</param>
 		public static double MaxLinkSqrDistanceTo(this AntennaRelay relayOne, IAntennaRelay relayTwo)
 		{
 			if (ARConfiguration.UseAdditiveRanges)
@@ -155,6 +161,12 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Returns the square of the maximum link range between a relay and Kerbin.
+		/// </summary>
+		/// <returns>The maximum link range between a relay and Kerbin.</returns>
+		/// <param name="relayOne">Relay one.</param>
+		/// <param name="body">A CelestialBody (must be Kerbin).</param>
 		public static double MaxLinkSqrDistanceTo(this AntennaRelay relayOne, CelestialBody body)
 		{
 			if (body != AntennaRelay.Kerbin)
@@ -172,6 +184,12 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Determines if relayOne is in range of the specified relayTwo.
+		/// </summary>
+		/// <returns><c>true</c> if relayOne is in range of the specifie relayTwo; otherwise, <c>false</c>.</returns>
+		/// <param name="relayOne">Relay one.</param>
+		/// <param name="relayTwo">Relay two.</param>
 		public static bool IsInRangeOf(this AntennaRelay relayOne, IAntennaRelay relayTwo)
 		{
 			if (relayOne == null || relayTwo == null)
@@ -182,7 +200,12 @@ namespace AntennaRange
 			return relayOne.SqrDistanceTo(relayTwo) <= relayOne.MaxLinkSqrDistanceTo(relayTwo);
 		}
 
-
+		/// <summary>
+		/// Determines if relayOne is in range of the specified body.
+		/// </summary>
+		/// <returns><c>true</c> if relayOne is in range of the specified body; otherwise, <c>false</c>.</returns>
+		/// <param name="relayOne">Relay one.</param>
+		/// <param name="body">Body.</param>
 		public static bool IsInRangeOf(this AntennaRelay relayOne, CelestialBody body)
 		{
 			if (relayOne == null || body == null)

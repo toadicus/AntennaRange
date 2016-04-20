@@ -317,8 +317,8 @@ namespace AntennaRange
 
 					log.AppendFormat("\n\tDoing target search for useful relay {0}", relay);
 
-					relay.RecalculateTransmissionRates();
 					relay.FindNearestRelay();
+					relay.RecalculateTransmissionRates();
 				}
 
 				// Very last, find routes for the non-best relays on the active vessel.

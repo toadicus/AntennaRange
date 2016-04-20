@@ -72,6 +72,10 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets the data capacity of a packet, in MiT/packet
+		/// </summary>
+		/// <value>The data capacity of a packet, in MiT/packet</value>
 		public float PacketSize
 		{
 			get
@@ -94,6 +98,10 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the base data capacity of a packet, in MiT/packet
+		/// </summary>
+		/// <value>The base data capacity of a packet, in MiT/packet</value>
 		public float BasePacketSize
 		{
 			get
@@ -107,6 +115,10 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets the resource cost of a packet, in EC/packet
+		/// </summary>
+		/// <value>The resource cost of a packet, in EC/packet</value>
 		public float PacketResourceCost
 		{
 			get
@@ -129,6 +141,10 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the base resource cost of a packet, in EC/packet
+		/// </summary>
+		/// <value>The base resource cost of a packet, in EC/packet</value>
 		public float BasePacketResourceCost
 		{
 			get
@@ -142,6 +158,10 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the packet throttle.
+		/// </summary>
+		/// <value>The packet throttle in range [0..100].</value>
 		public float PacketThrottle
 		{
 			get
@@ -155,6 +175,10 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the max data factor.
+		/// </summary>
+		/// <value>The max data factor.</value>
 		public float MaxDataFactor
 		{
 			get
@@ -228,6 +252,9 @@ namespace AntennaRange
 			return base.CanTransmit();
 		}
 
+		/// <summary>
+		/// Recalculates the max range; useful for making sure we're using additive ranges when enabled.
+		/// </summary>
 		public void RecalculateMaxRange()
 		{
 			if (this.moduleRef != null)

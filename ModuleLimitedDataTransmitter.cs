@@ -186,6 +186,10 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets or sets the data capacity of a packet, in MiT/packet
+		/// </summary>
+		/// <value>The data capacity of a packet, in MiT/packet</value>
 		public float PacketSize
 		{
 			get
@@ -198,12 +202,20 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the base data capacity of a packet, in MiT/packet
+		/// </summary>
+		/// <value>The base data capacity of a packet, in MiT/packet</value>
 		public float BasePacketSize
 		{
 			get;
 			private set;
 		}
 
+		/// <summary>
+		/// Gets or sets the resource cost of a packet, in EC/packet
+		/// </summary>
+		/// <value>The resource cost of a packet, in EC/packet</value>
 		public float PacketResourceCost
 		{
 			get
@@ -216,12 +228,20 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the base resource cost of a packet, in EC/packet
+		/// </summary>
+		/// <value>The base resource cost of a packet, in EC/packet</value>
 		public float BasePacketResourceCost
 		{
 			get;
 			private set;
 		}
 
+		/// <summary>
+		/// Gets the packet throttle.
+		/// </summary>
+		/// <value>The packet throttle in range [0..100].</value>
 		public float PacketThrottle
 		{
 			get
@@ -230,6 +250,10 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets the max data factor.
+		/// </summary>
+		/// <value>The max data factor.</value>
 		public float MaxDataFactor
 		{
 			get
@@ -316,23 +340,6 @@ namespace AntennaRange
 				}
 
 				return this.relay.CurrentLinkSqrDistance;
-			}
-		}
-
-		/// <summary>
-		/// Gets the current link resource rate in EC/MiT.
-		/// </summary>
-		/// <value>The current link resource rate in EC/MiT.</value>
-		public double CurrentLinkResourceRate
-		{
-			get
-			{
-				if (this.relay == null)
-				{
-					return double.PositiveInfinity;
-				}
-
-				return this.relay.CurrentLinkResourceRate;
 			}
 		}
 
@@ -450,16 +457,20 @@ namespace AntennaRange
 			}
 		}
 
-		public double CurrentNetworkResourceRate
+		/// <summary>
+		/// Gets the current network resource rate in EC/MiT.
+		/// </summary>
+		/// <value>The current network resource rate in EC/MiT.</value>
+		public RelayDataCost CurrentNetworkLinkCost
 		{
 			get
 			{
 				if (this.relay == null)
 				{
-					return double.PositiveInfinity;
+					return RelayDataCost.Infinity;
 				}
 
-				return this.relay.CurrentNetworkResourceRate;
+				return this.relay.CurrentNetworkLinkCost;
 			}
 		}
 
@@ -691,6 +702,9 @@ namespace AntennaRange
 			return this.relay.CanTransmit();
 		}
 
+		/// <summary>
+		/// Recalculates the transmission rates.
+		/// </summary>
 		public void RecalculateTransmissionRates()
 		{
 			if (this.relay != null)
@@ -902,6 +916,9 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Recalculates the max range; useful for making sure we're using additive ranges when enabled.
+		/// </summary>
 		public void RecalculateMaxRange()
 		{
 			this.maxTransmitDistance = Math.Sqrt(this.maxPowerFactor) * this.nominalTransmitDistance;

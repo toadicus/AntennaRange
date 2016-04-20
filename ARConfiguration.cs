@@ -118,6 +118,10 @@ namespace AntennaRange
 			}
 		}
 
+		/// <summary>
+		/// Gets a value indicating whether we should use Toolbar if available.
+		/// </summary>
+		/// <value><c>true</c> if we should use Toolbar if available; otherwise, <c>false</c>.</value>
 		public static bool UseToolbarIfAvailable
 		{
 			get;

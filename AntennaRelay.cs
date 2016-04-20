@@ -161,35 +161,50 @@ namespace AntennaRange
 		/// Gets the current link resource rate in EC/MiT.
 		/// </summary>
 		/// <value>The current link resource rate in EC/MiT.</value>
-		public virtual double CurrentLinkResourceRate
+		public virtual RelayDataCost CurrentLinkCost
 		{
 			get
 			{
-				return this.DataResourceCost;
+				return new RelayDataCost(this.moduleRef.PacketResourceCost, this.moduleRef.PacketSize);
 			}
 		}
 
-		public virtual double CurrentNetworkResourceRate
+		/// <summary>
+		/// Gets the current network link cost back to Kerbin, in EC/MiT.
+		/// </summary>
+		/// <value>The current network link cost back to Kerbin, in EC/MiT.</value>
+		public virtual RelayDataCost CurrentNetworkLinkCost
 		{
 			get
 			{
-				double totalRate = 0;
+				RelayDataCost cost = new RelayDataCost();
 
-				IAntennaRelay nextLink = this.moduleRef;
+				IAntennaRelay relay = this.moduleRef;
 
-				while (nextLink != null)
+				ushort iters = 0;
+				while (relay != null)
 				{
-					totalRate += nextLink.DataResourceCost;
+					cost += new RelayDataCost(relay.PacketResourceCost, relay.PacketSize);
 
-					if (nextLink.KerbinDirect)
+					if (relay.KerbinDirect)
 					{
 						break;
 					}
 
-					nextLink = nextLink.targetRelay;
+					iters++;
+
+					if (iters > 255)
+					{
+						this.LogError("Bailing out of AntennaRelay.CurrentNetworkLinkCost because it looks like " +
+							"we're stuck in an infinite loop.  This is probably a bug.");
+						
+						break;
+					}
+
+					relay = relay.targetRelay;
 				}
 
-				return totalRate;
+				return cost;
 			}
 		}
 
@@ -293,67 +308,86 @@ namespace AntennaRange
 			return this.canTransmit;
 		}
 
-		// Before transmission, set packetSize.  Per above, packet size increases with the inverse square of
-		// distance.  packetSize maxes out at _basepacketSize * maxDataFactor.
+		/// <summary>
+		/// Recalculates the transmission rates.
+		/// </summary>
 		public void RecalculateTransmissionRates()
 		{
-			float rangeFactor = (float)(this.NominalLinkSqrDistance / this.CurrentLinkSqrDistance);
+			if (!this.canTransmit) {
+				this.moduleRef.PacketSize = 0f;
+				this.moduleRef.PacketResourceCost = float.PositiveInfinity;
+				return;
+			}
+
+			RelayDataCost cost = this.GetPotentialLinkCost(this.CurrentLinkSqrDistance, this.NominalLinkSqrDistance);
+
+			this.moduleRef.PacketSize = cost.PacketSize;
+			this.moduleRef.PacketResourceCost = cost.PacketResourceCost;
+		}
+
+		/// <summary>
+		/// Gets the potential link cost, in EC/MiT.
+		/// </summary>
+		/// <returns>The potential link cost, in EC/MiT.</returns>
+		/// <param name="currentSqrDistance">Square of the current distance to the target</param>
+		/// <param name="nominalSqrDistance">Square of the nominal range to the target.</param>
+		public RelayDataCost GetPotentialLinkCost(double currentSqrDistance, double nominalSqrDistance)
+		{
+			RelayDataCost linkCost = new RelayDataCost();
+
+			float rangeFactor = (float)(nominalSqrDistance / currentSqrDistance);
+
+			linkCost.PacketSize = this.moduleRef.PacketSize;
 
 			if (ARConfiguration.FixedPowerCost)
 			{
-				this.moduleRef.PacketResourceCost = this.moduleRef.BasePacketResourceCost;
+				linkCost.PacketResourceCost = this.moduleRef.BasePacketResourceCost;
 
-				this.moduleRef.PacketSize = Mathf.Min(
+				linkCost.PacketSize = Mathf.Min(
 					this.moduleRef.BasePacketSize * rangeFactor,
 					this.moduleRef.BasePacketSize * this.moduleRef.MaxDataFactor
 				);
 			}
 			else
 			{
-				if (this.CurrentLinkSqrDistance > this.NominalLinkSqrDistance)
+				if (currentSqrDistance > nominalSqrDistance)
 				{
-					this.moduleRef.PacketSize = this.moduleRef.BasePacketSize;
-					this.moduleRef.PacketResourceCost = this.moduleRef.BasePacketResourceCost / rangeFactor;
+					linkCost.PacketSize = this.moduleRef.BasePacketSize;
+					linkCost.PacketResourceCost = this.moduleRef.BasePacketResourceCost / rangeFactor;
 				}
 				else
 				{
-					this.moduleRef.PacketSize = Mathf.Min(
+					linkCost.PacketSize = Mathf.Min(
 						this.moduleRef.BasePacketSize * rangeFactor,
 						this.moduleRef.BasePacketSize * this.moduleRef.MaxDataFactor
 					);
-					this.moduleRef.PacketResourceCost = this.moduleRef.BasePacketResourceCost;
+					linkCost.PacketResourceCost = this.moduleRef.BasePacketResourceCost;
 				}
 			}
 
-			this.moduleRef.PacketSize *= this.moduleRef.PacketThrottle / 100f;
-			this.moduleRef.PacketResourceCost *= this.moduleRef.PacketThrottle / 100f;
+			linkCost.PacketResourceCost *= this.moduleRef.PacketThrottle / 100f;
+			linkCost.PacketSize *= this.moduleRef.PacketThrottle / 100f;
+
+			return linkCost;
 		}
 
-		public double GetPotentialLinkCost(double currentSqrDistance, double nominalSqrDistance)
-		{
-			double cost;
-
-			float rangeFactor = (float)(nominalSqrDistance / currentSqrDistance);
-
-			if (ARConfiguration.FixedPowerCost || currentSqrDistance <= NominalLinkSqrDistance)
-			{
-				cost = this.moduleRef.BasePacketResourceCost;
-			}
-			else
-			{
-				cost = this.moduleRef.BasePacketResourceCost / rangeFactor;
-			}
-
-			cost *= this.moduleRef.PacketThrottle / 100f;
-
-			return cost;
-		}
-
-		public double GetPotentialLinkCost(IAntennaRelay potentialTarget)
+		/// <summary>
+		/// Gets the potential link cost, in EC/MiT.
+		/// </summary>
+		/// <returns>The potential link cost, in EC/MiT.</returns>
+		/// <param name="potentialTarget">Potential target relay.</param>
+		public RelayDataCost GetPotentialLinkCost(IAntennaRelay potentialTarget)
 		{
 			if (potentialTarget == null)
 			{
-				return double.PositiveInfinity;
+				return RelayDataCost.Infinity;
+			}
+
+			double currentSqrDistance = this.SqrDistanceTo(potentialTarget);
+
+			if (currentSqrDistance > this.MaxLinkSqrDistanceTo(potentialTarget))
+			{
+				return RelayDataCost.Infinity;
 			}
 
 			double nominalSqrDistance;
@@ -366,16 +400,26 @@ namespace AntennaRange
 				nominalSqrDistance = this.nominalTransmitDistance * this.nominalTransmitDistance;
 			}
 
-			double currentSqrDistance = this.SqrDistanceTo(potentialTarget);
-
 			return GetPotentialLinkCost(currentSqrDistance, nominalSqrDistance);
 		}
 
-		public double GetPotentialLinkCost(CelestialBody body)
+		/// <summary>
+		/// Gets the potential link cost, in EC/MiT.
+		/// </summary>
+		/// <returns>The potential link cost, in EC/MiT.</returns>
+		/// <param name="body">Potential target Body</param>
+		public RelayDataCost GetPotentialLinkCost(CelestialBody body)
 		{
 			if (body == null || body != Kerbin)
 			{
-				return double.PositiveInfinity;
+				return RelayDataCost.Infinity;
+			}
+
+			double currentSqrDistance = this.SqrDistanceTo(body);
+
+			if (currentSqrDistance > this.MaxLinkSqrDistanceTo(body))
+			{
+				return RelayDataCost.Infinity;
 			}
 
 			double nominalSqrDistance;
@@ -387,8 +431,6 @@ namespace AntennaRange
 			{
 				nominalSqrDistance = this.nominalTransmitDistance * this.nominalTransmitDistance;
 			}
-
-			double currentSqrDistance = this.SqrDistanceTo(body);
 
 			return GetPotentialLinkCost(currentSqrDistance, nominalSqrDistance);
 		}
@@ -442,12 +484,12 @@ namespace AntennaRange
 			CelestialBody bodyOccludingBestOccludedRelay = null;
 			IAntennaRelay needle;
 
-			double cheapestRelayRate = double.PositiveInfinity;
-			double cheapestOccludedRelayRate = double.PositiveInfinity;
+			RelayDataCost cheapestRelayRate = RelayDataCost.Infinity;
+			RelayDataCost cheapestOccludedRelayRate = RelayDataCost.Infinity;
 
-			double potentialRelayRate;
+			RelayDataCost potentialRelayRate;
 
-			double kerbinRelayRate = this.GetPotentialLinkCost(Kerbin);
+			RelayDataCost kerbinRelayRate = this.GetPotentialLinkCost(Kerbin);
 
 			bool isCircular;
 			int iterCount;
@@ -503,7 +545,9 @@ namespace AntennaRange
 
 				// Find the distance from here to the vessel...
 				log.Append("\n\tgetting cost to potential vessel");
-				potentialRelayRate = potentialBestRelay.CurrentNetworkResourceRate + this.GetPotentialLinkCost(potentialBestRelay);
+				potentialRelayRate = potentialBestRelay.CurrentNetworkLinkCost + this.GetPotentialLinkCost(potentialBestRelay);
+
+				log.AppendFormat("\n\tpotentialRelayRate = {0} ({1} + {2})", potentialRelayRate, potentialBestRelay.CurrentNetworkLinkCost, this.GetPotentialLinkCost(potentialBestRelay));
 
 				#if BENCH
 				startLOSVesselTicks = performanceTimer.ElapsedTicks;
@@ -575,9 +619,13 @@ namespace AntennaRange
 				if (potentialRelayRate > cheapestRelayRate)
 				{
 					
-					log.AppendFormat("\n\t{0}: Relay {1} discarded because it is more expensive than another the nearest relay.",
+					log.AppendFormat(
+							"\n\t{0}: Relay {1} discarded because it is more expensive than the cheapest relay." +
+							"\n\t\t({2}, {3} > {4})",
 						this.ToString(),
-						potentialBestRelay
+						potentialBestRelay,
+						this.nearestRelay == null ? "NULL" : this.nearestRelay.ToString(),
+						potentialRelayRate, cheapestRelayRate
 					);
 					continue;
 				}
@@ -647,7 +695,7 @@ namespace AntennaRange
 						log.AppendFormat("\n\t{0}: found new cheapest relay {1} ({2} EC/MiT)",
 							this.ToString(),
 							this.nearestRelay.ToString(),
-							Math.Sqrt(cheapestRelayRate)
+							cheapestRelayRate
 						);
 					}
 					else
@@ -678,7 +726,7 @@ namespace AntennaRange
 
 			log.AppendFormat("\n{0} ({1}): Search done, figuring status.", this.ToString(), this.GetType().Name);
 			log.AppendFormat(
-				"\n{0}: nearestRelay={1} ({2})), bestOccludedRelay={3} ({4}), kerbinSqrDistance={5}m²)",
+					"\n{0}: nearestRelay={1} ({2})), bestOccludedRelay={3} ({4}), kerbinRelayRate={5} EC/MiT)",
 				this,
 				this.nearestRelay == null ? "null" : this.nearestRelay.ToString(),
 				cheapestRelayRate,
@@ -1046,6 +1094,7 @@ namespace AntennaRange
 		/// as an <see cref="AntennaRange.IAntennaRelay"/></param>
 		public AntennaRelay(IAntennaRelay module)
 		{
+			this.KerbinDirect = true;
 			this.moduleRef = module;
 
 			#if BENCH

@@ -46,16 +46,40 @@ namespace AntennaRange
 		/// </summary>
 		IAntennaRelay targetRelay { get; }
 
+		/// <summary>
+		/// Gets or sets the data capacity of a packet, in MiT/packet
+		/// </summary>
+		/// <value>The data capacity of a packet, in MiT/packet</value>
 		float PacketSize { get; set; }
 
+		/// <summary>
+		/// Gets the base data capacity of a packet, in MiT/packet
+		/// </summary>
+		/// <value>The base data capacity of a packet, in MiT/packet</value>
 		float BasePacketSize { get; }
 
+		/// <summary>
+		/// Gets or sets the resource cost of a packet, in EC/packet
+		/// </summary>
+		/// <value>The resource cost of a packet, in EC/packet</value>
 		float PacketResourceCost { get; set; }
 
+		/// <summary>
+		/// Gets the base resource cost of a packet, in EC/packet
+		/// </summary>
+		/// <value>The base resource cost of a packet, in EC/packet</value>
 		float BasePacketResourceCost { get; }
 
+		/// <summary>
+		/// Gets the packet throttle.
+		/// </summary>
+		/// <value>The packet throttle in range [0..100].</value>
 		float PacketThrottle { get; }
 
+		/// <summary>
+		/// Gets the max data factor.
+		/// </summary>
+		/// <value>The max data factor.</value>
 		float MaxDataFactor { get; }
 
 		/// <summary>
@@ -68,7 +92,7 @@ namespace AntennaRange
 		/// Gets the current network resource rate in EC/MiT.
 		/// </summary>
 		/// <value>The current network resource rate in EC/MiT.</value>
-		double CurrentNetworkResourceRate { get; }
+		RelayDataCost CurrentNetworkLinkCost { get; }
 
 		/// <summary>
 		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating

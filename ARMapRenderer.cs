@@ -322,6 +322,12 @@ namespace AntennaRange
 				while (enumerator.MoveNext())
 				{
 					lineRenderer = enumerator.Current;
+
+					if (lineRenderer == null)
+					{
+						continue;
+					}
+
 					lineRenderer.enabled = false;
 
 					if (freeObjects)
