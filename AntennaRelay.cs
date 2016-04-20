@@ -489,9 +489,15 @@ namespace AntennaRange
 
 				// Find the distance from here to the vessel...
 				log.Append("\n\tgetting cost to potential vessel");
-				potentialRelayRate = potentialBestRelay.CurrentNetworkLinkCost + this.GetPotentialLinkCost(potentialBestRelay);
+				potentialRelayRate = potentialBestRelay.CurrentNetworkLinkCost +
+					this.GetPotentialLinkCost(potentialBestRelay);
 
-				log.AppendFormat("\n\tpotentialRelayRate = {0} ({1} + {2})", potentialRelayRate, potentialBestRelay.CurrentNetworkLinkCost, this.GetPotentialLinkCost(potentialBestRelay));
+				log.AppendFormat(
+					"\n\tpotentialRelayRate = {0} ({1} + {2})",
+					potentialRelayRate,
+					potentialBestRelay.CurrentNetworkLinkCost,
+					this.GetPotentialLinkCost(potentialBestRelay)
+				);
 
 				#if BENCH
 				startLOSVesselTicks = performanceTimer.ElapsedTicks;
@@ -528,7 +534,7 @@ namespace AntennaRange
 						potentialBestRelay.CanTransmit()
 					)
 					{
-						log.Append("\n\t\t...vessel is cheapest and close enough and potentialBestRelay can transmit");
+						log.Append("\n\t\t...vessel is cheapest and in range and potentialBestRelay can transmit");
 						log.AppendFormat("\n\t\t...{0} found new best occluded relay {1}", this, potentialBestRelay);
 
 						this.bestOccludedRelay = potentialBestRelay;
@@ -727,7 +733,7 @@ namespace AntennaRange
 						// Since cheapestRelayRate is infinity if there are no nearby relays, this is safe.
 						if (cheapestRelayRate < cheapestOccludedRelayRate)
 						{
-							log.AppendFormat("\n\t\t\t\t...but the nearest relay is cheaper ({0} < {1}), so picking it.",
+							log.AppendFormat("\n\t\t\t\t...but the cheapest relay is cheaper ({0} < {1}), so picking it.",
 								cheapestRelayRate, cheapestOccludedRelayRate);
 							
 							this.targetRelay = this.nearestRelay;
@@ -851,7 +857,7 @@ namespace AntennaRange
 							// Since cheapestRelayRate is infinity if there are no nearby relays, this is safe.
 							if (cheapestRelayRate < cheapestOccludedRelayRate)
 							{
-								log.AppendFormat("\n\t\t\t\t...but the nearest relay is cheaper ({0} < {1}), so picking it.",
+								log.AppendFormat("\n\t\t\t\t...but the cheapest relay is cheaper ({0} < {1}), so picking it.",
 									cheapestRelayRate, cheapestOccludedRelayRate);
 								
 								this.targetRelay = this.nearestRelay;
@@ -860,7 +866,7 @@ namespace AntennaRange
 							// Otherwise, target the best occluded relay.
 							else
 							{
-								log.AppendFormat("\n\t\t\t\t...and cheaper than the nearest relay ({0} >= {1}), so picking it.",
+								log.AppendFormat("\n\t\t\t\t...and cheaper than the cheapest relay ({0} >= {1}), so picking it.",
 									cheapestRelayRate, cheapestOccludedRelayRate);
 								
 								this.targetRelay = bestOccludedRelay;
