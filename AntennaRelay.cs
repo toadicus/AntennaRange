@@ -301,34 +301,100 @@ namespace AntennaRange
 		// distance.  packetSize maxes out at _basepacketSize * maxDataFactor.
 		public void RecalculateTransmissionRates()
 		{
-			if (!ARConfiguration.FixedPowerCost && this.CurrentLinkSqrDistance >= this.NominalLinkSqrDistance)
+			float rangeFactor = (float)(this.NominalLinkSqrDistance / this.CurrentLinkSqrDistance);
+
+			if (ARConfiguration.FixedPowerCost)
 			{
-				this.moduleRef.PacketSize = this.moduleRef.BasePacketSize;
-			}
-			else
-			{
-				float rangeFactor = (float)(this.NominalLinkSqrDistance / this.CurrentLinkSqrDistance);
+				this.moduleRef.PacketResourceCost = this.moduleRef.BasePacketResourceCost;
 
 				this.moduleRef.PacketSize = Mathf.Min(
 					this.moduleRef.BasePacketSize * rangeFactor,
 					this.moduleRef.BasePacketSize * this.moduleRef.MaxDataFactor
 				);
 			}
+			else
+			{
+				if (this.CurrentLinkSqrDistance > this.NominalLinkSqrDistance)
+				{
+					this.moduleRef.PacketSize = this.moduleRef.BasePacketSize;
+					this.moduleRef.PacketResourceCost = this.moduleRef.BasePacketResourceCost / rangeFactor;
+				}
+				else
+				{
+					this.moduleRef.PacketSize = Mathf.Min(
+						this.moduleRef.BasePacketSize * rangeFactor,
+						this.moduleRef.BasePacketSize * this.moduleRef.MaxDataFactor
+					);
+					this.moduleRef.PacketResourceCost = this.moduleRef.BasePacketResourceCost;
+				}
+			}
 
 			this.moduleRef.PacketSize *= this.moduleRef.PacketThrottle / 100f;
+			this.moduleRef.PacketResourceCost *= this.moduleRef.PacketThrottle / 100f;
+		}
 
-			if (ARConfiguration.FixedPowerCost || this.CurrentLinkSqrDistance <= this.NominalLinkSqrDistance)
+		public double GetPotentialLinkCost(double currentSqrDistance, double nominalSqrDistance)
+		{
+			double cost;
+
+			float rangeFactor = (float)(nominalSqrDistance / currentSqrDistance);
+
+			if (ARConfiguration.FixedPowerCost || currentSqrDistance <= NominalLinkSqrDistance)
 			{
-				this.moduleRef.PacketResourceCost = this.moduleRef.BasePacketResourceCost;
+				cost = this.moduleRef.BasePacketResourceCost;
 			}
 			else
 			{
-				float rangeFactor = (float)(this.CurrentLinkSqrDistance / this.NominalLinkSqrDistance);
-
-				this.moduleRef.PacketResourceCost = this.moduleRef.BasePacketResourceCost * rangeFactor;
+				cost = this.moduleRef.BasePacketResourceCost / rangeFactor;
 			}
 
-			this.moduleRef.PacketResourceCost *= this.moduleRef.PacketThrottle / 100f;
+			cost *= this.moduleRef.PacketThrottle / 100f;
+
+			return cost;
+		}
+
+		public double GetPotentialLinkCost(IAntennaRelay potentialTarget)
+		{
+			if (potentialTarget == null)
+			{
+				return double.PositiveInfinity;
+			}
+
+			double nominalSqrDistance;
+			if (ARConfiguration.UseAdditiveRanges)
+			{
+				nominalSqrDistance = this.nominalTransmitDistance * potentialTarget.nominalTransmitDistance;
+			}
+			else
+			{
+				nominalSqrDistance = this.nominalTransmitDistance * this.nominalTransmitDistance;
+			}
+
+			double currentSqrDistance = this.SqrDistanceTo(potentialTarget);
+
+			return GetPotentialLinkCost(currentSqrDistance, nominalSqrDistance);
+		}
+
+		public double GetPotentialLinkCost(CelestialBody body)
+		{
+			if (body == null || body != Kerbin)
+			{
+				return double.PositiveInfinity;
+			}
+
+			double nominalSqrDistance;
+			if (ARConfiguration.UseAdditiveRanges)
+			{
+				nominalSqrDistance = this.nominalTransmitDistance * ARConfiguration.KerbinNominalRange;
+			}
+			else
+			{
+				nominalSqrDistance = this.nominalTransmitDistance * this.nominalTransmitDistance;
+			}
+
+			double currentSqrDistance = this.SqrDistanceTo(body);
+
+			return GetPotentialLinkCost(currentSqrDistance, nominalSqrDistance);
 		}
 
 		/// <summary>
