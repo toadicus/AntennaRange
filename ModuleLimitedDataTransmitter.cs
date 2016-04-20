@@ -187,52 +187,27 @@ namespace AntennaRange
 		}
 
 		/// <summary>
-		/// Gets or sets the data capacity of a packet, in MiT/packet
+		/// Gets the current link resource rate in EC/MiT.
 		/// </summary>
-		/// <value>The data capacity of a packet, in MiT/packet</value>
-		public float PacketSize
+		/// <value>The current link resource rate in EC/MiT.</value>
+		public RelayDataCost CurrentLinkCost
 		{
 			get
 			{
-				return this.packetSize;
+				return new RelayDataCost(this.packetResourceCost, this.packetSize);
 			}
 			set
 			{
-				this.packetSize = value;
+				this.packetResourceCost = value.PacketResourceCost;
+				this.packetSize = value.PacketSize;
 			}
 		}
 
 		/// <summary>
-		/// Gets the base data capacity of a packet, in MiT/packet
+		/// Gets the base link resource rate in EC/MiT.
 		/// </summary>
-		/// <value>The base data capacity of a packet, in MiT/packet</value>
-		public float BasePacketSize
-		{
-			get;
-			private set;
-		}
-
-		/// <summary>
-		/// Gets or sets the resource cost of a packet, in EC/packet
-		/// </summary>
-		/// <value>The resource cost of a packet, in EC/packet</value>
-		public float PacketResourceCost
-		{
-			get
-			{
-				return this.packetResourceCost;
-			}
-			set
-			{
-				this.packetResourceCost = value;
-			}
-		}
-
-		/// <summary>
-		/// Gets the base resource cost of a packet, in EC/packet
-		/// </summary>
-		/// <value>The base resource cost of a packet, in EC/packet</value>
-		public float BasePacketResourceCost
+		/// <value>The base link resource rate in EC/MiT.</value>
+		public RelayDataCost BaseLinkCost
 		{
 			get;
 			private set;
@@ -431,12 +406,14 @@ namespace AntennaRange
 		{
 			get
 			{
-				if (this.relay == null)
+				if (this.CanTransmit())
 				{
-					return float.PositiveInfinity;
+					return this.packetSize;
 				}
-
-				return this.relay.DataRate;
+				else
+				{
+					return float.Epsilon;
+				}
 			}
 		}
 
@@ -448,12 +425,14 @@ namespace AntennaRange
 		{
 			get
 			{
-				if (this.relay == null)
+				if (this.CanTransmit())
 				{
-					return double.PositiveInfinity;
+					return this.packetResourceCost;
 				}
-
-				return this.relay.DataResourceCost;
+				else
+				{
+					return float.PositiveInfinity;
+				}
 			}
 		}
 
@@ -507,8 +486,8 @@ namespace AntennaRange
 		{
 			base.OnAwake();
 
-			this.BasePacketSize = base.packetSize;
-			this.BasePacketResourceCost = base.packetResourceCost;
+			this.BaseLinkCost = new RelayDataCost(base.packetSize, base.packetResourceCost);
+
 			this.moduleInfoContent = new GUIContent();
 
 			this.LogDebug("{0} loaded:\n" +
@@ -519,7 +498,7 @@ namespace AntennaRange
 				"maxDataFactor: {5}\n",
 				this,
 				base.packetSize,
-				this.BasePacketResourceCost,
+				this.packetResourceCost,
 				this.nominalTransmitDistance,
 				this.maxPowerFactor,
 				this.maxDataFactor

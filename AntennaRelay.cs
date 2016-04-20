@@ -165,7 +165,16 @@ namespace AntennaRange
 		{
 			get
 			{
-				return new RelayDataCost(this.moduleRef.PacketResourceCost, this.moduleRef.PacketSize);
+				return this.moduleRef?.CurrentLinkCost ?? RelayDataCost.Infinity;
+			}
+			set
+			{
+				throw new NotImplementedException(
+					string.Format(
+						"{0} must not assign CurrentLinkCost.  This is probably a bug.",
+						this.GetType().FullName
+					)
+				);
 			}
 		}
 
@@ -184,7 +193,7 @@ namespace AntennaRange
 				ushort iters = 0;
 				while (relay != null)
 				{
-					cost += new RelayDataCost(relay.PacketResourceCost, relay.PacketSize);
+					cost += relay.CurrentLinkCost;
 
 					if (relay.KerbinDirect)
 					{
@@ -235,69 +244,6 @@ namespace AntennaRange
 			get;
 			set;
 		}
-		/*
-		 * The next two functions overwrite the behavior of the stock functions and do not perform equivalently, except
-		 * in that they both return floats.  Here's some quick justification:
-		 * 
-		 * The stock implementation of GetTransmitterScore (which I cannot override) is:
-		 * 		Score = (1 + DataResourceCost) / DataRate
-		 * 
-		 * The stock DataRate and DataResourceCost are:
-		 * 		DataRate = packetSize / packetInterval
-		 * 		DataResourceCost = packetResourceCost / packetSize
-		 * 
-		 * So, the resulting score is essentially in terms of joules per byte per baud.  Rearranging that a bit, it
-		 * could also look like joule-seconds per byte per byte, or newton-meter-seconds per byte per byte.  Either way,
-		 * that metric is not a very reasonable one.
-		 * 
-		 * Two metrics that might make more sense are joules per byte or joules per byte per second.  The latter case
-		 * would look like:
-		 * 		DataRate = packetSize / packetInterval
-		 * 		DataResourceCost = packetResourceCost
-		 * 
-		 * The former case, which I've chosen to implement below, is:
-		 * 		DataRate = packetSize
-		 * 		DataResourceCost = packetResourceCost
-		 * 
-		 * So... hopefully that doesn't screw with anything else.
-		 * */
-		/// <summary>
-		/// Override ModuleDataTransmitter.DataRate to just return packetSize, because we want antennas to be scored in
-		/// terms of joules/byte
-		/// </summary>
-		public virtual float DataRate
-		{
-			get
-			{
-				if (this.CanTransmit())
-				{
-					return this.moduleRef.PacketSize;
-				}
-				else
-				{
-					return float.Epsilon;
-				}
-			}
-		}
-
-		/// <summary>
-		/// Override ModuleDataTransmitter.DataResourceCost to just return packetResourceCost, because we want antennas
-		/// to be scored in terms of joules/byte
-		/// </summary>
-		public virtual double DataResourceCost
-		{
-			get
-			{
-				if (this.CanTransmit())
-				{
-					return this.moduleRef.PacketResourceCost;
-				}
-				else
-				{
-					return float.PositiveInfinity;
-				}
-			}
-		}
 
 		/// <summary>
 		/// Determines whether this instance can transmit.
@@ -314,15 +260,13 @@ namespace AntennaRange
 		public void RecalculateTransmissionRates()
 		{
 			if (!this.canTransmit) {
-				this.moduleRef.PacketSize = 0f;
-				this.moduleRef.PacketResourceCost = float.PositiveInfinity;
+				this.moduleRef.CurrentLinkCost = RelayDataCost.Infinity;
 				return;
 			}
 
 			RelayDataCost cost = this.GetPotentialLinkCost(this.CurrentLinkSqrDistance, this.NominalLinkSqrDistance);
 
-			this.moduleRef.PacketSize = cost.PacketSize;
-			this.moduleRef.PacketResourceCost = cost.PacketResourceCost;
+			this.moduleRef.CurrentLinkCost = cost;
 		}
 
 		/// <summary>
@@ -337,31 +281,31 @@ namespace AntennaRange
 
 			float rangeFactor = (float)(nominalSqrDistance / currentSqrDistance);
 
-			linkCost.PacketSize = this.moduleRef.PacketSize;
+			RelayDataCost baseCost = this.moduleRef?.BaseLinkCost ?? RelayDataCost.Infinity;
 
 			if (ARConfiguration.FixedPowerCost)
 			{
-				linkCost.PacketResourceCost = this.moduleRef.BasePacketResourceCost;
+				linkCost.PacketResourceCost = baseCost.PacketResourceCost;
 
 				linkCost.PacketSize = Mathf.Min(
-					this.moduleRef.BasePacketSize * rangeFactor,
-					this.moduleRef.BasePacketSize * this.moduleRef.MaxDataFactor
+					baseCost.PacketSize * rangeFactor,
+					baseCost.PacketSize * this.moduleRef.MaxDataFactor
 				);
 			}
 			else
 			{
 				if (currentSqrDistance > nominalSqrDistance)
 				{
-					linkCost.PacketSize = this.moduleRef.BasePacketSize;
-					linkCost.PacketResourceCost = this.moduleRef.BasePacketResourceCost / rangeFactor;
+					linkCost.PacketSize = baseCost.PacketSize;
+					linkCost.PacketResourceCost = baseCost.PacketResourceCost / rangeFactor;
 				}
 				else
 				{
 					linkCost.PacketSize = Mathf.Min(
-						this.moduleRef.BasePacketSize * rangeFactor,
-						this.moduleRef.BasePacketSize * this.moduleRef.MaxDataFactor
+						baseCost.PacketSize * rangeFactor,
+						baseCost.PacketSize * this.moduleRef.MaxDataFactor
 					);
-					linkCost.PacketResourceCost = this.moduleRef.BasePacketResourceCost;
+					linkCost.PacketResourceCost = baseCost.PacketResourceCost;
 				}
 			}
 

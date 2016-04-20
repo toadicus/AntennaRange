@@ -47,28 +47,16 @@ namespace AntennaRange
 		IAntennaRelay targetRelay { get; }
 
 		/// <summary>
-		/// Gets or sets the data capacity of a packet, in MiT/packet
+		/// Gets the current link resource rate in EC/MiT.
 		/// </summary>
-		/// <value>The data capacity of a packet, in MiT/packet</value>
-		float PacketSize { get; set; }
+		/// <value>The current link resource rate in EC/MiT.</value>
+		RelayDataCost CurrentLinkCost { get; set; }
 
 		/// <summary>
-		/// Gets the base data capacity of a packet, in MiT/packet
+		/// Gets the base link resource rate in EC/MiT.
 		/// </summary>
-		/// <value>The base data capacity of a packet, in MiT/packet</value>
-		float BasePacketSize { get; }
-
-		/// <summary>
-		/// Gets or sets the resource cost of a packet, in EC/packet
-		/// </summary>
-		/// <value>The resource cost of a packet, in EC/packet</value>
-		float PacketResourceCost { get; set; }
-
-		/// <summary>
-		/// Gets the base resource cost of a packet, in EC/packet
-		/// </summary>
-		/// <value>The base resource cost of a packet, in EC/packet</value>
-		float BasePacketResourceCost { get; }
+		/// <value>The base link resource rate in EC/MiT.</value>
+		RelayDataCost BaseLinkCost { get; }
 
 		/// <summary>
 		/// Gets the packet throttle.

@@ -73,88 +73,31 @@ namespace AntennaRange
 		}
 
 		/// <summary>
-		/// Gets or sets the data capacity of a packet, in MiT/packet
+		/// Gets the base link resource rate in EC/MiT.
 		/// </summary>
-		/// <value>The data capacity of a packet, in MiT/packet</value>
-		public float PacketSize
+		/// <value>The base link resource rate in EC/MiT.</value>
+		public RelayDataCost BaseLinkCost
 		{
-			get
-			{
-				if (this.moduleRef == null)
-				{
-					return float.NaN;
-				}
-
-				return this.moduleRef.PacketSize;
-			}
-			set
-			{
-				if (this.moduleRef == null)
-				{
-					return;
-				}
-
-				this.moduleRef.PacketSize = value;
-			}
+			get;
+			private set;
 		}
 
 		/// <summary>
-		/// Gets the base data capacity of a packet, in MiT/packet
+		/// Override ModuleDataTransmitter.DataResourceCost to just return packetResourceCost, because we want antennas
+		/// to be scored in terms of joules/byte
 		/// </summary>
-		/// <value>The base data capacity of a packet, in MiT/packet</value>
-		public float BasePacketSize
+		public double DataResourceCost
 		{
 			get
 			{
-				if (this.moduleRef == null)
+				if (this.CanTransmit())
 				{
-					return float.NaN;
+					return this.moduleRef.DataResourceCost;
 				}
-
-				return this.moduleRef.BasePacketSize;
-			}
-		}
-
-		/// <summary>
-		/// Gets or sets the resource cost of a packet, in EC/packet
-		/// </summary>
-		/// <value>The resource cost of a packet, in EC/packet</value>
-		public float PacketResourceCost
-		{
-			get
-			{
-				if (this.moduleRef == null)
+				else
 				{
-					return float.NaN;
+					return float.PositiveInfinity;
 				}
-
-				return this.moduleRef.PacketResourceCost;
-			}
-			set
-			{
-				if (this.moduleRef == null)
-				{
-					return;
-				}
-
-				this.moduleRef.PacketResourceCost = value;
-			}
-		}
-
-		/// <summary>
-		/// Gets the base resource cost of a packet, in EC/packet
-		/// </summary>
-		/// <value>The base resource cost of a packet, in EC/packet</value>
-		public float BasePacketResourceCost
-		{
-			get
-			{
-				if (this.moduleRef == null)
-				{
-					return float.NaN;
-				}
-
-				return this.moduleRef.BasePacketResourceCost;
 			}
 		}
 
