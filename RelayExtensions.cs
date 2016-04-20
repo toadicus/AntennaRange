@@ -143,6 +143,56 @@ namespace AntennaRange
 			return relayOne.vessel.sqrDistanceTo(relayTwo.vessel);
 		}
 
+		public static double MaxLinkSqrDistanceTo(this AntennaRelay relayOne, IAntennaRelay relayTwo)
+		{
+			if (ARConfiguration.UseAdditiveRanges)
+			{
+				return relayOne.maxTransmitDistance * relayTwo.maxTransmitDistance;
+			}
+			else
+			{
+				return relayOne.maxTransmitDistance * relayOne.maxTransmitDistance;
+			}
+		}
+
+		public static double MaxLinkSqrDistanceTo(this AntennaRelay relayOne, CelestialBody body)
+		{
+			if (body != AntennaRelay.Kerbin)
+			{
+				return 0d;
+			}
+
+			if (ARConfiguration.UseAdditiveRanges)
+			{
+				return relayOne.maxTransmitDistance * ARConfiguration.KerbinRelayRange;
+			}
+			else
+			{
+				return relayOne.maxTransmitDistance * relayOne.maxTransmitDistance;
+			}
+		}
+
+		public static bool IsInRangeOf(this AntennaRelay relayOne, IAntennaRelay relayTwo)
+		{
+			if (relayOne == null || relayTwo == null)
+			{
+				return false;
+			}
+
+			return relayOne.SqrDistanceTo(relayTwo) <= relayOne.MaxLinkSqrDistanceTo(relayTwo);
+		}
+
+
+		public static bool IsInRangeOf(this AntennaRelay relayOne, CelestialBody body)
+		{
+			if (relayOne == null || body == null)
+			{
+				return false;
+			}
+
+			return relayOne.SqrDistanceTo(body) <= relayOne.MaxLinkSqrDistanceTo(body);
+		}
+
 		/// <summary>
 		/// Returns all of the PartModules or ProtoPartModuleSnapshots implementing IAntennaRelay in this Vessel.
 		/// </summary>

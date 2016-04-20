@@ -123,6 +123,11 @@ namespace AntennaRange
 		bool CanTransmit();
 
 		/// <summary>
+		/// Recalculates the transmission rates.
+		/// </summary>
+		void RecalculateTransmissionRates();
+
+		/// <summary>
 		/// Finds the nearest relay.
 		/// </summary>
 		void FindNearestRelay();

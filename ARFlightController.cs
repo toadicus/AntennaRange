@@ -317,6 +317,7 @@ namespace AntennaRange
 
 					log.AppendFormat("\n\tDoing target search for useful relay {0}", relay);
 
+					relay.RecalculateTransmissionRates();
 					relay.FindNearestRelay();
 				}
 
@@ -333,6 +334,7 @@ namespace AntennaRange
 
 					log.AppendFormat("\nFinding nearest relay for active vessel relay {0}", relay);
 
+					relay.RecalculateTransmissionRates();
 					relay.FindNearestRelay();
 				}
 

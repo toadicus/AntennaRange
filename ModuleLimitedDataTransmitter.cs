@@ -178,7 +178,7 @@ namespace AntennaRange
 				else
 				{
 					this.LogError("Vessel and/or part reference are null, returning null vessel.");
-					#if DEBUG
+					#if DEBUG && VERBOSE
 					this.LogError(new System.Diagnostics.StackTrace().ToString());
 					#endif
 					return null;
@@ -691,6 +691,14 @@ namespace AntennaRange
 			return this.relay.CanTransmit();
 		}
 
+		public void RecalculateTransmissionRates()
+		{
+			if (this.relay != null)
+			{
+				this.relay.RecalculateTransmissionRates();
+			}
+		}
+
 		/// <summary>
 		/// Finds the nearest relay.
 		/// </summary>
@@ -713,9 +721,6 @@ namespace AntennaRange
 				"TransmitData(List<ScienceData> dataQueue, Callback callback) called.  dataQueue.Count={0}",
 				dataQueue.Count
 			);
-			this.relay.RecalculateTransmissionRates();
-
-			this.FindNearestRelay();
 
 			if (this.CanTransmit())
 			{
@@ -824,10 +829,6 @@ namespace AntennaRange
 		/// </summary>
 		public new void StartTransmission()
 		{
-			this.FindNearestRelay();
-
-			this.relay.RecalculateTransmissionRates();
-
 			this.LogDebug(
 				"distance: " + this.CurrentLinkSqrDistance
 				+ " packetSize: " + this.packetSize
@@ -1022,8 +1023,8 @@ namespace AntennaRange
 		[KSPEvent (guiName = "Show Debug Info", active = true, guiActive = true)]
 		public void DebugInfo()
 		{
-			PreTransmit_SetPacketSize ();
-			PreTransmit_SetPacketResourceCost ();
+			if (this.relay != null)
+				this.relay.RecalculateTransmissionRates();
 
 			DebugPartModule.DumpClassObject(this);
 		}
