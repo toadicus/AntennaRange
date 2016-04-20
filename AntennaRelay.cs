@@ -158,6 +158,42 @@ namespace AntennaRange
 		}
 
 		/// <summary>
+		/// Gets the current link resource rate in EC/MiT.
+		/// </summary>
+		/// <value>The current link resource rate in EC/MiT.</value>
+		public virtual double CurrentLinkResourceRate
+		{
+			get
+			{
+				return this.DataResourceCost;
+			}
+		}
+
+		public virtual double CurrentNetworkResourceRate
+		{
+			get
+			{
+				double totalRate = 0;
+
+				IAntennaRelay nextLink = this.moduleRef;
+
+				while (nextLink != null)
+				{
+					totalRate += nextLink.DataResourceCost;
+
+					if (nextLink.KerbinDirect)
+					{
+						break;
+					}
+
+					nextLink = nextLink.targetRelay;
+				}
+
+				return totalRate;
+			}
+		}
+
+		/// <summary>
 		/// Gets or sets the link status.
 		/// </summary>
 		public virtual ConnectionStatus LinkStatus
@@ -214,7 +250,7 @@ namespace AntennaRange
 		/// Override ModuleDataTransmitter.DataRate to just return packetSize, because we want antennas to be scored in
 		/// terms of joules/byte
 		/// </summary>
-		public new float DataRate
+		public virtual float DataRate
 		{
 			get
 			{
@@ -235,7 +271,7 @@ namespace AntennaRange
 		/// Override ModuleDataTransmitter.DataResourceCost to just return packetResourceCost, because we want antennas
 		/// to be scored in terms of joules/byte
 		/// </summary>
-		public new double DataResourceCost
+		public virtual double DataResourceCost
 		{
 			get
 			{

@@ -59,6 +59,18 @@ namespace AntennaRange
 		float MaxDataFactor { get; }
 
 		/// <summary>
+		/// Gets the data resource cost in EC/MiT.
+		/// </summary>
+		/// <value>The data resource cost in EC/MiT.</value>
+		double DataResourceCost { get; }
+
+		/// <summary>
+		/// Gets the current network resource rate in EC/MiT.
+		/// </summary>
+		/// <value>The current network resource rate in EC/MiT.</value>
+		double CurrentNetworkResourceRate { get; }
+
+		/// <summary>
 		/// Gets a value indicating whether this <see cref="AntennaRange.IAntennaRelay"/> Relay is communicating
 		/// directly with Kerbin.
 		/// </summary>

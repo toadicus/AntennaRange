@@ -56,12 +56,6 @@ namespace AntennaRange
 		private static GUIStyle partTooltipBodyStyle;
 		private static GUIStyle partTooltipHeaderStyle;
 
-		// Stores the packetResourceCost as defined in the .cfg file.
-		private float _basepacketResourceCost;
-
-		// Stores the packetSize as defined in the .cfg file.
-		private float _basepacketSize;
-
 		// Every antenna is a relay.
 		private AntennaRelay relay;
 
@@ -206,10 +200,8 @@ namespace AntennaRange
 
 		public float BasePacketSize
 		{
-			get
-			{
-				return this._basepacketSize;
-			}
+			get;
+			private set;
 		}
 
 		public float PacketResourceCost
@@ -226,10 +218,8 @@ namespace AntennaRange
 
 		public float BasePacketResourceCost
 		{
-			get
-			{
-				return this._basepacketResourceCost;
-			}
+			get;
+			private set;
 		}
 
 		public float PacketThrottle
@@ -330,6 +320,23 @@ namespace AntennaRange
 		}
 
 		/// <summary>
+		/// Gets the current link resource rate in EC/MiT.
+		/// </summary>
+		/// <value>The current link resource rate in EC/MiT.</value>
+		public double CurrentLinkResourceRate
+		{
+			get
+			{
+				if (this.relay == null)
+				{
+					return double.PositiveInfinity;
+				}
+
+				return this.relay.CurrentLinkResourceRate;
+			}
+		}
+
+		/// <summary>
 		/// Gets the link status.
 		/// </summary>
 		public ConnectionStatus LinkStatus
@@ -417,19 +424,12 @@ namespace AntennaRange
 		{
 			get
 			{
-				if (this.relay != null)
+				if (this.relay == null)
 				{
-					this.relay.RecalculateTransmissionRates();
+					return float.PositiveInfinity;
 				}
 
-				if (this.CanTransmit())
-				{
-					return this.packetSize;
-				}
-				else
-				{
-					return float.Epsilon;
-				}
+				return this.relay.DataRate;
 			}
 		}
 
@@ -441,16 +441,25 @@ namespace AntennaRange
 		{
 			get
 			{
-				this.relay.RecalculateTransmissionRates();
+				if (this.relay == null)
+				{
+					return double.PositiveInfinity;
+				}
 
-				if (this.CanTransmit())
+				return this.relay.DataResourceCost;
+			}
+		}
+
+		public double CurrentNetworkResourceRate
+		{
+			get
+			{
+				if (this.relay == null)
 				{
-					return this.packetResourceCost;
+					return double.PositiveInfinity;
 				}
-				else
-				{
-					return float.PositiveInfinity;
-				}
+
+				return this.relay.CurrentNetworkResourceRate;
 			}
 		}
 
@@ -487,8 +496,8 @@ namespace AntennaRange
 		{
 			base.OnAwake();
 
-			this._basepacketSize = base.packetSize;
-			this._basepacketResourceCost = base.packetResourceCost;
+			this.BasePacketSize = base.packetSize;
+			this.BasePacketResourceCost = base.packetResourceCost;
 			this.moduleInfoContent = new GUIContent();
 
 			this.LogDebug("{0} loaded:\n" +
@@ -499,7 +508,7 @@ namespace AntennaRange
 				"maxDataFactor: {5}\n",
 				this,
 				base.packetSize,
-				this._basepacketResourceCost,
+				this.BasePacketResourceCost,
 				this.nominalTransmitDistance,
 				this.maxPowerFactor,
 				this.maxDataFactor
