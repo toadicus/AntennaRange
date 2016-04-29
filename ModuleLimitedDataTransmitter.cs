@@ -564,6 +564,9 @@ namespace AntennaRange
 		// HACK: Currently hacks around Squad's extraneous layout box, see KSPModders issue #5118
 		private void drawTooltipWidget(Rect rect)
 		{
+			/*
+			 * Removed all this because Squad doesn't even call it anymore.
+			 *
 			this.moduleInfoContent.text = this.GetInfo();
 
 			if (partTooltipSkin == null)
@@ -605,7 +608,7 @@ namespace AntennaRange
 			GUILayout.Space(height - orgHeight
 				- partTooltipBodyStyle.padding.bottom - partTooltipBodyStyle.padding.top
 				- 2f * (partTooltipBodyStyle.margin.bottom + partTooltipBodyStyle.margin.top)
-			);
+			);*/
 		}
 
 		/// <summary>

@@ -6,6 +6,8 @@
 using KSP;
 using KSP.UI.Screens;
 using System;
+using System.Collections.Generic;
+using System.Reflection;
 using ToadicusTools.Extensions;
 using ToadicusTools.Text;
 using ToadicusTools.GUIUtils;
@@ -130,6 +132,8 @@ namespace AntennaRange
 
 #pragma warning disable 1591
 
+		private static MethodInfo partLoader_CompilePartInfo;
+
 		private bool showConfigWindow;
 		private Rect configWindowPos;
 
@@ -228,6 +232,16 @@ namespace AntennaRange
 
 				this.LogWarning("Failed to load Tracking Station ranges from config, using hard-coded values: [{0}]",
 					this.trackingStationRanges.SPrint());
+			}
+
+			if (partLoader_CompilePartInfo == null)
+			{
+				partLoader_CompilePartInfo = typeof(PartLoader).GetMethod(
+					"CompilePartInfo",
+					BindingFlags.NonPublic | BindingFlags.Instance
+				);
+
+				this.Log("Fetched PartLoader.CompilePartInfo: {0}", partLoader_CompilePartInfo);
 			}
 
 			this.runOnce = true;
@@ -363,6 +377,8 @@ namespace AntennaRange
 			{
 				ARConfiguration.UseAdditiveRanges = useAdditive;
 				this.SaveConfigValue(USE_ADDITIVE_KEY, useAdditive);
+
+				this.updateModuleInfos();
 			}
 
 			GUILayout.EndHorizontal();
@@ -468,6 +484,90 @@ namespace AntennaRange
 			{
 				this.Log("Caught onFacilityUpgraded for {0} at level {1}", fac.id, lvl);
 				this.SetKerbinRelayRange();
+
+				this.updateModuleInfos();
+			}
+		}
+
+		private void updateModuleInfos()
+		{
+			if (PartLoader.Instance != null && PartLoader.Instance.parts != null)
+			{
+				this.Log("Updating module infos in PartLoader");
+				this.updateModuleInfos(PartLoader.Instance.parts);
+			}
+
+			if (RDTestSceneLoader.Instance != null && RDTestSceneLoader.Instance.partsList != null)
+			{
+				this.Log("Updating module infos in RDTestSceneLoader");
+				this.updateModuleInfos(RDTestSceneLoader.Instance.partsList);
+			}
+		}
+
+		private void updateModuleInfos(List<AvailablePart> partsList)
+		{
+			if (partLoader_CompilePartInfo == null)
+			{
+				this.LogError("Cannot recompile part info; partLoader_CompilePartInfo not found.");
+				return;
+			}
+
+			if (PartLoader.Instance == null)
+			{
+				this.LogError("Cannot recompile part info; PartLoader.Instance is null.");
+				return;
+			}
+
+			// We need to go find all of the prefabs and update them, because Squad broke IModuleInfo.
+			AvailablePart availablePart;
+			Part partPrefab;
+			PartModule modulePrefab;
+			object[] compileArgs = new object[2];
+
+			this.Log("Updating module infos...");
+
+			for (int apIdx = 0; apIdx < partsList.Count; apIdx++)
+			{
+				availablePart = partsList[apIdx];
+
+				if (availablePart == null)
+				{
+					continue;
+				}
+
+				partPrefab = availablePart.partPrefab;
+
+				if (partPrefab == null || partPrefab.Modules == null)
+				{
+					continue;
+				}
+
+				for (int pmIdx = 0; pmIdx < partPrefab.Modules.Count; pmIdx++)
+				{
+					modulePrefab = partPrefab.Modules[pmIdx];
+
+					if (modulePrefab == null)
+					{
+						continue;
+					}
+
+					if (modulePrefab is IAntennaRelay)
+					{
+						this.Log("Found prefab IAntennaRelay {0}", modulePrefab);
+
+						this.Log("Recompiling part and module info for {0}", availablePart.name);
+
+						availablePart.moduleInfos.Clear();
+						availablePart.resourceInfos.Clear();
+
+						compileArgs[0] = availablePart;
+						compileArgs[1] = partPrefab;
+
+						partLoader_CompilePartInfo.Invoke(PartLoader.Instance, compileArgs);
+
+						break;
+					}
+				}
 			}
 		}
 
