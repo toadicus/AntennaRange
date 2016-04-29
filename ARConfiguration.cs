@@ -366,6 +366,8 @@ namespace AntennaRange
 			{
 				ARConfiguration.FixedPowerCost = fixedPowerCost;
 				this.SaveConfigValue(FIXED_POWER_KEY, fixedPowerCost);
+
+				this.updateModuleInfos();
 			}
 
 			GUILayout.EndHorizontal();

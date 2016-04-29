@@ -628,14 +628,12 @@ namespace AntennaRange
 			{
 				string text;
 
-				sb.Append(base.GetInfo());
-
 				if (ARConfiguration.UseAdditiveRanges)
 				{
-					sb.AppendFormat("Nominal Range to Kerbin: {0:S3}m\n",
+					sb.AppendFormat("<b>Nominal Range to Kerbin: </b>{0:S3}m\n",
 						Math.Sqrt(this.nominalTransmitDistance * ARConfiguration.KerbinNominalRange)
 					);
-					sb.AppendFormat("Maximum Range to Kerbin: {0:S3}m",
+					sb.AppendFormat("<b>Maximum Range to Kerbin: </b>{0:S3}m",
 						Math.Sqrt(
 							this.nominalTransmitDistance * Math.Sqrt(this.maxPowerFactor) *
 							ARConfiguration.KerbinRelayRange
@@ -644,13 +642,69 @@ namespace AntennaRange
 				}
 				else
 				{
-					sb.AppendFormat("Nominal Range: {0:S3}m\n", this.nominalTransmitDistance);
-					sb.AppendFormat("Maximum Range: {0:S3}m", this.maxTransmitDistance);
+					sb.AppendFormat("<b>Nominal Range: </b>{0:S3}m\n", this.nominalTransmitDistance);
+					sb.AppendFormat("<b>Maximum Range: </b>{0:S3}m\n", this.maxTransmitDistance);
 				}
 
-				text = sb.ToString();
+				sb.AppendLine();
 
-				return text;
+				sb.AppendFormat("<b>Nominal Packet Size: </b>{0:S3}iT\n", this.BaseLinkCost.PacketSize * 1000000f);
+				sb.AppendFormat(
+					"<b>Nominal Data Rate: </b>{0:S3}iT/sec\n",
+					this.BaseLinkCost.PacketSize / this.packetInterval * 1000000f
+				);
+
+				sb.AppendLine();
+
+				sb.AppendFormat("<b>Within Nominal Range...\n...Maximum Speedup:</b> {0:P0}\n", this.maxDataFactor);
+
+				if (ARConfiguration.FixedPowerCost)
+				{
+					sb.AppendLine();
+
+					sb.AppendFormat(
+						"<b>Outside Nominal Range...\n...Maximum Slowdown:</b> {0:P1}\n",
+						1f / this.maxPowerFactor
+					);
+
+					sb.AppendLine();
+
+					sb.AppendFormat(
+						"<b>Packet Cost:</b> {0:0.0#} {1}\n",
+						this.BaseLinkCost.PacketResourceCost,
+						this.requiredResource == "ElectricCharge" ? "EC" : this.requiredResource
+					);
+					sb.AppendFormat(
+						"<b>Power Drain:</b> {0:0.0#} {1}/s\n",
+						this.BaseLinkCost.PacketResourceCost / this.packetInterval,
+						this.requiredResource == "ElectricCharge" ? "EC" : this.requiredResource
+					);
+				}
+				else
+				{
+					sb.AppendLine();
+
+					sb.AppendFormat(
+						"<b>Nominal Packet Cost:</b> {0:0.0#} {1}\n",
+						this.BaseLinkCost.PacketResourceCost,
+						this.requiredResource == "ElectricCharge" ? "EC" : this.requiredResource
+					);
+					sb.AppendFormat(
+						"<b>Nominal Power Drain:</b> {0:0.0#} {1}/s\n",
+						this.BaseLinkCost.PacketResourceCost / this.packetInterval,
+						this.requiredResource == "ElectricCharge" ? "EC" : this.requiredResource
+					);
+
+					sb.AppendLine();
+
+					sb.AppendFormat(
+						"<b>Outside Nominal Range...\n...Maximum Power Drain:</b> {0:0.0#} {1}/s\n",
+						this.BaseLinkCost.PacketResourceCost / this.packetInterval * this.maxPowerFactor,
+						this.requiredResource == "ElectricCharge" ? "EC" : this.requiredResource
+					);
+				}
+
+				return sb.ToString();
 			}
 		}
 
