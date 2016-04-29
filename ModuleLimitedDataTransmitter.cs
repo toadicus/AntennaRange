@@ -626,14 +626,12 @@ namespace AntennaRange
 		{
 			using (PooledStringBuilder sb = PooledStringBuilder.Get())
 			{
-				string text;
-
 				if (ARConfiguration.UseAdditiveRanges)
 				{
 					sb.AppendFormat("<b>Nominal Range to Kerbin: </b>{0:S3}m\n",
 						Math.Sqrt(this.nominalTransmitDistance * ARConfiguration.KerbinNominalRange)
 					);
-					sb.AppendFormat("<b>Maximum Range to Kerbin: </b>{0:S3}m",
+					sb.AppendFormat("<b>Maximum Range to Kerbin: </b>{0:S3}m\n",
 						Math.Sqrt(
 							this.nominalTransmitDistance * Math.Sqrt(this.maxPowerFactor) *
 							ARConfiguration.KerbinRelayRange

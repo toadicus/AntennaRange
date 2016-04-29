@@ -259,6 +259,7 @@ namespace AntennaRange
 				this.runOnce = false;
 
 				this.SetKerbinRelayRange();
+				this.updateModuleInfos();
 			}
 		}
 
