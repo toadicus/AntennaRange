@@ -52,18 +52,12 @@ namespace AntennaRange
 		: ModuleDataTransmitter, IScienceDataTransmitter, IAntennaRelay, IModuleInfo
 	{
 		private const string tooltipSkinName = "PartTooltipSkin";
-		private static GUISkin partTooltipSkin;
-		private static GUIStyle partTooltipBodyStyle;
-		private static GUIStyle partTooltipHeaderStyle;
 
 		// Every antenna is a relay.
 		private AntennaRelay relay;
 
 		// Sometimes we will need to communicate errors; this is how we do it.
 		private ScreenMessage ErrorMsg;
-
-		// Used in module info panes for part tooltips in the editor and R&D
-		private GUIContent moduleInfoContent;
 
 		/// <summary>
 		/// When additive ranges are enabled, the distance from Kerbin at which the antenna will perform exactly as
@@ -486,10 +480,6 @@ namespace AntennaRange
 		{
 			base.OnAwake();
 
-			this.BaseLinkCost = new RelayDataCost(base.packetSize, base.packetResourceCost);
-
-			this.moduleInfoContent = new GUIContent();
-
 			this.LogDebug("{0} loaded:\n" +
 				"packetSize: {1}\n" +
 				"packetResourceCost: {2}\n" +
@@ -541,6 +531,7 @@ namespace AntennaRange
 
 			base.OnLoad (node);
 
+			this.BaseLinkCost = new RelayDataCost(base.packetResourceCost, base.packetSize);
 			this.RecalculateMaxRange();
 		}
 
@@ -646,9 +637,9 @@ namespace AntennaRange
 
 				sb.AppendLine();
 
-				sb.AppendFormat("<b>Nominal Packet Size: </b>{0:S3}iT\n", this.BaseLinkCost.PacketSize * 1000000f);
+				sb.AppendFormat("<b>Nominal Packet Size: </b>{0:S2}iT\n", this.BaseLinkCost.PacketSize * 1000000f);
 				sb.AppendFormat(
-					"<b>Nominal Data Rate: </b>{0:S3}iT/sec\n",
+					"<b>Nominal Data Rate: </b>{0:S2}iT/sec\n",
 					this.BaseLinkCost.PacketSize / this.packetInterval * 1000000f
 				);
 
