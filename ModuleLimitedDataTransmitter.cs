@@ -473,6 +473,7 @@ namespace AntennaRange
 			this.packetThrottle = 100f;
 		}
 
+		#if DEBUG
 		/// <summary>
 		/// PartModule OnAwake override; runs at Unity Awake.
 		/// </summary>
@@ -494,6 +495,7 @@ namespace AntennaRange
 				this.maxDataFactor
 			);
 		}
+		#endif
 
 		/// <summary>
 		/// PartModule OnStart override; runs at Unity Start.
@@ -501,9 +503,10 @@ namespace AntennaRange
 		/// <param name="state">State.</param>
 		public override void OnStart (StartState state)
 		{
-			base.OnStart (state);
-
+			this.BaseLinkCost = new RelayDataCost(base.packetResourceCost, base.packetSize);
 			this.RecalculateMaxRange();
+
+			base.OnStart (state);
 
 			if (state >= StartState.PreLaunch)
 			{
