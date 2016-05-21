@@ -173,7 +173,7 @@ namespace AntennaRange
 
 			VesselCommand availableCommand;
 
-			if (ARConfiguration.RequireConnectionForControl)
+			if (ARConfiguration.RequireConnectionForControl && this.vessel != null)
 			{
 				availableCommand = this.vessel.CurrentCommand();
 			}
