@@ -419,6 +419,8 @@ namespace AntennaRange
 			GameEvents.onVesselWasModified.Add(this.onVesselEvent);
 			GameEvents.onVesselChange.Add(this.onVesselEvent);
 			GameEvents.onVesselDestroy.Add(this.onVesselEvent);
+			GameEvents.onVesselGoOnRails.Add(this.onVesselEvent);
+			GameEvents.onVesselGoOffRails.Add(this.onVesselEvent);
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChange);
 			GameEvents.onPartCouple.Add(this.onFromPartToPartEvent);
 			GameEvents.onPartUndock.Add(this.onPartEvent);
@@ -431,6 +433,8 @@ namespace AntennaRange
 			GameEvents.onVesselWasModified.Remove(this.onVesselEvent);
 			GameEvents.onVesselChange.Remove(this.onVesselEvent);
 			GameEvents.onVesselDestroy.Remove(this.onVesselEvent);
+			GameEvents.onVesselGoOnRails.Remove(this.onVesselEvent);
+			GameEvents.onVesselGoOffRails.Add(this.onVesselEvent);
 			GameEvents.onGameSceneLoadRequested.Remove(this.onSceneChange);
 			GameEvents.onPartCouple.Remove(this.onFromPartToPartEvent);
 			GameEvents.onPartUndock.Remove(this.onPartEvent);
