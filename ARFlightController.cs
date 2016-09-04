@@ -157,8 +157,9 @@ namespace AntennaRange
 				this.toolbarButton.TexturePath = this.toolbarTextures[ConnectionStatus.None];
 				this.toolbarButton.Text = "AntennaRange";
 				this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.FLIGHT);
-				this.toolbarButton.OnClick += (e) => (this.buttonToggle());
-			}
+                this.toolbarButton.OnClick += (e) => { this.buttonToggle(); };
+                
+            }
 
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
 			GameEvents.onVesselChange.Add(this.onVesselChange);
