@@ -565,10 +565,8 @@ namespace AntennaRange
 
 						compileArgs[0] = availablePart;
 						compileArgs[1] = partPrefab;
-                        if (PartLoader.Instance != null)
-                            partLoader_CompilePartInfo.Invoke(PartLoader.Instance, compileArgs);
-                        else
-                            this.Log("PartLoader.Instance is null");
+
+						partLoader_CompilePartInfo.Invoke(PartLoader.Instance, compileArgs);
 
 						break;
 					}
