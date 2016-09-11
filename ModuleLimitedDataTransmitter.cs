@@ -59,9 +59,15 @@ namespace AntennaRange
 		// Sometimes we will need to communicate errors; this is how we do it.
 		private ScreenMessage ErrorMsg;
 
+		/// <summary>
+		/// The base size of a transmission packet, in MiT.
+		/// </summary>
 		[KSPField(isPersistant = false)]
 		public float basePacketSize;
 
+		/// <summary>
+		/// The base resource cost of a transmission packet, presumably in EC.
+		/// </summary>
 		[KSPField(isPersistant = false)]
 		public float basePacketResourceCost;
 
