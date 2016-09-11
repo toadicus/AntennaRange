@@ -59,6 +59,12 @@ namespace AntennaRange
 		// Sometimes we will need to communicate errors; this is how we do it.
 		private ScreenMessage ErrorMsg;
 
+		[KSPField(isPersistant = false)]
+		public float basePacketSize;
+
+		[KSPField(isPersistant = false)]
+		public float basePacketResourceCost;
+
 		/// <summary>
 		/// When additive ranges are enabled, the distance from Kerbin at which the antenna will perform exactly as
 		/// prescribed by packetResourceCost and packetSize.
@@ -180,6 +186,7 @@ namespace AntennaRange
 			}
 		}
 
+		private RelayDataCost _currentLinkCost = new RelayDataCost();
 		/// <summary>
 		/// Gets the current link resource rate in EC/MiT.
 		/// </summary>
@@ -188,7 +195,9 @@ namespace AntennaRange
 		{
 			get
 			{
-				return new RelayDataCost(this.packetResourceCost, this.packetSize);
+				_currentLinkCost.PacketResourceCost = this.packetResourceCost;
+				_currentLinkCost.PacketSize = this.packetSize;
+				return _currentLinkCost;
 			}
 			set
 			{
@@ -503,7 +512,7 @@ namespace AntennaRange
 		/// <param name="state">State.</param>
 		public override void OnStart (StartState state)
 		{
-			this.BaseLinkCost = new RelayDataCost(base.packetResourceCost, base.packetSize);
+			this.BaseLinkCost = new RelayDataCost(this.basePacketResourceCost, this.basePacketSize);
 			this.RecalculateMaxRange();
 
 			base.OnStart (state);
@@ -534,7 +543,7 @@ namespace AntennaRange
 
 			base.OnLoad (node);
 
-			this.BaseLinkCost = new RelayDataCost(base.packetResourceCost, base.packetSize);
+			this.BaseLinkCost = new RelayDataCost(this.basePacketResourceCost, this.basePacketSize);
 			this.RecalculateMaxRange();
 		}
 
@@ -738,7 +747,14 @@ namespace AntennaRange
 			if (this.relay != null)
 			{
 				this.relay.RecalculateTransmissionRates();
+				this.LogDebug("Recalculated transmission rates in MLDT, cost is {0}", this.CurrentLinkCost);
 			}
+			#if DEBUG
+			else
+			{
+				this.LogDebug("Skipping recalculation; relay is null.");
+			}
+			#endif
 		}
 
 		/// <summary>
@@ -970,6 +986,8 @@ namespace AntennaRange
 				if (this.part != null && this.part.partInfo != null)
 				{
 					sb.Append(this.part.partInfo.title);
+					sb.Append('#');
+					sb.Append(this.part.flightID);
 				}
 				else
 				{

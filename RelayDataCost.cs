@@ -65,7 +65,7 @@ namespace AntennaRange
 				lcd.PacketResourceCost *= mul;
 			}
 
-			return new RelayDataCost(gcd.PacketResourceCost + lcd.PacketResourceCost, gcd.PacketSize + lcd.PacketSize);
+			return new RelayDataCost(gcd.PacketResourceCost + lcd.PacketResourceCost, gcd.PacketSize);
 		}
 
 		/// <param name="only">RelayDataCost to be negated</param>

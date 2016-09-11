@@ -158,7 +158,6 @@ namespace AntennaRange
 				this.toolbarButton.Text = "AntennaRange";
 				this.toolbarButton.Visibility = new GameScenesVisibility(GameScenes.FLIGHT);
                 this.toolbarButton.OnClick += (e) => { this.buttonToggle(); };
-                
             }
 
 			GameEvents.onGameSceneLoadRequested.Add(this.onSceneChangeRequested);
@@ -335,8 +334,8 @@ namespace AntennaRange
 
 					log.AppendFormat("\nFinding nearest relay for active vessel relay {0}", relay);
 
-					relay.RecalculateTransmissionRates();
 					relay.FindNearestRelay();
+					relay.RecalculateTransmissionRates();
 				}
 
 				if (this.toolbarButton != null || this.appLauncherButton != null)

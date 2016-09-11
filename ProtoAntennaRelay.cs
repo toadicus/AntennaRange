@@ -218,6 +218,8 @@ namespace AntennaRange
 
 				if (this.protoPart != null && this.protoPart.pVesselRef != null)
 				{
+					sb.Append('#');
+					sb.Append(this.protoPart.flightID);
 					sb.AppendFormat(" on {0}", this.protoPart.pVesselRef.vesselName);
 				}
 

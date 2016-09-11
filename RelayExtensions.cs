@@ -343,7 +343,13 @@ namespace AntennaRange
 		[System.Diagnostics.Conditional("DEBUG")]
 		public static void LogDebug(this AntennaRelay relay, string format, params object[] args)
 		{
-			ToadicusTools.Logging.PostDebugMessage(string.Format("[{0}] {1}", relay.ToString(), format), args);
+			using (var sb = ToadicusTools.Text.PooledStringBuilder.Get())
+			{
+				sb.AppendFormat("[{0}] ", relay == null ? "NULL" : relay.ToString());
+				sb.AppendFormat(format, args);
+
+				ToadicusTools.Logging.PostDebugMessage(sb.ToString());
+			}
 		}
 
 		/// <summary>
@@ -352,7 +358,13 @@ namespace AntennaRange
 		[System.Diagnostics.Conditional("DEBUG")]
 		public static void LogDebug(this AntennaRelay relay, string msg)
 		{
-			ToadicusTools.Logging.PostDebugMessage("[{0}] {1}", relay.ToString(), msg);
+			using (var sb = ToadicusTools.Text.PooledStringBuilder.Get())
+			{
+				sb.AppendFormat("[{0}] ", relay == null ? "NULL" : relay.ToString());
+				sb.Append(msg);
+
+				ToadicusTools.Logging.PostDebugMessage(sb.ToString());
+			}
 		}
 	}
 
