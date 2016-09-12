@@ -992,8 +992,10 @@ namespace AntennaRange
 				if (this.part != null && this.part.partInfo != null)
 				{
 					sb.Append(this.part.partInfo.title);
+					#if DEBUG
 					sb.Append('#');
 					sb.Append(this.part.flightID);
+					#endif
 				}
 				else
 				{
